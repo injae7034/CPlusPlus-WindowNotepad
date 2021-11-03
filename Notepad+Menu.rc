@@ -1,0 +1,263 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 한국어(대한민국) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_KOR)
+LANGUAGE LANG_KOREAN, SUBLANG_DEFAULT
+#pragma code_page(949)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "파일(&F)"
+    BEGIN
+        MENUITEM "새로 만들기(&N)\t\t\tCtrl + N",    IDM_FILE_CLOSEANDOPENNEW
+        MENUITEM "불러오기(&O)\t\t\tCtrl + O",      IDM_FILE_OPEN
+        MENUITEM "저장하기(&S)\t\t\tCtrl + S",      IDM_FILE_SAVE
+        MENUITEM "다른 이름으로 저장하기(&A)\t\t\tCtrl + Shift + S", IDM_FILE_SAVEDIFFERENTNAME
+        MENUITEM SEPARATOR
+        MENUITEM "페이지 설정하기(&U)",                IDM_FILE_SETUP
+        MENUITEM "인쇄하기(&P)\t\t\tCtrl + P",      IDM_FILE_PRINT
+        MENUITEM "미리보기(&F)",                    IDM_FILE_PREVIEW
+        MENUITEM SEPARATOR
+        MENUITEM "끝내기(&X)",                     IDM_FILE_EXIT
+    END
+    POPUP "편집(&E)"
+    BEGIN
+        MENUITEM "실행 취소(&U)\t\t\tCtrl + Z",     IDM_NOTE_UNDO
+        MENUITEM "다시 실행(&R)\t\t\tCtrl + Y",     IDM_NOTE_REDO
+        MENUITEM SEPARATOR
+        MENUITEM "잘라내기(&T)\t\t\tCtrl + X",      IDM_NOTE_CUT
+        MENUITEM "복사하기(&C)\t\t\tCtrl + C",      IDM_NOTE_COPY
+        MENUITEM "붙여넣기(&P)\t\t\tCtrl + V",      IDM_NOTE_PASTE
+        MENUITEM "삭제(&D)",                      IDM_NOTE_REMOVE
+        MENUITEM "모두 선택(&A)\t\t\tCtrl + A",     IDM_NOTE_SELECTALL
+        MENUITEM SEPARATOR
+        MENUITEM "찾기(&F)\t\t\tCtrl + F",        IDM_NOTE_FIND
+        MENUITEM "바꾸기(&H)\t\t\tCtrl + H",       IDM_NOTE_REPLACE
+    END
+    POPUP "서식(&O)"
+    BEGIN
+        MENUITEM "자동 줄 바꿈(&W)",                 IDM_ROW_AUTOCHANGE
+        MENUITEM "글꼴(&F)",                      IDM_FONT_CHANGE
+    END
+    POPUP "도움말(&H)"
+    BEGIN
+        MENUITEM "도움말 보기(&H)",                  IDM_HELP_SEEING
+        MENUITEM "피드백 보내기(&F)",                 IDM_FEEDBACK_SENDING
+    END
+END
+
+IDR_MENU3 MENU
+BEGIN
+    POPUP "메뉴"
+    BEGIN
+        MENUITEM "실행 취소(&U)\t\t\tCtrl + Z",     IDM_NOTE_UNDO
+        MENUITEM "다시 실행(&R)\t\t\tCtrl + Y",     IDM_NOTE_REDO
+        MENUITEM SEPARATOR
+        MENUITEM "잘라내기(&T)\t\t\tCtrl + X",      IDM_NOTE_CUT
+        MENUITEM "복사하기(&C)\t\t\tCtrl + C",      IDM_NOTE_COPY
+        MENUITEM "붙여넣기(&P)\t\t\tCtrl + V",      IDM_NOTE_PASTE
+        MENUITEM "삭제(&D)",                      IDM_NOTE_REMOVE
+        MENUITEM "모두 선택(&A)\t\t\tCtrl + A",     IDM_NOTE_SELECTALL
+        MENUITEM SEPARATOR
+        MENUITEM "찾기(&F)\t\t\tCtrl + F",        IDM_NOTE_FIND
+        MENUITEM "바꾸기(&H)\t\t\tCtrl + H",       IDM_NOTE_REPLACE
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_FINDINGDIALOG DIALOGEX 30, 73, 236, 74
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "찾기"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    EDITTEXT        IDC_EDIT_FINDINGCONTENT,47,7,128,12,ES_AUTOHSCROLL | WS_GROUP
+    CONTROL         "대/소문자 구분",IDC_CHECKBOX_MATCHCASE,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,4,42,64,12
+    CONTROL         "주위에 배치",IDC_CHECKBOX_WRAPAROUND,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,4,58,64,12
+    CONTROL         "위로",IDC_RADIO_UP,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,111,38,25,12
+    CONTROL         "아래로",IDC_RADIO_DOWN,"Button",BS_AUTORADIOBUTTON | WS_TABSTOP,138,38,35,12
+    DEFPUSHBUTTON   "찾기",IDC_BUTTON_FIND,182,5,50,14,WS_GROUP
+    PUSHBUTTON      "취소",IDC_BUTTON_CANCEL,182,23,50,14,WS_GROUP
+    CTEXT           "찾을 내용",IDC_STATIC_FINDINGCONTENT,4,8,42,8
+    CONTROL         "Match &whole word only",1040,"Button",BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_DISABLED | WS_TABSTOP,4,26,100,12
+    GROUPBOX        "방향",IDC_GROUPBOX_DIRECTION,107,26,68,28,WS_GROUP
+    LTEXT           "",1088,4,56,1,1,NOT WS_VISIBLE
+END
+
+IDD_REPLACINGDIALOG DIALOGEX 36, 44, 230, 94
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "바꾸기"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    EDITTEXT        IDC_EDIT_FINDINGCONTENT,54,7,114,12,ES_AUTOHSCROLL | WS_GROUP
+    EDITTEXT        IDC_EDIT_REPLACINGCONTENT,54,24,114,12,ES_AUTOHSCROLL | WS_GROUP
+    CONTROL         "대/소문자 구분",IDC_CHECKBOX_MATCHCASE,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,4,62,59,12
+    CONTROL         "주위에 배치",IDC_CHECKBOX_WRAPAROUND,"Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,4,78,64,12
+    PUSHBUTTON      "↓↑",IDC_BUTTON_SWAP,175,7,50,14,WS_GROUP
+    DEFPUSHBUTTON   "찾기",IDC_BUTTON_FIND,174,24,50,14,WS_GROUP
+    PUSHBUTTON      "바꾸기",IDC_BUTTON_REPLACE,174,41,50,14,WS_GROUP
+    PUSHBUTTON      "모두 바꾸기",IDC_BUTTON_REPLACEALL,174,58,50,14,WS_GROUP
+    PUSHBUTTON      "취소",IDC_BUTTON_CANCEL,174,75,50,14,WS_GROUP
+    CTEXT           "찾을 내용",IDC_STATIC_FINDINGCONTENT,4,9,48,8
+    CTEXT           "바꿀 내용",IDC_STATIC_FINDINGCONTENT,4,26,48,8
+    CONTROL         "Match &whole word only",1040,"Button",BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_DISABLED | WS_GROUP | WS_TABSTOP,4,46,104,12
+    LTEXT           "",1088,4,76,1,1,NOT WS_VISIBLE
+END
+
+IDD_PAGESETUPDIALOG DIALOGEX 32, 32, 390, 226
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CONTEXTHELP | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "페이지 설정"
+FONT 8, "MS Shell Dlg", 0, 0, 0x0
+BEGIN
+    COMBOBOX        1137,64,27,160,160,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_GROUP | WS_TABSTOP
+    COMBOBOX        1138,64,47,160,160,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_GROUP | WS_TABSTOP
+    RADIOBUTTON     "세로(O)",1056,16,89,52,12,WS_GROUP | WS_TABSTOP
+    RADIOBUTTON     "가로(A)",1057,16,109,52,12,WS_GROUP | WS_TABSTOP
+    EDITTEXT        1155,118,89,32,12,WS_GROUP
+    EDITTEXT        1157,194,89,32,12,WS_GROUP
+    EDITTEXT        1156,118,109,32,12,WS_GROUP
+    EDITTEXT        1158,194,109,32,12,WS_GROUP
+    EDITTEXT        IDC_EDIT_HEADER,47,152,177,14,ES_AUTOHSCROLL | WS_GROUP
+    EDITTEXT        IDC_EDIT_FOOTER,47,175,177,14,ES_AUTOHSCROLL | WS_GROUP
+    DEFPUSHBUTTON   "확인",IDOK,260,202,55,14,WS_GROUP
+    PUSHBUTTON      "취소",IDCANCEL,320,202,53,14,WS_GROUP
+    CONTROL         "",1080,"Static",SS_WHITERECT | WS_GROUP,253,52,88,100
+    CONTROL         "",1081,"Static",SS_GRAYRECT | WS_GROUP,341,66,6,92
+    CONTROL         "",1082,"Static",SS_GRAYRECT | WS_GROUP,258,152,86,6
+    GROUPBOX        "용지",1073,8,13,224,56,WS_GROUP
+    LTEXT           "크기(Z):",1089,16,29,36,8
+    LTEXT           "공급(S):",1090,16,49,36,8
+    GROUPBOX        "방향",1072,8,75,64,56,WS_GROUP
+    GROUPBOX        "여백(밀리미터)",1075,80,75,152,56,WS_GROUP
+    LTEXT           "왼쪽(L):",1102,87,91,26,8
+    LTEXT           "오른쪽(R):",1103,157,91,32,8
+    LTEXT           "위쪽(T):",1104,87,111,26,8
+    LTEXT           "아래쪽(B):",1105,157,111,32,8
+    GROUPBOX        "미리보기",1200,239,13,134,181
+    LTEXT           "머리글(H):",1201,13,155,33,8
+    LTEXT           "바닥글(F):",1202,13,177,32,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_FINDINGDIALOG, DIALOG
+    BEGIN
+    END
+
+    IDD_REPLACINGDIALOG, DIALOG
+    BEGIN
+    END
+
+    IDD_PAGESETUPDIALOG, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_FINDINGDIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_REPLACINGDIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_PAGESETUPFORM AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_PAGESETUPDIALOG AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "Notepad.ico"
+
+#endif    // 한국어(대한민국) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
