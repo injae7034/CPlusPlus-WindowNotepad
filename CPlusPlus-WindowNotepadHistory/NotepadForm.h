@@ -18,8 +18,14 @@ public:
 protected://#
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg LRESULT OnStartCompostion(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnComposition(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnImeChar(WPARAM wParam, LPARAM lParam);
+	//afx_msg LRESULT OnSetContext(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnPaint();
 	DECLARE_MESSAGE_MAP()
+private:
+	bool IsComposing;
 };
 
 #endif // !_NOTEPADFORM_H
