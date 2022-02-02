@@ -196,13 +196,16 @@ void NotepadForm::OnPaint()
 	//11. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
 	while (i < this->note->GetLength())
 	{
+		//11.1 현재 줄의 글자들을 구한다.
 		content = CString(this->note->GetAt(i)->GetContent().c_str());
+		//11.2 스크롤의 위치를 구한다.
 		currentXPos = this->GetScrollPos(SB_HORZ);
 		currentYPos = this->GetScrollPos(SB_VERT);
-		//11.1 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
-		//11.2 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
+		//11.3 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
+		//11.3 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
 		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, content);
-		this->Notify();
+		//dc.TextOut(0, i * text.tmHeight, content);
+		//this->Notify(); 여기서 Notify 해주면 안됨! 캐럿이 계속 남게되고 안사라짐.
 		i++;
 	}
 	dc.SelectObject(oldFont);
@@ -333,6 +336,7 @@ void NotepadForm::OnSetFocus(CWnd* pOldWnd)
 {
 	//1. 캐럿 매니저를 생성한다.
 	CaretController* caretController = new CaretController(this);
+	//this->caretController = new CaretController(this);
 	//2. 캐럿이 변경되었음을 옵저버들에게 알린다.
 	this->Notify();
 }
@@ -341,23 +345,22 @@ void NotepadForm::OnSetFocus(CWnd* pOldWnd)
 void NotepadForm::OnKillFocus(CWnd* pNewWnd)
 {
 	//observer주소배열에서 CaretManager를 찾을 때까지 반복한다.
-	Long i = this->length - 1;
+	Long i = 0;
 	//1. 옵저버 리스트에서 옵저버를 구한다.
 	Observer* observer = this->observers.GetAt(i);
-	//2. i가 0보다 크거나 같은 동안 옵저버가 캐럿매니저가 아닌동안 반복한다.
-	while (i >= 0 && dynamic_cast<CaretController*>(observer) != observer)
+	//2. i가 length보다 작은 동안 옵저버가 캐럿매니저가 아닌동안 반복한다.
+	while (i <this->length && dynamic_cast<CaretController*>(observer) != observer)
 	{
-		//2.1 옵저버 리스트에서 옵저버를 구한다.
+		//2.1 i를 증가시킨다.
+		i++;
+		//2.2 옵저버 리스트에서 옵저버를 구한다.
 		observer = this->observers.GetAt(i);
-		//2.2 i를 감소시킨다.
-		i--;
 	}
 	//3. 옵저버가 CaretManager이면
 	if (dynamic_cast<CaretController*>(observer))
 	{
 		//3.1 힙에 할당된 옵저버의 내용을 할당해제한다.
 		delete observer;//힙에서 내용 할당해제
-		i++;//반복문에서 i를 한번 더 -1해줬기 때문에 원상태로 돌리기 위해 +1을 해줌.
 		//3.2 옵저버리스트들 중 이전에 힙에서 할당해제된 내용의 주소를 가지고 있는
 		//멤버를 할당해제한다.
 		this->observers.Delete(i);//힙에서 내용을 가지고 있던 주소 할당해제
@@ -402,6 +405,7 @@ void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 	//4. 변경사항을 옵저버리스트에게 알린다.
 	this->Notify();
+	this->Invalidate();
 }
 
 //메모장에서 세로 스크롤을 클릭할 때
@@ -525,7 +529,7 @@ void NotepadForm::OnClose()
 		}
 		//NotepadForm는 Subject의 상속을 받았기 때문에 NotepadForm이 소멸될 때
 		//Subject의 소멸자가 호출되면 ScrollController를 알아서 할당해제시켜준다.
-		//ScrollController는 NotepadForm이 생성될 때 힙에 한전 할당되고 NotepadForm이 소멸될 때
+		//ScrollController는 NotepadForm이 생성될 때 힙에 한번 할당되고 NotepadForm이 소멸될 때
 		//같이 소멸되기 때문에 따로 ScrollController를 할당해제시켜줄 필요가 없다.
 		//CaretController같은 경우는 OnSetFoucs될때마다 생성되고 OnKillFoculs될때마다 할당해제되는데
 		//이 때 NotepadForm은 소멸되지않기 때문에 반드시 OnKillFoucs에서 별도로 할당해제를 해줘야한다.

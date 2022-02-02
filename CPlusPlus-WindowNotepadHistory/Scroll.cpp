@@ -44,7 +44,7 @@ Scroll& Scroll::operator=(const Scroll& source)
 	return *this;
 }
 
-//First
+//First 수평수직스크롤 동일함
 Long Scroll::First()
 {
 	//1. 현재 위치를 처음으로 이동시킨다.
@@ -53,7 +53,7 @@ Long Scroll::First()
 	return this->currentPos;
 }
 
-//Last
+//Last 수평수직스크롤 동일함
 Long Scroll::Last()
 {
 	//1. 현재 위치를 마지막으로 이동시킨다.
@@ -62,33 +62,55 @@ Long Scroll::Last()
 	return this->currentPos;
 }
 
-//LinePrevious
+//LinePrevious 수평수직스크롤 서로 다르므로 HorizontalScroll과 VerticalScroll에서 각자 정의해줌
 Long Scroll::LinePrevious()
 {
 	return -1;
 }
 
-//LineNext
+//LineNext 수평수직스크롤 서로 다르므로 HorizontalScroll과 VerticalScroll에서 각자 정의해줌
 Long Scroll::LineNext()
 {
 	return -1;
 }
 
 //pagePrevious
-Long Scroll::pagePrevious()
+Long Scroll::PagePrevious()
 {
-	return this->currentPos;;
-}
-
-//pageNext
-Long Scroll::pageNext()
-{
+	//1. 현재 위치에 화면크기만큼 빼준다.
+	this->currentPos -= this->pageSize;
+	//2. 현재 위치가 음수이면
+	if (this->currentPos < 0)
+	{
+		//2.1 현재 위치를 0으로 바꿔준다.
+		this->currentPos = 0;
+	}
+	//3. 현재 위치를 출력한다.
 	return this->currentPos;
 }
 
-//Move
-Long Scroll::Move(Long currentPos)
+//pageNext
+Long Scroll::PageNext()
 {
+	//1. 현재 위치에 화면크기만큼 더해준다.
+	this->currentPos += this->pageSize;
+	//2. 현재 위치가 max보다 크면
+	Long max = this->max - this->pageSize;
+	if (this->currentPos > max)
+	{
+		//2.1 현재 위치를 max로 변경한다.
+		this->currentPos = max;
+	}
+	//3. 현재 위치를 출력한다.
+	return this->currentPos;
+}
+
+//MoveP
+Long Scroll::Move(UINT nPos)
+{
+	//1. 현재 위치를 스크롤에서 마우스로 클릭한 위치로 이동시킨다. 
+	this->currentPos = nPos;
+	//2. 현재 위치를 출력한다.
 	return this->currentPos;
 }
 

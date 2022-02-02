@@ -10,6 +10,8 @@
 #include "EndKeyAction.h"
 #include "CtrlEndKeyAction.h"
 #include "KeyAction.h"
+#include "PageUpKeyAction.h"
+#include "PageDownKeyAction.h"
 
 //디폴트생성자
 KeyActionCreator::KeyActionCreator(NotepadForm* notepadForm)
@@ -74,7 +76,17 @@ KeyAction* KeyActionCreator::Create(UINT nChar)
 	{
 		keyAction = new EndKeyAction(this->notepadForm);
 	}
-	//12. keyAction을 출력한다.
+	//12. PageUp키를 눌렀으면
+	else if (nChar == VK_PRIOR)
+	{
+		keyAction = new PageUpKeyAction(this->notepadForm);
+	}
+	//13. PageDown키를 눌렀으면
+	else if (nChar == VK_NEXT)
+	{
+		keyAction = new PageDownKeyAction(this->notepadForm);
+	}
+	//14. keyAction을 출력한다.
 	return keyAction;
 }
 

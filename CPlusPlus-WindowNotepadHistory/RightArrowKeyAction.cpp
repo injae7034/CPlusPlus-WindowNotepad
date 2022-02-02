@@ -1,5 +1,7 @@
 #include "RightArrowKeyAction.h"
 #include "Glyph.h"
+#include "ScrollController.h"
+#include "Scroll.h"
 
 //디폴트생성자
 RightArrowKeyAction::RightArrowKeyAction(NotepadForm* notepadForm)
@@ -11,24 +13,43 @@ RightArrowKeyAction::RightArrowKeyAction(NotepadForm* notepadForm)
 //Execute
 void RightArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	//1. 다음으로 이동하기 전에 캐럿의 현재 가로위치를 저장한다.
+	//1. 현재 화면의 가로 넓이를 구한다.
+	CRect rect;
+	this->notepadForm->GetClientRect(&rect);
+	Long pageWidth = rect.Width();
+	//2. 다음으로 이동하기 전에 캐럿의 현재 가로위치를 저장한다.
 	Long previousIndex = this->notepadForm->current->GetCurrent();
-	//2. 다음으로 이동하고 현재 캐럿의 가로위치를 반환받는다.
+	//3. 다음으로 이동하고 현재 캐럿의 가로위치를 반환받는다.
 	Long currentIndex = this->notepadForm->current->Next();
-	//3. 캐럿의 이전 가로위치와 캐럿의 현재 가로위치가 같으면
+	//4. 캐럿의 이전 가로위치와 캐럿의 현재 가로위치가 같으면(캐럿의 이동이 없었으면)
+	//이동이 없었다는 말은 캐럿이 현재 줄의 마지막 글자뒤에 있어서 더이상 이동할 곳이 없다는 뜻이다.
 	if (previousIndex == currentIndex)
 	{
-		//3.1 다음으로 이동하기 전에 캐럿의 현재 세로위치를 저장한다.
+		//3.1 다음으로 이동하기 전에 캐럿의 현재 세로위치(현재 줄의 위치)를 저장한다.
 		Long previousRowIndex = this->notepadForm->note->GetCurrent();
-		//3.2 캐럿의 현재 세로 위치를 다음 줄로 이동시킨다.
+		//3.2 캐럿의 현재 세로 위치(현재 줄의 위치)를 다음 줄로 이동시킨다.
 		Long currentRowIndex = this->notepadForm->note->Next();
-		//3.3 캐럿의 이전 세로 위치와 캐럿의 현재 세로 위치가 서로 다르면
+		//3.3 캐럿의 이전 세로 위치와 캐럿의 현재 세로 위치가 서로 다르면(현재 줄의 이동이 있었으면)
+		//줄의 이동이 있었다는 말은 이동하기 전의 줄이 마지막 줄이 아니기 때문에 이동이 가능함.
+		//현재 줄이 마지막 줄이었으면 다음 줄로 이동 후에도 현재 줄과 위치가 같기 때문에 이동한게아님.
 		if (previousRowIndex != currentRowIndex)
 		{
 			//3.3.1 캐럿의 현재 줄을 변경한다.
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
-			//3.3.2 캐럿의 현재 가로 위치를 변경한다.
+			//3.3.2 캐럿의 현재 가로 위치를 변경한다.(현재 줄이 다음 줄로 옮겨졌기 때문에
+			//캐럿은 이전 줄의 마지막 위치에서 다음 줄의 처음 위치로 이동한다.)
 			this->notepadForm->current->First();
+
+			//3.3.3 수평스크롤을 제일 처음으로 이동시킨다.
+			//this->notepadForm->scrollController->scroll[0]->First();
+			//3.3.4 수직스크롤을 한 줄 다음으로 이동시킨다.
+			//this->notepadForm->scrollController->scroll[1]->LineNext();
+			//3.3.5 수평스크롤바의 수평스크롤을 이동시킨다.
+			//this->notepadForm->SetScrollPos(SB_HORZ,
+			//	this->notepadForm->scrollController->scroll[0]->GetCurrentPos());
+			//2. 수직스크롤바의 수직스크롤을 이동시킨다.
+			//this->notepadForm->SetScrollPos(SB_VERT,
+			//	this->notepadForm->scrollController->scroll[1]->GetCurrentPos());
 		}
 	}
 }

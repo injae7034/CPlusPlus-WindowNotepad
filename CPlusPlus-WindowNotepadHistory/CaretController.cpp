@@ -39,17 +39,16 @@ void CaretController::Update()
         letterWidth = this->notepadForm->textExtent->GetTextWidth(this->notepadForm->
             current->GetAt(this->notepadForm->current->GetCurrent() - 1)->GetContent());
     }
-    
+    //3. 스크롤의 현재 위치를 구한다.
     Long currentXPos = this->notepadForm->GetScrollPos(SB_HORZ);
     Long currentYPos = this->notepadForm->GetScrollPos(SB_VERT);
-
-    //3. 캐럿을 생성한다.
+    //4. 캐럿을 생성한다.
     this->caret->Create(letterWidth, this->notepadForm->textExtent->GetHeight());
-    //4. 캐럿을 이동시킨다.
+    //5. 캐럿을 이동시킨다.
     this->caret->Move(rowTextWidth - letterWidth - currentXPos,
         this->notepadForm->note->GetCurrent() *
         this->notepadForm->textExtent->GetHeight() - currentYPos);
-    //5. 캐럿을 보이게 한다.
+    //6. 캐럿을 보이게 한다.
     this->caret->Show();  
 }
 

@@ -4,6 +4,9 @@
 #include "LastScrollAction.h"
 #include "PreviousScrollAction.h"
 #include "NextScrollAction.h"
+#include "PagePreviousScrollAction.h"
+#include "PageNextScrollAction.h"
+#include "ThumbPositionScrollAction.h"
 
 //디폴트생성자
 ScrollActionCreator::ScrollActionCreator(NotepadForm* notepadForm)
@@ -38,6 +41,23 @@ ScrollAction* ScrollActionCreator::Create(UINT nSBCode)
 	else if (nSBCode == 1)
 	{
 		scrollAction = new NextScrollAction(this->notepadForm);
+	}
+	//5. 스크롤을 한 페이지 위(SB_PAGEUP)로 올리거나 한 페이지 왼쪽(SB_PAGELEFT)으로 움직이면
+	//SB_PAGEUP과 SB_PAGELEFT의 값이 2로 서로 같음.
+	else if (nSBCode == 2)
+	{
+		scrollAction = new PagePreviousScrollAction(this->notepadForm);
+	}
+	//6. 스크롤을 한 페이지 아래(SB_PAGEDOWN)로 내리거나 한 페이지 오른쪽(SB_PAGERIGHT)으로 움직이면
+	//SB_PAGEDOWN과 SB_PAGERIGHT의 값이 3으로 서로 같음.
+	else if (nSBCode == 3)
+	{
+		scrollAction = new PageNextScrollAction(this->notepadForm);
+	}
+	//7. 스크롤을 현재 마우스가 클릭한 위치로 움직이면
+	else if (nSBCode == SB_THUMBPOSITION)
+	{
+		scrollAction = new ThumbPositionScrollAction(this->notepadForm);
 	}
 
 	return scrollAction;

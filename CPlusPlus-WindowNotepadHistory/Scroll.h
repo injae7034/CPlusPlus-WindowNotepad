@@ -26,9 +26,9 @@ public:
 	virtual Long Last();
 	virtual Long LinePrevious() = 0;
 	virtual Long LineNext() = 0;
-	virtual Long pagePrevious();
-	virtual Long pageNext();
-	virtual Long Move(Long currentPos);
+	virtual Long PagePrevious();
+	virtual Long PageNext();
+	virtual Long Move(UINT nPos);
 	virtual ~Scroll() = 0;//추상클래스 소멸자
 	//인라인함수 선언
 	Long GetCurrentPos() const;
