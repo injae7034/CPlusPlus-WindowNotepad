@@ -6,6 +6,7 @@
 #include "resource.h"
 #include<afxwin.h>//CDialog 헤더파일
 
+class TextExtent;
 class Glyph;
 typedef signed long int Long;
 
@@ -19,6 +20,7 @@ public:
 	Glyph* note;
 	Glyph* current;
 	Font font;
+	TextExtent* textExtent;
 	//flag는 public으로
 	bool IsComposing;//한글이 조립중인지 아닌지 판별하기 위한 flag
 	bool IsDirty;//새파일인지 아닌지 판별하기 위한 flag

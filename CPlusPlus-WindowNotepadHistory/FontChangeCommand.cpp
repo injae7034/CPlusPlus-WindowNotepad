@@ -1,5 +1,6 @@
 #include "FontChangeCommand.h"
 #include "NotepadForm.h"
+#include "TextExtent.h"
 #include "afxdlgs.h"//CFileDialog헤더파일
 
 //디폴트생성자
@@ -38,9 +39,16 @@ void FontChangeCommand::Execute()
         //private멤버의 내용에 접근하고 싶으면 인라인함수(Get)를 이용하고
         //private멤버의 내용을 변경하고 싶으면 생성자를 이용한다!
         this->notepadForm->font = Font(logFont, selectedColor);
-        //2.4 캐럿의 크기와 위치가 변경되었음을 알린다.
+        //2.4 기존 글꼴 정보를 가지고 있는 TextExtent를 할당해제(소멸)해준다.
+        if (this->notepadForm->textExtent != NULL)
+        {
+            delete this->notepadForm->textExtent;
+        }
+        //2.5 새로 선택한 글꼴 정보를 반영한 TextExtent를 힙에 할당(생성)한다.
+        this->notepadForm->textExtent = new TextExtent(this->notepadForm);
+        //2.6 캐럿의 크기와 위치가 변경되었음을 알린다.
         this->notepadForm->Notify();
-        //2.5 변경사항을 갱신한다.
+        //2.7 변경사항을 갱신한다.
         this->notepadForm->Invalidate(TRUE);
     }
 }

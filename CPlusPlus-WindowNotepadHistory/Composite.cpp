@@ -234,14 +234,6 @@ Long Composite::NextWord()
 		//this->Last();
 		this->current = this->length;
 	}
-
-#if 0
-	//2. 캐럿의 현재 가로 위치가  현재 줄의 마지막글자 위치보다 작으면(스페이스나 탭문자가 나왔을 경우)
-	if (this->current < lastPositionOfLetter)
-	{
-#endif
-
-
 	//2. 이전의 글자가 무엇이었는지 구하기 위해 캐럿의 현재 가로 위치를 1만큼 감소시킨다. 
 	//현재 가장 마지막에 읽은 글자가 탭이나 스페이스인데 그 전에 글자가 무엇인지가 중요!
 	//그게 한글인지 영문, 숫자, 특수문자인지에 따라 단어단위 오른쪽 이동방식이 다르기때문에
@@ -249,24 +241,6 @@ Long Composite::NextWord()
 	//3. 스페이스나 탭이 나오기 이전의 글자가 무엇이었는지 구한다.
 	//letter = this->GetAt(this->current)->GetContent();
 	//4. 이전 글자가 한글인 경우
-#if 0
-	if ((letter[0] & 0x80))
-	{
-		//4.1 현재 글자가 무엇인지 다시 구하기 위해 캐럿의 가로 위치를 다시 현재로 이동시킨다.
-		this->current++;
-		//4.2 현재 글자가 무엇인지 구한다.
-		letter = this->GetAt(this->current)->GetContent();
-		//4.3 캐럿의 현재 가로 위치가  현재 줄의 마지막글자 위치보다 작고
-		//공백(스페이스문자)인동안 오른쪽으로 이동한다.
-		while (this->current < lastPositionOfLetter && letter == " ")
-		{
-			//4.3.1. 캐럿의 현재 가로 위치를 1만큼 증가시킨다.
-			this->current++;
-			//4.3.2 다음 글자를 읽는다.
-			letter = this->GetAt(this->current)->GetContent();
-		}
-	}
-#endif
 
 	//5. 캐럿의 현재 가로 위치가  현재 줄의 마지막글자 위치보다 작고 
 	//현재 글자가 탭문자인 동안 반복한다.
@@ -302,13 +276,6 @@ Long Composite::NextWord()
 		//this->Last();
 		this->current = this->length;
 	}
-	//}
-	//7. 캐럿의 현재 가로 위치가 이동하기 전의 위치와 같으면(이동하지 않았으면)
-	//if (this->current == current)
-	//{
-		//7.1 캐럿의 현재 가로 위치를 마지막으로 이동시켜준다
-	//	this->current = this->length;
-	//}
 	//8. 현재 캐럿의 가로 위치를 출력한다.
 	return this->current;
 }

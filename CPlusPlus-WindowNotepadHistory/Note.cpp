@@ -97,7 +97,7 @@ Long Note::Add(Glyph* glyph)
 	}
 	//4. 사용량을 증가시킨다.
 	this->length++;
-	//5. 캐럿의 현재 세로 위치를 저장한다.(Note기준)
+	//5. 캐럿의 현재 세로 위치(현재 줄의 위치)를 저장한다.(Note기준)
 	this->current = index;
 	//6. 현재 줄의 위치를 출력한다.(Note기준)
 	return index;

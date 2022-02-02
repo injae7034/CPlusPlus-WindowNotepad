@@ -124,9 +124,15 @@ void FileOpenCommand::Execute()
 			//3.2.11 flag들을 초기화시킨다.
 			this->notepadForm->IsComposing = false;//false로 초기화시킴
 			this->notepadForm->IsDirty = false;//false로 초기화시킴
-			//3.2.12 캐럿의 위치와 크기가 변경되었음을 알린다.
+			//3.3.12 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
+			rowIndex = this->notepadForm->note->First();
+			//3.3.13 현재 줄의 위치를 다시 저장한다.
+			this->notepadForm->current = this->notepadForm->note->GetAt(rowIndex);
+			//3.3.14 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
+			this->notepadForm->current->First();
+			//3.2.15 캐럿의 위치와 크기가 변경되었음을 알린다.
 			this->notepadForm->Notify();
-			//3.2.13 갱신한다.
+			//3.2.16 갱신한다.
 			this->notepadForm->Invalidate(TRUE);
 		}
 	}
