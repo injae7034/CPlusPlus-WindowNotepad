@@ -1,6 +1,5 @@
 #include "NotepadForm.h"
 #include "GlyphCreator.h"
-#include "Glyph.h"
 
 BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_WM_CREATE()
@@ -11,41 +10,71 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_MESSAGE(WM_IME_COMPOSITION, OnComposition)
 	ON_MESSAGE(WM_IME_CHAR, OnImeChar)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
+	ON_WM_CLOSE()
 	//ON_MESSAGE(WM_IME_SETCONTEXT, OnSetContext)
 END_MESSAGE_MAP()
 
 //NotepadForm생성자
 NotepadForm::NotepadForm()
-	:CFrameWnd()
+	:CFrameWnd()//여기서 콜론초기화로 따로지정안하면 Font()와 Caret()의 기본생성자가 호출됨
+	//왜냐하면 NotepadForm이 멤버로 font와 caret을 가지고 있기때문에 notepadForm이 생성되면서
+	//font와 caret의 기본생성자가 호출되어 생성됨. 그렇기 때문에 Font와 Caret의
+	//기본생성자 Font()와 Caret()이 필요함.
 {
 	this->note = NULL;//NULL로 초기화시킴.
 	this->current = NULL;//NULL로 초기화시킴.
 	this->IsComposing = false;//false로 초기화시킴
 	//CFont에서 사용하고자 하는 글자크기와 글자체로 초기화시킴.
+	//기본생성자로 생성된 this->font에 매개변수 2개생성자로 치환(=)시킴
 	this->font = Font(300, "궁서체");
+	//기본생성자로 생성된 this->caret에 매개변수 1개생성자로 치환(=)시킴.
+	this->caret = Caret(this);
+	this->file = File(this);
 }
-
+#if 0
 //NotepadForm소멸자
 NotepadForm::~NotepadForm()
 {
 
 }
-
+#endif
 //1. 메모장 윈도우가 생성될 때
 int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	//1.1 glyphCreator를 만든다.
+	//1.1 CClientDC를 생성한다.
+	//CClientDC dc(this);
+	//1.2 CFont를 생성한다.
+	//CFont font;
+	//1.3 글씨크기와 글씨체를 정하다.
+	//font.CreatePointFont(this->font.Getsize(), this->font.GetStyle().c_str());
+	//1.4 폰트를 dc에 지정한다.
+	//dc.SelectObject(font);
+	//1.5 TEXTMETRIC을 생성한다.
+	//TEXTMETRIC text;
+	//1.6 글꼴의 정보를 얻는다.
+	//dc.GetTextMetrics(&text);
+	//1.7 캐럿을 생성한다.
+	//this->caret.Create(0, text.tmHeight);
+	//1.8 glyphCreator를 만든다.
 	GlyphCreator glyphCreator;
-	//1.2 메모장을 만든다.
+	//1.9 메모장을 만든다.
 	this->note = glyphCreator.Create((char*)"\0");
-	//1.3 줄을 만든다.
+	//1.10 줄을 만든다.
 	Glyph* row = glyphCreator.Create((char*)"\n");
-	//1.4 줄을 메모장에 추가한다.
+	//1.11 줄을 메모장에 추가한다.
 	Long rowIndex;
 	rowIndex = this->note->Add(row);
-	//1.5 현재 줄의 위치를 저장한다.
+	//1.13 현재 줄의 위치를 저장한다.
 	this->current = this->note->GetAt(rowIndex);
-	
+	//1.12 저장된 메모장을 불러온다.
+	this->file.Load("연습장");
+	//1.14 캐럿의 위치를 이동시킨다.
+	//this->caret.Move(0, 0);
+	//1.15 캐럿을 보여준다.
+	//this->caret.Show();
+	//1.16 갱신한다.
+	Invalidate(TRUE);
+
 	return 0;
 }
 
@@ -59,7 +88,7 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//2.3 glyph를 생성한다.
 	Glyph* glyph = glyphCreator.Create((char*)&nChar);
 	Long index;
-	CPoint caretPosition;
+	//CPoint caretPosition;
 	//2.4 CFont를 생성한다.
 	CFont font;
 	//2.5 글씨크기와 글씨체를 정하다.
@@ -71,7 +100,8 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//2.8 글꼴의 정보를 얻는다.
 	dc.GetTextMetrics(&text);
 	//2.9 캐럿을 생성한다.
-	CreateSolidCaret(0, text.tmHeight);
+	//CreateSolidCaret(0, text.tmHeight);
+	this->caret.Create(0, text.tmHeight);
 	//2.10 입력받은 문자가 개행문자가 아니면
 	if (nChar != '\n' && nChar != '\r')
 	{
@@ -81,7 +111,9 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 		CString letter = CString(this->current->GetContent().c_str());
 		CSize letterSize = dc.GetTextExtent(letter);
 		//2.10.3 캐럿이 이동할 위치를 정한다.
-		caretPosition = CPoint(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
+		//caretPosition = CPoint(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
+		//2.10.3 캐럿을 이동시킨다.
+		this->caret.Move(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
 	}
 	//2.11 입력받은 문자가 개행문자이면
 	else if (nChar == '\n' || nChar == '\r')
@@ -91,12 +123,15 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//2.11.2 현재 줄의 위치를 새로 저장한다.
 		this->current = this->note->GetAt(index);
 		//2.11.3 캐럿이 이동할 위치를 정한다.
-		caretPosition = CPoint(0, (this->note->GetCurrent() - 1) * text.tmHeight);
+		//caretPosition = CPoint(0, (this->note->GetCurrent() - 1) * text.tmHeight);
+		//2.11.3 캐럿을 이동시킨다.
+		this->caret.Move(0, (this->note->GetCurrent() - 1) * text.tmHeight);
 	}
 	//2.12 캐럿의 위치를 이동한다.
-	this->SetCaretPos(caretPosition);
+	//this->SetCaretPos(caretPosition);
 	//2.13 캐럿을 보이게 한다.
-	ShowCaret();
+	this->caret.Show();
+	//ShowCaret();
 	//2.14 isComposing을 false로 바꾼다.
 	this->IsComposing = false;
 	//2.15 갱신한다.
@@ -192,13 +227,16 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 	//4.12 캐럿을 생성한다.
 	TEXTMETRIC koreanCaret;
 	dc.GetTextMetrics(&koreanCaret);
-	CreateSolidCaret(letterSize.cx, koreanCaret.tmHeight);
+	this->caret.Create(letterSize.cx, koreanCaret.tmHeight);
+	//CreateSolidCaret(letterSize.cx, koreanCaret.tmHeight);
 	//4.13 캐럿이 이동할 위치를 정한다.
-	CPoint caretPosition = CPoint(textSize.cx - letterSize.cx, (this->note->GetCurrent() - 1) * koreanCaret.tmHeight);
+	//CPoint caretPosition = CPoint(textSize.cx - letterSize.cx, (this->note->GetCurrent() - 1) * koreanCaret.tmHeight);
 	//4.14 캐럿을 이동시킨다.
-	this->SetCaretPos(caretPosition);
+	this->caret.Move(textSize.cx - letterSize.cx, (this->note->GetCurrent() - 1) * koreanCaret.tmHeight);
+	//this->SetCaretPos(caretPosition);
 	//4.15 캐럿을 보이게 한다.
-	ShowCaret();
+	this->caret.Show();
+	//ShowCaret();
 	//4.16 갱신한다.
 	Invalidate(TRUE);
 
@@ -234,15 +272,18 @@ LRESULT NotepadForm::OnImeChar(WPARAM wParam, LPARAM lParam)
 	//5.10 캐럿을 생성한다
 	TEXTMETRIC text;
 	dc.GetTextMetrics(&text);
-	CreateSolidCaret(0, text.tmHeight);
+	this->caret.Create(0, text.tmHeight);
+	//CreateSolidCaret(0, text.tmHeight);
 	//5.11 캐럿이 이동할 위치를 정한다.
 	CString letter = CString(this->current->GetContent().c_str());
 	CSize letterSize = dc.GetTextExtent(letter);
-	CPoint caretPosition = CPoint(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
+	//CPoint caretPosition = CPoint(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
 	//5.12 캐럿을 이동시킨다.
-	SetCaretPos(caretPosition);
+	this->caret.Move(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
+	//SetCaretPos(caretPosition);
 	//5.13 캐럿을 보여준다.
-	ShowCaret();
+	this->caret.Show();
+	//ShowCaret();
 	//5.14 갱신한다.
 	Invalidate(TRUE);
 
@@ -271,17 +312,20 @@ void NotepadForm::OnSetFocus(CWnd* pOldWnd)
 	//6. 글꼴의 정보를 얻는다.
 	dc.GetTextMetrics(&text);
 	//7. 캐럿을 생성한다.
-	CreateSolidCaret(0, text.tmHeight);
+	this->caret.Create(0, text.tmHeight);
+	//CreateSolidCaret(0, text.tmHeight);
 	//8. 현재줄의 텍스트들을 저장한다.
 	CString letter = CString(this->current->GetContent().c_str());
 	//9. 현재줄의 텍스트들의 size를 구한다.
 	CSize letterSize = dc.GetTextExtent(letter);
 	//10. 캐럿이 이동할 위치를 정한다.
-	CPoint caretPosition = CPoint(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
+	//CPoint caretPosition = CPoint(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
 	//11. 캐럿을 이동시킨다.
-	SetCaretPos(caretPosition);
+	this->caret.Move(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
+	//SetCaretPos(caretPosition);
 	//12. 캐럿을 보이게 한다.
-	ShowCaret();
+	this->caret.Show();
+	//ShowCaret();
 
 #if 0
 	//Caret의 위치 지정
@@ -309,6 +353,22 @@ void NotepadForm::OnKillFocus(CWnd* pNewWnd)
 	::DestroyCaret();
 }
 
+
+void NotepadForm::OnClose()
+{
+	//9.1 메모장을 저장한다.
+	this->file.Save("연습장");
+	//9.2 메모장을 지운다.
+	if (this->note != NULL)
+	{
+		delete this->note;
+		//this->note를 소멸시키면 note에 있는 Row와 letter들도 다 소멸된다.
+		//this->current는 Row인데 이미 this->note를 소멸시키면서 Row들이 다 소멸되었는데
+		//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
+		//delete this->current;
+	}
+	CFrameWnd::OnClose();
+}
 
 
 #if 0

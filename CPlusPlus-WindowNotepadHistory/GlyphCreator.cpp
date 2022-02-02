@@ -32,13 +32,14 @@ Glyph* GlyphCreator::Create(char(*letter))
 	{
 		glyph = new Row();
 	}
-	else if (strlen(letter) < 2)
+	else if ((letter[0] & 0x80))//한글이면
 	{
-		glyph = new SingleByteLetter(letter[0]);
+		
+		glyph = new DoubleByteLetter(letter);
 	}
 	else
 	{
-		glyph = new DoubleByteLetter(letter);
+		glyph = new SingleByteLetter(letter[0]);
 	}
 
 	return glyph;
