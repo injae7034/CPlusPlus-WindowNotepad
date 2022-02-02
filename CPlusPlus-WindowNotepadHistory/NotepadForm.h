@@ -9,7 +9,7 @@
 class Glyph;
 typedef signed long int Long;
 
-class NotepadForm :public CFrameWnd, public Subject
+class NotepadForm :public CFrameWnd, public Subject//다중상속
 {
 public:
 	NotepadForm();//생성자
@@ -34,6 +34,7 @@ protected://#
 	afx_msg LRESULT OnImeChar(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg void OnCommand(UINT nID);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnClose();
 	DECLARE_MESSAGE_MAP()
 private:

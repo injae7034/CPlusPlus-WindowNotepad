@@ -34,7 +34,18 @@ void CaretManager::Update()
     //6. 글꼴의 정보를 얻는다.
     dc.GetTextMetrics(&textmetric);
     //7. 현재줄의 텍스트들을 저장한다.
-    CString rowText = CString(this->notepadForm->current->GetContent().c_str());
+    //현재 줄의 글자 전체를 구하고 있기 때문에 캐럿의 현재 가로 위치는 항상 현재 줄의 전체길이에 위치함.
+    //CString rowText = CString(this->notepadForm->current->GetContent().c_str());
+    //위의 코드대로 하면 캐럿의 이동이 반영되지 못하고 글자가 추가될때 캐럿의 이동만 반영함.
+    //NotepadForm의 OnKeyDown에서 키보드 동작을 인식해서 note의 캐럿의 현재 가로위치와
+    //캐럿의 현재 새로 위치를 이동시키고 있다 이를 반영해야하는데 여기서 내가 알 수 있는 것은
+    //current(캐럿의 현재 가로위치와 현재 새로위치)가 변경되었고 그 변경된 값을 알 수 있다.
+    //이를 활용해서 새로운 함수를 만들어내면 된다.
+    //우선 키보트 left와 right을 반영하려면 현재 줄의 current가 증가되고 감소되는것을 알수있는데
+    //이를 활용해서 현재 줄의 글자를 string에 다 담지 말고(GetContent) 
+    //current보다 작은동안만 string에 담아서 출력하면 된다.(GetPartOfContent)
+    CString rowText = CString(this->notepadForm->current->
+        GetPartOfContent(this->notepadForm->current->GetCurrent()).c_str());
     //8. 현재줄의 텍스트들의 size를 구한다.
     CSize rowTextSize = dc.GetTextExtent(rowText);
     //9. 한글이 조립중이면
@@ -47,7 +58,7 @@ void CaretManager::Update()
     //10. 캐럿을 생성한다.
     this->caret->Create(letterSize.cx, textmetric.tmHeight);
     //11. 캐럿을 이동시킨다.
-    this->caret->Move(rowTextSize.cx - letterSize.cx, (this->notepadForm->note->GetCurrent() - 1) * textmetric.tmHeight);
+    this->caret->Move(rowTextSize.cx - letterSize.cx, this->notepadForm->note->GetCurrent() * textmetric.tmHeight);
     //12. 캐럿을 보이게 한다.
     this->caret->Show();  
 }

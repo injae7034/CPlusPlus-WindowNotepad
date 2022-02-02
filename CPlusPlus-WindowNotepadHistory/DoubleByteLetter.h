@@ -12,8 +12,8 @@ public:
 	DoubleByteLetter(const DoubleByteLetter& source);//복사생성자
 	DoubleByteLetter& operator=(const DoubleByteLetter& source);//치환연산자
 	virtual ~DoubleByteLetter();//소멸자
-	Glyph* Clone();//Prototype Pattern Clone
-	string GetContent();
+	virtual Glyph* Clone();//Prototype Pattern Clone
+	virtual string GetContent();
 	//인라인함수
 	char* GetScript() const;
 

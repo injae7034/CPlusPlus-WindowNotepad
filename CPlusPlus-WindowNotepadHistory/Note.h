@@ -10,8 +10,17 @@ public:
 	Note(const Note& source);//복사생성자
 	Note& operator=(const Note& source);//치환연산자
 	virtual ~Note();//소멸자
-	Glyph* Clone();//Prototype Pattern Clone
-	string GetContent();
+	virtual Glyph* Clone();//Prototype Pattern Clone
+	virtual string GetContent();
+	//Composite에 있는 가상함수들을 Note기준에 맞게 재정의(오버라이딩)
+	//재정의하는 함수는 상속받는 함수가 그 함수를 재정의하더라도 그 함수앞에 virtual을 붙여 줘야함.
+	virtual Long Last();
+	virtual Long Next();
+	virtual Long NextWord();
+	virtual Long PreviousWord();
+	//Previous랑 First는 Composite와 정의가 중복되기때문에 Composite꺼 그대로 쓰면 됨.
+	virtual Long Add(Glyph* glyph);
+	virtual Long Remove(Long index);
 };
 
 #endif // !_NOTE_H

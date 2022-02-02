@@ -19,7 +19,14 @@ public:
 	//SingleByteLetter랑 DoubleByteLetter에서도 만들어서 main에서 형변환을 안하게 만들어줘야함.
 	//Glyph에 GetScript가 없기때문에 이런일이 발생함 GetScript는 반환값이 single이랑 double
 	//두개가 달라서 여기서 GetScript를 정의할 수 없기때문에 나중에 main함수에서 Glyph*자료형일때는
-	//GetScript를 사용할 수 없다.
+	//GetScript를 사용할 수 없다
+	virtual string GetPartOfContent(Long current);
+	virtual Long First();
+	virtual Long Last();
+	virtual Long Previous();
+	virtual Long Next();
+	virtual Long NextWord();
+	virtual Long PreviousWord();
 	//인라인함수
 	//여기서 실제로는 안쓰이고 자식에게 넘겨주는 역할을 하기때문에 virtual을 붙여줘야함
 	virtual Long GetCapacity() const;

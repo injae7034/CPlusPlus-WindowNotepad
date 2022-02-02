@@ -42,5 +42,44 @@ string Glyph::GetContent()
 	return "\0";
 }
 
+//GetPartOfContent
+string Glyph::GetPartOfContent(Long current)
+{
+	return "\0";
+}
 
+//First
+Long Glyph::First()
+{
+	return -1;
+}
 
+//Last
+Long Glyph::Last()
+{
+	return -1;
+}
+
+//Previous
+Long Glyph::Previous()
+{
+	return -1;
+}
+
+//Next
+Long Glyph::Next()
+{
+	return -1;
+}
+
+//NextWord
+Long Glyph::NextWord()
+{
+	return -1;
+}
+
+//PreviousWord
+Long Glyph::PreviousWord()
+{
+	return - 1;
+}

@@ -13,7 +13,7 @@ public:
 	Caret* caret;
 public:
 	CaretManager(NotepadForm* notepadForm = 0);//디폴트생성자
-	void Update();
+	virtual void Update();
 	~CaretManager();//소멸자
 };
 

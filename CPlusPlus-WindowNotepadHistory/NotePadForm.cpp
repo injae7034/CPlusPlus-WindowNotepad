@@ -20,6 +20,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
 	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_FONT_CHANGE, OnCommand)
+	ON_WM_KEYDOWN()
 	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
@@ -64,6 +65,10 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//6. CMenu를 notepadForm에 연결한다.
 	this->menu.LoadMenu(IDR_MENU1);
 	SetMenu(&this->menu);
+	//3.2.9 선택한 메모장의 노트(내용)를 불러온다.
+	File file;
+	string path = "test.txt";
+	file.Load(this, path);
 	//7. 처음 만들어지는 메모장 이름을 정한다.
 	string name = this->fileName;
 	name += " - 메모장";
@@ -274,6 +279,337 @@ void NotepadForm::OnCommand(UINT nId)
 	command->Execute();
 	//4. command를 할당해제한다.
 	delete command;
+}
+
+//메모장에서 키보드로 이동하기
+void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	//1. Ctrl키가 입력되면 Ctrl키의 상태를 저장한다.
+	Long ctrlPressedCheck = GetKeyState(VK_CONTROL);
+	//2. CClientDC를 생성한다.
+	CClientDC dc(this);
+	//3. CFont를 생성한다.
+	CFont font;
+	//4. 글씨크기와 글씨체를 정하다.
+	font.CreateFontIndirect(&this->font.GetLogFont());
+	//5. 폰트를 dc에 지정한다.
+	dc.SelectObject(font);
+	//6. TEXTMETRIC을 생성한다.
+	TEXTMETRIC textmetric;
+	//7. 글꼴의 정보를 얻는다.
+	dc.GetTextMetrics(&textmetric);
+	//8. 오른쪽 방향키버튼을 눌렀으면
+	if (nChar == VK_RIGHT)
+	{
+		//8.1 Ctrl키를 같이 눌렀으면
+		if (ctrlPressedCheck & 0x8000)
+		{
+			//8.1.1 Note의 NextWord를 호출한다.
+			Long currentCaretindex = this->note->NextWord();
+			//8.1.2 현재줄을 변경한다.
+			this->current = this->note->GetAt(this->note->GetCurrent());
+			//8.1.3 현재줄의 캐럿의 가로 위치를 변경한다.
+			Long i = this->current->First();
+			while (i < currentCaretindex)
+			{
+				i = this->current->Next();
+			}
+		}
+		//8.2 Ctrl키를 안눌렀으면
+		else
+		{
+			//8.2.1 이전으로 이동하기 전에 캐럿의 현재 가로위치를 저장한다.
+			Long previousIndex = this->current->GetCurrent();
+			//8.2.2 다음으로 이동하고 현재 캐럿의 가로위치를 반환받는다.
+			Long currentIndex = this->current->Next();
+			//8.2.3 캐럿의 이전 가로위치와 캐럿의 현재 가로위치가 같으면
+			if (previousIndex == currentIndex)
+			{
+				//8.2.3.1 다음으로 이동하기 전에 캐럿의 현재 세로위치를 저장한다.
+				Long previousRowIndex = this->note->GetCurrent();
+				//8.2.3.2 캐럿의 현재 세로 위치를 다음 줄로 이동시킨다.
+				Long currentRowIndex = this->note->Next();
+				//8.2.3.3 캐럿의 이전 세로 위치와 캐럿의 현재 세로 위치가 서로 다르면
+				if (previousRowIndex != currentRowIndex)
+				{
+					//8.2.3.3.1 캐럿의 현재 줄을 변경한다.
+					this->current = this->note->GetAt(currentRowIndex);
+					//8.2.3.3.2 캐럿의 현재 가로 위치를 변경한다.
+					this->current->First();
+				}
+			}
+		}
+
+	}
+	else if (nChar == VK_LEFT)
+	{
+		//Ctrl이 눌려져있으면
+		if (ctrlPressedCheck & 0x8000)
+		{
+			//Note의 PreviousWord를 호출한다.
+			Long currentCaretindex = this->note->PreviousWord();
+			//현재줄을 변경한다.
+			this->current = this->note->GetAt(this->note->GetCurrent());
+			//현재줄의 캐럿의 가로 위치를 변경한다.
+			Long i = this->current->First();
+			while (i < currentCaretindex)
+			{
+				i = this->current->Next();
+			}
+		}
+		else
+		{
+			//이전으로 이동하기 전에 캐럿의 현재 가로위치를 저장한다.
+			Long previousIndex = this->current->GetCurrent();
+			//이전으로 이동하고 현재 캐럿의 가로위치를 반환받는다.
+			Long currentIndex = this->current->Previous();
+			//캐럿의 이전 가로위치와 캐럿의 현재 가로위치가 같으면
+			if (previousIndex == currentIndex)
+			{
+				//이전으로 이동하기 전에 캐럿의 현재 세로 위치를 저장한다.
+				Long previousRowIndex = this->note->GetCurrent();
+				//캐럿의 현재 세로 위치를 이전 줄로 이동시킨다.
+				Long currentRowIndex = this->note->Previous();
+				//캐럿의 이전 세로 위치와 캐럿의 현재 새로 위치가 서로 다르면
+				if (previousRowIndex != currentRowIndex)
+				{
+					//캐럿의 현재 줄을 변경한다.
+					this->current = this->note->GetAt(currentRowIndex);
+					//캐럿의 현재 가로 위치를 변경한다.
+					this->current->Last();
+				}
+			}
+		}
+	}
+	else if (nChar == VK_DOWN)
+	{
+		//1. 다음으로 이동하기 전에 캐럿의 현재 세로 위치를 저장한다.
+		Long previousRowIndex = this->note->GetCurrent();
+		//2. 다음으로 이동하기 전에 캐럿의 현재 가로 위치를 저장한다.
+		Long previousCaretIndex = current->GetCurrent();
+		//3. 캐럿의 현재 세로 위치를 다음 줄로 이동시킨다.
+		Long currentRowIndex = this->note->Next();
+		//4. 이동하기 전 캐럿의 세로 위치와 이동한 후 캐럿의 세로 위치가 서로 다르면(실질적으로 이동을 했으면)
+		if (previousRowIndex != currentRowIndex)
+		{
+			//4.1 현재 줄을 이동한 후 캐럿의 세로 위치가 있는 줄로 변경한다.
+			this->current = this->note->GetAt(currentRowIndex);
+			//4.2 이동하기 전 캐럿의 가로 위치가 0이 아니고 이동한 후 현재줄의 글자개수가 0이 아니면
+			if (previousCaretIndex != 0 && this->current->GetLength() != 0)
+			{
+				//4.2.1 이동하기 전 줄의 텍스트를 구한다.
+				CString previousRowText = CString(this->note->GetAt(previousRowIndex)
+					->GetPartOfContent(previousCaretIndex).c_str());
+				//4.2.2 이동하기 전 줄의 텍스트 크기를 구한다.
+				CSize previousRowTextSize = dc.GetTextExtent(previousRowText);
+				//4.2.3 캐럿의 현재 가로 위치를 처음으로 이동시킨다.
+				this->current->First();//캐럿의 가로 위치를 맨 처음(0)으로 보냄
+				Long i = this->current->Next();//첫번째 글자를 읽기 위해 캐럿을 1 증가시킴.
+				//4.2.4 현재 줄의 텍스트를 구한다. (첫번째 글자를 읽음)
+				CString currentRowText = CString(this->current->GetPartOfContent(i).c_str());
+				//4.2.5 현재 줄의 텍스트의 크기를 구한다.(첫번째 글자의 텍스트 크기를 구함)
+				CSize currentRowTextSize = dc.GetTextExtent(currentRowText);
+				//4.2.6 i(캐럿의 현재 가로위치)가 length(현재줄의 글자개수)보다 작고
+				//현재 줄의 텍스트 크기가 이동하기 전 줄의 텍스트 크기보다 작은동안 반복한다.
+				while (i < this->current->GetLength()
+					&& currentRowTextSize.cx < previousRowTextSize.cx)
+				{
+					//4.2.6.1 i(캐럿의 현재 가로위치)를 증가시킨다(캐럿의 가로 위치를 다음으로 이동시킨다.).
+					i = this->current->Next();
+					//4.2.6.2 현재 줄의 텍스트를 구한다.(제일 처음부터 현재 캐럿의 가로위치까지)
+					currentRowText = CString(this->current->GetPartOfContent(i).c_str());
+					//4.2.6.3 현재 줄의 텍스트 크기를 구한다.
+					currentRowTextSize = dc.GetTextExtent(currentRowText);
+				}
+				//4.2.7 현재줄의 텍스트크기에서 이전줄의 텍스트크기를 뺀다.
+				Long difference = currentRowTextSize.cx - previousRowTextSize.cx;
+				//4.2.8 차이가 0보다 크면(현재줄의 텍스트를 다 읽지 못한 경우)
+				if (difference > 0)
+				{
+					//4.2.8.1 i-1번째 글자를 구한다. 현재 i는 캐럿의 가로 위치를 담고 있고
+					CString letter = CString(this->current->GetAt(i - 1)->GetContent().c_str());
+					CSize letterSize = dc.GetTextExtent(letter);
+					Long halfLetterSize = letterSize.cx / 2;
+					//4.2.8.2 차이가 i번째 글자크기의 절반보다 같거나 크면
+					if (difference >= halfLetterSize)
+					{
+						//4.2.8.2.1 캐럿의 현재 가로 위치를 이전으로 이동한다.
+						this->current->Previous();
+					}
+				}
+			}
+			//4.3 캐럿의 이전 가로 위치가 0 또는 캐럿의 현재 줄의 글자개수가 0개이면
+			else
+			{
+				//4.3.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
+				this->current->First();
+			}
+		}
+
+	}
+	else if (nChar == VK_UP)
+	{
+		//1. 이전으로 이동하기 전에 캐럿의 현재 세로 위치를 저장한다.
+		Long previousRowIndex = this->note->GetCurrent();
+		//2. 이전으로 이동하기 전에 캐럿의 현재 가로 위치를 저장한다.
+		Long previousCaretIndex = current->GetCurrent();
+		//3. 캐럿의 현재 세로 위치를 이전 줄로 이동시킨다.
+		Long currentRowIndex = this->note->Previous();
+		//4. 이동하기 전 캐럿의 세로 위치와 이동한 후 캐럿의 세로 위치가 서로 다르면(실질적으로 이동을 했으면)
+		if (previousRowIndex != currentRowIndex)
+		{
+			//4.1 현재 줄을 이동한 후 캐럿의 세로 위치가 있는 줄로 변경한다.
+			this->current = this->note->GetAt(currentRowIndex);
+			//4.2 이동하기 전 캐럿의 가로 위치가 0이 아니고 이동한 후 현재줄의 글자개수가 0이 아니면
+			//(이동하기 전 캐럿의 가로 위치가 0이면 이동한 후의 현재 캐럿의 가로 위치도 무조건 0이고,
+			//이동한 후 현재줄의 글자개수가 0이어도 현재 캐럿의 가로 위치는 무조건 0임,
+			//따라서 그 이외의 경우의 수를 if안에서 처리하고 else에서 위의 2경우를 first로 처리함!)
+			if (previousCaretIndex != 0 && this->current->GetLength() != 0)
+			{
+				//4.2.1 이동하기 전 줄의 텍스트를 구한다.(이동하기 전에 미리 저장한 캐럿의 가로 위치와
+				//이동하기 전 캐럿의 세로 위치를 통해서 구함)
+				CString previousRowText = CString(this->note->GetAt(previousRowIndex)
+					->GetPartOfContent(previousCaretIndex).c_str());
+				//4.2.2 이동하기 전 줄의 텍스트 크기를 구한다.
+				CSize previousRowTextSize = dc.GetTextExtent(previousRowText);
+				//4.2.3 캐럿의 현재 가로 위치를 처음으로 이동시킨다.(현재 캐럿의 가로 위치가 어딘지 모르기때문에)
+				//i가 0이 되면 GetPartOfContent에서 읽는 텍스트가 없기 때문에 i의 최소값은 1이 되어야함.
+				//GetPartOfContent는 캐럿의 위치까지 있는 글자들을 읽는것임!
+				//위 if 조건식에서 이미 현재 줄의 글자가 하나도 없는 경우는 걸러져서 들어왔기 때문에
+				//현재줄의 글자수는 최소 1개이상은 있는 경우에 대해서 처리함.
+				this->current->First();//캐럿의 가로 위치를 맨 처음(0)으로 보냄
+				Long i = this->current->Next();//첫번째 글자를 읽기 위해 캐럿을 1 증가시킴.
+				//4.2.4 현재 줄의 텍스트를 구한다. (첫번째 글자를 읽음)
+				CString currentRowText = CString(this->current->GetPartOfContent(i).c_str());
+				//4.2.5 현재 줄의 텍스트의 크기를 구한다.(첫번째 글자의 텍스트 크기를 구함)
+				CSize currentRowTextSize = dc.GetTextExtent(currentRowText);
+				//4.2.6 i(캐럿의 현재 가로위치)가 length(현재줄의 글자개수)보다 작고
+				//현재 줄의 텍스트 크기가 이동하기 전 줄의 텍스트 크기보다 작은동안 반복한다.
+				while (i < this->current->GetLength()
+					&& currentRowTextSize.cx < previousRowTextSize.cx)
+				{
+					//4.2.6.1 i(캐럿의 현재 가로위치)를 증가시킨다(캐럿의 가로 위치를 다음으로 이동시킨다.).
+					i = this->current->Next();
+					//4.2.6.2 현재 줄의 텍스트를 구한다.(제일 처음부터 현재 캐럿의 가로위치까지)
+					currentRowText = CString(this->current->GetPartOfContent(i).c_str());
+					//4.2.6.3 현재 줄의 텍스트 크기를 구한다.
+					currentRowTextSize = dc.GetTextExtent(currentRowText);
+				}
+
+				//4.2.7 i(캐럿의 현재 가로위치)가 length(현재줄의 글자개수)보다 작거나 같으면
+				//if (i <= this->current->GetLength()) 이 조건문이 아무 의미가 없음 ㅆㅂ
+				//{
+
+				//4.2.7 현재줄의 텍스트크기에서 이전줄의 텍스트크기를 뺀다.
+				Long difference = currentRowTextSize.cx - previousRowTextSize.cx;					
+				//(현재줄과 이전줄의 텍스트크기 차이가 0이면 텍스트 크기가 같다는 의미이기때문에
+				//현재 캐럿의 가로 위치는 지금 위치 그대로에 있으면 됨)
+				//(현재줄과 이전줄의 텍스트크기 차이가 음수이면 
+				//currentRowTextSize.cx < previousRowTextSize.cx이라는 뜻인데 그러면 위의
+				//반복문 조건에서 빠져나오려면 결국 i가 현재줄의 글자개수(length)와 같아서 빠져나왔다는 
+				//의미이고 그렇다면 i는 현재 줄의 마지막 캐럿 위치라는 뜻이고 
+				//이동하기전 줄의 텍스트가 현재 줄의 전체 텍스트보다 더 큰 경우는 현재줄의 캐럿가로위치는
+				//언제나 현재줄의 마지막에 있어야 하고 현재 마지막 위치에 있기 때문에 그대로 두면 된다.
+				//4.2.8 차이가 0보다 크면(현재줄의 텍스트를 다 읽지 못한 경우)
+				//현재줄의 전체 텍스트가 이전줄의 캐럿 가로 위치까지 읽은 텍스트보다 큰 경우
+				if (difference > 0)
+				{
+					//4.2.8.1 i-1번째 글자를 구한다. 현재 i는 캐럿의 가로 위치를 담고 있고
+					//캐럿의 가로 위치는 다음에 쓰여질 글자위치를 저장하고 있기 때문에
+					//현재 글자의 위치를 구하기 위해서는 i-1번째 글자를 구해야함.
+					CString letter = CString(this->current->GetAt(i - 1)->GetContent().c_str());
+					CSize letterSize = dc.GetTextExtent(letter);
+					Long halfLetterSize = letterSize.cx / 2;
+					//4.2.8.2 차이가 i번째 글자크기의 절반보다 같거나 크면
+					if (difference >= halfLetterSize)
+					{
+						//4.2.8.2.1 캐럿의 현재 가로 위치를 이전으로 이동한다.
+						this->current->Previous();
+					}
+				}
+				//}
+
+#if 0
+				//i가 length(글자개수)와 같으면
+				else if (i == this->current->GetLength())
+				{
+					//3.7.1 현재줄의 텍스트크기에서 이전줄의 텍스트크기를 뺀다.
+					difference = currentRowTextSize.cx - previousRowTextSize.cx;
+					//3.7.3 차이가 0보다 크면
+					if (difference > 0)
+					{
+						//3.7.3.1 i-1번째 글자를 구한다. 현재 i는 캐럿의 가로 위치를 담고 있고
+						//캐럿의 가로 위치는 다음에 쓰여질 글자위치를 저장하고 있기 때문에
+						//현재 글자의 위치를 구하기 위해서는 i-1번째 글자를 구해야함.
+						CString letter = CString(this->current->GetAt(i - 1)->GetContent().c_str());
+						CSize letterSize = dc.GetTextExtent(letter);
+						Long halfLetterSize = letterSize.cx / 2;
+						//3.7.3.2 차이가 i번째 글자크기의 절반보다 같거나 크면
+						if (difference >= halfLetterSize)
+						{
+							//3.7.3.2.1 캐럿의 현재 가로 위치를 이전으로 이동한다.
+							this->current->Previous();
+						}
+					}
+
+					//3.8 i가 length(현재줄의 글자개수)보다 크거나 같으면
+					//else
+					//{
+						//3.8.1 현재 캐럿의 가로 위치를 Last로 이동시킨다.
+						//this->current->Last();
+					//}
+
+				}
+#endif
+			}
+			//4.3 캐럿의 이전 가로 위치가 0 또는 캐럿의 현재 줄의 글자개수가 0개이면
+			else
+			{
+				//4.3.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
+				this->current->First();
+			}
+		}
+	}
+	else if (nChar == VK_HOME)
+	{
+		//Ctrl이 눌려져있으면
+		if (ctrlPressedCheck & 0x8000)
+		{
+			//메모장의 제일 처음으로 캐럿의 세로 위치를 이동시킨다.
+			Long firstIndex = this->note->First();
+			//메모장의 현재 줄을 변경한다.
+			this->current = this->note->GetAt(firstIndex);
+			//현재 줄의 맨 처음으로 캐럿의 가로 위치를 이동시킨다.
+			this->current->First();
+			
+		}
+		//Ctrl이 안눌려져있으면
+		else
+		{
+			//현재 줄의 맨 처음으로 캐럿의 가로 위치를 이동시킨다.
+			this->current->First();
+		}
+	}
+	else if (nChar == VK_END)
+	{
+		//Ctrl이 눌려져있으면
+		if (ctrlPressedCheck & 0x8000)
+		{
+			//메모장의 제일 마지막으로 캐럿의 세로 위치를 이동시킨다.
+			Long lastIndex = this->note->Last();
+			//메모장의 현재 줄을 변경한다.
+			this->current = this->note->GetAt(lastIndex);
+			//현재 줄의 맨 마지막으로 캐럿의 가로 위치를 이동시킨다.
+			this->current->Last();
+		}
+		//Ctrl이 안눌려져있으면
+		else
+		{
+			//현재 줄의 맨 마지막으로 캐럿의 가로 위치를 이동시킨다.
+			this->current->Last();
+		}
+	}
+	this->Notify();
 }
 
 //메모장에서 닫기버튼을 클릭했을 떄

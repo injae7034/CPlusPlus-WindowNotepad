@@ -10,8 +10,9 @@ public:
 	Row(const Row& source);//복사생성자
 	Row& operator=(const Row& source);//치환연산자
 	virtual ~Row();//소멸자
-	Glyph* Clone();//Prototype Patter Clone
-	string GetContent();
+	virtual Glyph* Clone();//Prototype Patter Clone
+	virtual string GetContent();
+	virtual string GetPartOfContent(Long current);
 };
 
 #endif // !_ROW_H
