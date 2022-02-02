@@ -105,13 +105,19 @@ Long Composite::Remove(Long index)
 	//1. 지울 위치를 입력받는다.
 	//2. 글자나 줄을 지우고 나면 지울 위치가 다음 글자를 추가할 위치가 되기 때문에 current에 저장한다.
 	this->current = index;
-	//2. 해당위치의 배열요소를 지운다.
+	//3. 해당배열요소가 주소를 저장하고 있기 때문에 해당배열요소의 힙에 할당된 내용을 먼저 지워야함.
+	Glyph* glyph = this->glyphs[index];
+	if (glyph != 0)
+	{
+		delete glyph;
+	}
+	//4. 해당위치의 배열요소의 힙에 할당된 내용을 지웠으니 이제 그 주소를 지운다.
 	index = this->glyphs.Delete(index);
-	//3. 할당량을 감소시킨다.
+	//5. 할당량을 감소시킨다.
 	this->capacity--;
-	//4. 사용량을 감소시킨다.
+	//6. 사용량을 감소시킨다.
 	this->length--;
-	//5. index를 출력한다.
+	//7. index를 출력한다.
 	return index;
 }
 

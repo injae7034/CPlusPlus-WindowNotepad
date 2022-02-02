@@ -1,8 +1,5 @@
 #include "FontChangeCommand.h"
 #include "NotepadForm.h"
-#include "GlyphCreator.h"
-#include "Glyph.h"
-#include "File.h"
 #include "afxdlgs.h"//CFileDialog헤더파일
 
 //디폴트생성자
@@ -12,7 +9,6 @@ FontChangeCommand::FontChangeCommand(NotepadForm* notepadForm)
 
 }
 
-//Command패턴
 void FontChangeCommand::Execute()
 {
     //1. this->notepadForm->font의 글꼴을 바탕으로 fontDialog를 생성한다.
@@ -39,32 +35,12 @@ void FontChangeCommand::Execute()
         //2.2 폰트대화상자에서 선택한 글꼴의 색을 얻는다.
         selectedColor = fontDialog.GetColor();
         //2.3 notepadForm의 font에 선택한 글꼴의 정보를 저장한다.
+        //private멤버의 내용에 접근하고 싶으면 인라인함수(Get)를 이용하고
+        //private멤버의 내용을 변경하고 싶으면 생성자를 이용한다!
         this->notepadForm->font = Font(logFont, selectedColor);
-        //2.4 캐럿을 다시 생성한다.
-        //2.4.1 CClientDC를 생성한다.
-        CClientDC dc(this->notepadForm);
-        //2.4.2 CFont를 생성한다.
-        CFont font;
-        //2.4.3 글씨크기와 글씨체를 정하다.
-        //font.CreatePointFont(this->notepadForm->GetFont().GetSize(), this->notepadForm->GetFont().GetFaceName().c_str());
-        font.CreateFontIndirect(&this->notepadForm->font.GetLogFont());
-        //2.4.5 폰트를 dc에 지정한다.
-        dc.SelectObject(font);
-        //2.4.6 TEXTMETRIC을 생성한다.
-        TEXTMETRIC text;
-        //2.4.7 글꼴의 정보를 얻는다.
-        dc.GetTextMetrics(&text);
-        //2.4.8 캐럿을 생성한다.
-        this->notepadForm->GetCaret().Create(0, text.tmHeight);
-        //2.4.9 현재줄의 텍스트들을 저장한다.
-        CString letter = CString(this->notepadForm->current->GetContent().c_str());
-        //2.4.10 현재줄의 텍스트들의 size를 구한다.
-        CSize letterSize = dc.GetTextExtent(letter);
-        //2.4.11 캐럿을 이동시킨다.
-        this->notepadForm->GetCaret().Move(letterSize.cx, (this->notepadForm->note->GetCurrent() - 1)* text.tmHeight);
-        //2.4.12 캐럿을 보이게 한다.
-        this->notepadForm->GetCaret().Show();
-        //2.4.13 변경사항을 갱신한다.
+        //2.4 캐럿의 크기와 위치가 변경되었음을 알린다.
+        this->notepadForm->Notify();
+        //2.5 변경사항을 갱신한다.
         this->notepadForm->Invalidate(TRUE);
     }
 }

@@ -124,31 +124,9 @@ void FileOpenCommand::Execute()
 			//3.2.11 flag들을 초기화시킨다.
 			this->notepadForm->IsComposing = false;//false로 초기화시킴
 			this->notepadForm->IsDirty = false;//false로 초기화시킴
-			//캐럿을 불러온 note(내용)에 맞게 다시 생성해준다.
-			//3.2.12 CClientDC를 생성한다.
-			CClientDC dc(this->notepadForm);
-			//3.2.13 CFont를 생성한다.
-			CFont font;
-			//3.2.14 글씨크기와 글씨체를 정하다.
-			//font.CreatePointFont(this->notepadForm->GetFont().GetSize(), this->notepadForm->GetFont().GetFaceName().c_str());
-			font.CreateFontIndirect(&this->notepadForm->font.GetLogFont());
-			//3.2.15 폰트를 dc에 지정한다.
-			dc.SelectObject(font);
-			//3.2.16 TEXTMETRIC을 생성한다.
-			TEXTMETRIC text;
-			//3.2.17 글꼴의 정보를 얻는다.
-			dc.GetTextMetrics(&text);
-			//3.2.18 캐럿을 생성한다.
-			this->notepadForm->GetCaret().Create(0, text.tmHeight);
-			//3.2.19 현재줄의 텍스트들을 저장한다.
-			CString letter = CString(this->notepadForm->current->GetContent().c_str());
-			//3.2.20 현재줄의 텍스트들의 size를 구한다.
-			CSize letterSize = dc.GetTextExtent(letter);
-			//3.2.21 캐럿을 이동시킨다.
-			this->notepadForm->GetCaret().Move(letterSize.cx, (this->notepadForm->note->GetCurrent() - 1) * text.tmHeight);
-			//3.2.22 캐럿을 보이게 한다.
-			this->notepadForm->GetCaret().Show();
-			//3.2.23 갱신한다.
+			//3.2.12 캐럿의 위치와 크기가 변경되었음을 알린다.
+			this->notepadForm->Notify();
+			//3.2.13 갱신한다.
 			this->notepadForm->Invalidate(TRUE);
 		}
 	}

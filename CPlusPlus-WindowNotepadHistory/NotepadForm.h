@@ -1,23 +1,19 @@
 #ifndef _NOTEPADFORM_H
 #define _NOTEPADFORM_H
 
-#include "Glyph.h"
+#include "Subject.h"
 #include "Font.h"
-#include "Caret.h"
 #include "resource.h"
-#include "Command.h"
 #include<afxwin.h>//CDialog 헤더파일
 
-
+class Glyph;
 typedef signed long int Long;
 
-class NotepadForm :public CFrameWnd
+class NotepadForm :public CFrameWnd, public Subject
 {
 public:
 	NotepadForm();//생성자
-	//인라인함수
 	//CMenu& GetCMenu() const; GetMenu가 있어서 따로 CMenu를 구하기 위한 인라인함수가 필요없음
-	Caret& GetCaret() const;
 public:
 	//주소는 public으로
 	Glyph* note;
@@ -41,16 +37,11 @@ protected://#
 	afx_msg void OnClose();
 	DECLARE_MESSAGE_MAP()
 private:
-	CMenu menu;//menu가 notepadForm의 멤버로 있어야 OnCreate스택이 종료되어도
+	//menu가 notepadForm의 멤버로 있어야 OnCreate스택이 종료되어도
 	//menu가 계속 notepadForm에 setMenu된채로 있게됨 단독적으로 CMenu가 있는 경우
 	//OnCreate 스택이 종료되면 CMenu가 사라지기때문에 뻑이남.
-	Caret caret;//레코드<<entity>>
+	CMenu menu;
 };
-//인라인함수정의
-inline Caret& NotepadForm::GetCaret() const
-{
-	return const_cast<Caret&>(this->caret);
-}
 
 //함수선언(함수포인터느낌)
 LRESULT CALLBACK SaveMessageBoxProc(int nCode, WPARAM wParam, LPARAM lParam);
