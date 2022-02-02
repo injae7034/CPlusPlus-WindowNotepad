@@ -55,7 +55,8 @@ ScrollAction* ScrollActionCreator::Create(UINT nSBCode)
 		scrollAction = new PageNextScrollAction(this->notepadForm);
 	}
 	//7. 스크롤을 현재 마우스가 클릭한 위치로 움직이면
-	else if (nSBCode == SB_THUMBPOSITION)
+	//SB_THUMBPOSITION을 쓰면 안됨! 그럼 스크롤 이동할 때 끊김이 심하다!
+	else if (nSBCode == SB_THUMBTRACK)
 	{
 		scrollAction = new ThumbPositionScrollAction(this->notepadForm);
 	}
