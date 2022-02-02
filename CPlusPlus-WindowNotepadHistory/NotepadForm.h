@@ -8,7 +8,7 @@
 #include<string>
 using namespace std;
 
-
+class ScrollController;
 class TextExtent;
 class Glyph;
 typedef signed long int Long;
@@ -24,6 +24,7 @@ public:
 	Glyph* current;
 	Font font;
 	TextExtent* textExtent;
+	ScrollController* scrollController;
 	//ScrollController* scrollController;
 	//flag는 public으로
 	bool IsComposing;//한글이 조립중인지 아닌지 판별하기 위한 flag

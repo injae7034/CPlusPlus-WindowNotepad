@@ -2,9 +2,9 @@
 #include "ScrollController.h"
 
 //디폴트생성자
-Scroll::Scroll()
+Scroll::Scroll(ScrollController* scrollController)
 {
-	this->scrollController = 0;
+	this->scrollController = scrollController;
 	this->currentPos = 0;
 	this->min = 0;
 	this->max = 0;
@@ -65,14 +65,13 @@ Long Scroll::Last()
 //LinePrevious
 Long Scroll::LinePrevious()
 {
-	//1. 현재 위치를 한글기준으로 한글자 왼쪽으로 또는 한줄 위로 이동시킨다.
-	return this->currentPos;
+	return -1;
 }
 
 //LineNext
 Long Scroll::LineNext()
 {
-	return this->currentPos;
+	return -1;
 }
 
 //pagePrevious

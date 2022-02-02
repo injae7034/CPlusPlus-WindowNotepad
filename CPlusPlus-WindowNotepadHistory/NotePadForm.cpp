@@ -73,14 +73,10 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	rowIndex = this->note->Add(row);
 	//5. 현재 줄의 위치를 저장한다.
 	this->current = this->note->GetAt(rowIndex);
-	//Menu가 notepadForm의 멤버여야 OnCreate이 종료되어도 정보가 계속 저장되어 있기때문에 뻑이 안남
-	//만약에 임시변수로 OnCreate에서만 Menu가 있으면 OnCreate이 종료될때 Menu의 모든정보도 같이 소멸됨
 	//6. CMenu를 notepadForm에 연결한다.
 	this->menu.LoadMenu(IDR_MENU1);
 	SetMenu(&this->menu);
 	//7. textExtent를 힙에 할당한다.
-	//notepadForm이 생성될 때 기본(디폴트)글꼴 정보를 바탕으로 TextExtent를 힙에할당해 생성해주고,
-	//notepadForm이 소멸될 때(OnClose) 힙에 할당된 TextExtent를 할당해제 소멸해주면된다.
 	this->textExtent = new TextExtent(this);
 	//8. 선택한 메모장의 노트(내용)를 불러온다.
 	File file;
@@ -97,43 +93,7 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//12. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
 	this->current->First();
 	//13. scrollController를 생성한다.
-	ScrollController* scrollController = new ScrollController(this);
-	//14. 스크롤의 현재 화면의 크기를 구해준다.
-	//CRect rect;
-	//this->GetClientRect(&rect);
-	/*
-	//15. 스크롤 현재 화면의 크기에 맞게 수평 스크롤바를 생성한다.
-	scrollController->GetHorizontalScrollBar().Create(SBS_HORZ | SBS_BOTTOMALIGN | WS_CHILD
-		| WS_DISABLED, rect, this, 0);
-	scrollController->GetHorizontalScrollBar().ShowScrollBar();
-	//16. 스크롤 현재 화면의 크기에 맞게 수직 스크롤바를 생성한다.
-	scrollController->GetVerticalScrollBar().Create(SBS_VERT | SBS_RIGHTALIGN | WS_CHILD
-		| WS_DISABLED, rect, this, 0);
-	scrollController->GetVerticalScrollBar().ShowScrollBar();
-	*/
-	/*
-	//17. 수평스크롤에 대한 정보를 구한다.
-	SCROLLINFO horizontalScrollInfo;
-	scrollController->GetHorizontalScrollBar().GetScrollInfo(&horizontalScrollInfo);
-	//18. 수평스크롤에 필요한 정보를 저장한다.
-	scrollController->scroll[0] = new HorizontalScroll(scrollController, horizontalScrollInfo.nPos,
-		horizontalScrollInfo.nMin, horizontalScrollInfo.nMax, horizontalScrollInfo.nPage);
-	//19. 수직스크롤에 대한 정보를 구한다.
-	SCROLLINFO verticalScrollInfo;
-	scrollController->GetVerticalScrollBar().GetScrollInfo(&verticalScrollInfo);
-	//20. 수직스크롤에 대한 정보를 저장한다.
-	scrollController->scroll[1] = new VerticalScroll(scrollController, verticalScrollInfo.nPos,
-		verticalScrollInfo.nMin, verticalScrollInfo.nMax, verticalScrollInfo.nPage);
-	//21. 스크롤 컨트롤러가 생성되었음을 옵저버들에게 알린다.
-	//this->Notify();
-	*/
-
-	/* 이렇게 하면 OnCreate스택이 끝나면서 사라지기 때문에 당연히 CScrollBar가 생성되지 않는다.!
-	CScrollBar horizontalScrollBar;
-	horizontalScrollBar.Create(SBS_HORZ | SBS_BOTTOMALIGN | WS_CHILD,
-		CRect(5, 5, 1000, 30), this, 0);
-	horizontalScrollBar.ShowScrollBar();
-	*/
+	this->scrollController = new ScrollController(this);
 
 	return 0;
 }
@@ -230,69 +190,25 @@ void NotepadForm::OnPaint()
 	dc.GetTextMetrics(&text);
 	//10. note에 저장된 글자들을 출력한다.
 	Long i = 0;
+	Long currentXPos;
+	Long currentYPos;
 	CString content;
 	//11. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
 	while (i < this->note->GetLength())
 	{
 		content = CString(this->note->GetAt(i)->GetContent().c_str());
+		currentXPos = this->GetScrollPos(SB_HORZ);
+		currentYPos = this->GetScrollPos(SB_VERT);
 		//11.1 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
-		dc.TextOut(0, i * text.tmHeight, content);
+		//11.2 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
+		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, content);
+		this->Notify();
 		i++;
 	}
 	dc.SelectObject(oldFont);
 	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음. 
 	font.DeleteObject();
 
-	/*
-	// 크기 구하기
-	CPaintDC dc(this);
-	CRect rect;
-	GetClientRect(&rect);
-	// 화면 그리기
-	CDC dcTemp;
-	dcTemp.CreateCompatibleDC(&dc);
-	HBITMAP hbmp = ::CreateCompatibleBitmap(dc, 10000, rect.Height() - 20);
-	// 가로 10000 크기로 생성 
-	HBITMAP hbmpOld = (HBITMAP)dcTemp.SelectObject(hbmp);
-	// 100마다 텍스트 출력
-	dcTemp.PatBlt(0, 0, 10000, rect.Height(), WHITENESS);
-	for (int iX = 0; iX < 10000; iX += 100)
-	{
-		CString sX;
-		sX.Format(_T("%d"), iX);
-		dcTemp.TextOut(iX, (rect.Height() / 2), sX);
-	}
-	SCROLLINFO scrInfo;
-	int iSrcX = 0;
-	if (NULL == m_ctlHScroll.GetSafeHwnd())
-	{
-		CRect rectHScroll;
-		rectHScroll.SetRect(rect.left, rect.top, rect.right, rect.bottom);
-		m_ctlHScroll.Create(WS_CHILD | WS_VISIBLE | SBS_HORZ | SBS_BOTTOMALIGN, rectHScroll, this, 0);
-		m_ctlHScroll.ShowScrollBar(TRUE);
-		scrInfo.cbSize = sizeof(scrInfo);
-		scrInfo.fMask = SIF_ALL;
-		scrInfo.nMin = 0;// 스크롤 최소값 
-		scrInfo.nMax = 10000; // 스크롤 최대값
-		scrInfo.nPage = rect.Width(); // 페이지 번호 
-		scrInfo.nTrackPos = 0; // 드래깅 상태의 트랙바 위치
-		scrInfo.nPos = 0; // 트랙바 위치 
-		m_ctlHScroll.SetScrollRange(scrInfo.nMin, scrInfo.nMax); // 범위 설정
-		m_ctlHScroll.SetScrollPos(scrInfo.nPos); // 위치 설정
-		m_ctlHScroll.SetScrollInfo(&scrInfo); // 스크롤바 정보 설정 
-	}
-	else
-	{
-		if (FALSE != m_ctlHScroll.GetScrollInfo(&scrInfo))
-		{
-			iSrcX = scrInfo.nPos; // 현재 스크롤 위치 받아옴 
-		}
-	}
-	dc.BitBlt(0, 0, rect.Width(), rect.Height(), &dcTemp, iSrcX, 0, SRCCOPY); // 더블 버퍼링
-	dcTemp.SelectObject(hbmpOld);
-	::DeleteObject(hbmp);
-	dcTemp.DeleteDC();
-	*/
 }
 
 //한글을 입력받을 때
@@ -500,15 +416,12 @@ void NotepadForm::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	{
 		//3.1 ConcreteScrollAction의 OnVScroll 함수를 실행한다.
 		scrollAction->OnVScroll(nSBCode, nPos, pScrollBar);
-		//3.2
 		//3.2 scrollAction을 할당해제한다.
 		delete scrollAction;
 	}
 	//4. 변경사항을 옵저버들에게 알린다.
 	this->Notify();
-	this->Invalidate();
-	//OnPaint();
-	//CWnd::OnVScroll(nSBCode, nPos, pScrollBar);	
+	this->Invalidate();	
 }
 
 //메모장에서 가로 스크롤을 클릭할 때
@@ -529,7 +442,6 @@ void NotepadForm::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	//4. 변경사항을 옵저버들에게 알린다.
 	this->Notify();
 	this->Invalidate();
-	//CWnd::OnHScroll(nSBCode, nPos, pScrollBar);																																		   출처: https://3001ssw.tistory.com/117?category=939609 [C++, WinAPI, Android, OpenCV 정리 블로그]
 }
 
 //메모장에서 닫기버튼을 클릭했을 떄

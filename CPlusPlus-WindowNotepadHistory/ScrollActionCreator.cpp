@@ -5,9 +5,6 @@
 #include "PreviousScrollAction.h"
 #include "NextScrollAction.h"
 
-//nSBCode == SB_LINEUP || nSBCode == SB_LINELEFT 일 경우  SB_LINEPREVIOUS로 구분한다.
-//#define SB_LINEPREVIOUS 0
-
 //디폴트생성자
 ScrollActionCreator::ScrollActionCreator(NotepadForm* notepadForm)
 {
@@ -18,29 +15,30 @@ ScrollActionCreator::ScrollActionCreator(NotepadForm* notepadForm)
 ScrollAction* ScrollActionCreator::Create(UINT nSBCode)
 {
 	ScrollAction* scrollAction = 0;
-	//if(nSBCode == SB_LINEPREVIOUS)
-	//1. 스크롤을 제일 위로 움직이거나 제일 왼쪽으로 움직이면
-	if (nSBCode == SB_TOP || nSBCode == SB_LEFT)
+	//1. 스크롤을 제일 위(SB_TOP)로 움직이거나 제일 왼쪽(SB_LEFT)으로 움직이면
+	//SB_TOP과 SB_LEFT의 값이 6으로 서로 같음.
+	if (nSBCode == 6)
 	{
 		scrollAction = new FirstScrollAction(this->notepadForm);
 	}
-	//2. 스크롤을 제일 아래로 움직이거나 제일 오른쪽으로 움직이면
-	else if (nSBCode == SB_BOTTOM || nSBCode == SB_RIGHT)
+	//2. 스크롤을 제일 아래(SB_BOTTOM)로 움직이거나 제일 오른쪽(SB_RIGHT)으로 움직이면
+	//SB_BOTTOM과 SB_RIGHT의 값이 7로 서로 같음.
+	else if (nSBCode == 7)
 	{
 		scrollAction = new LastScrollAction(this->notepadForm);
 	}
-	//3. 스크롤을 한 줄 위로 올리거나 한 칸 왼쪽으로 움직이면
-	else if (nSBCode == SB_LINEUP || nSBCode == SB_LINELEFT)
+	//3. 스크롤을 한 줄 위(SB_LINEUP)로 올리거나 한 칸 왼쪽(SB_LINELEFT)으로 움직이면
+	//SB_LINEUP과 SB_LINELEFT의 값이 0으로 서로 같음.
+	else if (nSBCode == 0)
 	{
 		scrollAction = new PreviousScrollAction(this->notepadForm);
 	}
-	//4. 스크롤을 한 줄 아래로 내리거나 한 칸 오른쪽으로 움직이면
-	else if (nSBCode == SB_LINEDOWN || nSBCode == SB_LINERIGHT)
+	//4. 스크롤을 한 줄 아래(SB_LINEDOWN)로 내리거나 한 칸 오른쪽(SB_LINERIGHT)으로 움직이면
+	//SB_LINEDOWN과 SB_LINERIGHT의 값이 1로 서로 같음.
+	else if (nSBCode == 1)
 	{
-		scrollAction = new LastScrollAction(this->notepadForm);
-		//scrollAction = new NextScrollAction(this->notepadForm);
+		scrollAction = new NextScrollAction(this->notepadForm);
 	}
-	//scrollAction = new FirstScrollAction(this->notepadForm);
 
 	return scrollAction;
 }

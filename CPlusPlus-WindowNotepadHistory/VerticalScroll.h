@@ -9,11 +9,13 @@ class ScrollController;
 class VerticalScroll :public Scroll
 {
 public:
-	VerticalScroll();//디폴트생성자
+	VerticalScroll(ScrollController* scrollController = 0);//디폴트생성자
 	VerticalScroll(ScrollController* scrollController, Long currentPos, Long min, Long max,
 		Long pageSize);//매개변수를 5개 가지는 생성자
 	VerticalScroll(const VerticalScroll& source);//복사생성자
 	VerticalScroll& operator=(const VerticalScroll& source);//치환연산자
+	virtual Long LinePrevious();
+	virtual Long LineNext();
 	~VerticalScroll();//소멸자
 };
 
