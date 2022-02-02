@@ -18,9 +18,13 @@ void LeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	CRect rect;
 	this->notepadForm->GetClientRect(&rect);
 	Long pageWidth = rect.Width();
-	Long currentScrollPos = 0;
+	Long pageHeight = rect.Height();
+	Long HScrollPos = 0;
+	Long VScrollPos = 0;
 	Long caretYPos = 0;
 	Long caretXPos = 0;
+	Long sum = 0;
+	Long distance = 0;
 	//2. 이전으로 이동하기 전에 캐럿의 현재 가로위치를 저장한다.
 	Long previousIndex = this->notepadForm->current->GetCurrent();
 	//3. 이전으로 이동하고 현재 캐럿의 가로위치를 반환받는다.
@@ -50,23 +54,29 @@ void LeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			//글자들의 높이가 반영이 되어서 수직스크롤의 현재 위치와 비교할 수 없다!
 			caretYPos = this->notepadForm->textExtent->GetHeight() * (currentRowIndex);
 			//4.3.4 수직스크롤의 현재 위치를 구한다.
-			currentScrollPos = this->notepadForm->GetScrollPos(SB_VERT);
-			//4.3.5 이전 줄까지의 총 세로 길이가 수직스크롤위 현재 위치보다 작거나 같으면
-			if (caretYPos < currentScrollPos)
+			VScrollPos = this->notepadForm->GetScrollPos(SB_VERT);
+			//4.3.5 현재화면의 세로 길이와 수직스크롤의 현재 위치의 합을 구한다.
+			sum = pageHeight + VScrollPos;
+			//4.3.6 이전 줄까지의 총 세로 길이가 수직스크롤위 현재 위치보다 작거나 또는
+			//이전 줄까지의 총 세로 길이가 현재화면의 세로 길이와 수직스크롤의 현재 위치의 합보다
+			//크거나 같으면
+
+			if (caretYPos < VScrollPos || caretYPos > sum)
 			{
 
 				//4.3.6.1 수직스크롤을 한줄 위로 이동시킨다.
 				//this->notepadForm->scrollController->scroll[1]->LinePrevious();
 				//caretYPos += pageHeight;//이렇게해야 정확히 한 줄씩 이동함.
 
-				//4.3.5.1 수직스크롤을 caretYPos로 이동시킨다.
+				//4.3.6.1 수직스크롤을 caretYPos로 이동시킨다.
 				this->notepadForm->scrollController->scroll[1]->Move(caretYPos);
-				//4.3.5.2 수직스크롤바의 수직스크롤을 이동시킨다.
+				//4.3.6.2 수직스크롤바의 수직스크롤을 이동시킨다.
 				this->notepadForm->SetScrollPos(SB_VERT,
 					this->notepadForm->scrollController->scroll[1]->GetCurrentPos());
 			}
 
-			//4.3.6 현재 캐럿의 가로 위치(x좌표)를 구한다.
+
+			//4.3.7 현재 캐럿의 가로 위치(x좌표)를 구한다.
 			caretXPos = this->notepadForm->textExtent->GetTextWidth(this->notepadForm->
 				current->GetPartOfContent(this->notepadForm->current->GetCurrent()));
 
@@ -74,13 +84,13 @@ void LeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			//4.3.7 수평스크롤의 현재 위치를 구한다.
 			//currentScrollPos = this->notepadForm->GetScrollPos(SB_HORZ);
 
-			//4.3.7 현재화면크기보다 현재 캐럿의 가로 위치(x좌표)가 더크면
+			//4.3.8 현재화면크기보다 현재 캐럿의 가로 위치(x좌표)가 더크면
 			if (caretXPos > pageWidth)
 			{
-				//4.3.7.1 캐럿이 이동한 글자의 너비만큼 수평스크롤을 이동시켜준다.
-				caretXPos -= pageWidth;
-				this->notepadForm->scrollController->scroll[0]->Move(caretXPos);
-				//4.3.7.2 수평스크롤바의 수평스크롤을 이동시킨다.
+				//4.3.8.1 캐럿이 이동한 글자의 너비만큼 수평스크롤을 이동시켜준다.
+				caretXPos -= pageWidth;//수평스크롤의 현재위치가 누적되어있음!
+				this->notepadForm->scrollController->scroll[0]->Move(caretXPos + 2);
+				//4.3.8.2 수평스크롤바의 수평스크롤을 이동시킨다.
 				this->notepadForm->SetScrollPos(SB_HORZ,
 					this->notepadForm->scrollController->scroll[0]->GetCurrentPos());
 			}
@@ -97,13 +107,16 @@ void LeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		caretXPos = this->notepadForm->textExtent->GetTextWidth(this->notepadForm->
 			current->GetPartOfContent(this->notepadForm->current->GetCurrent()));
 		//5.2 수평스크롤의 현재 위치를 구한다. 
-		currentScrollPos = this->notepadForm->GetScrollPos(SB_HORZ);
+		HScrollPos = this->notepadForm->GetScrollPos(SB_HORZ);
 		//5.3 현재 캐럿의 위치가 수평스크롤의 현재 위치보다 작으면
-		if (caretXPos < currentScrollPos)
+		if (caretXPos < HScrollPos)
 		{
-			//5.3.1 캐럿이 이동한 글자의 너비만큼 수평스크롤을 이동시켜준다.
-			this->notepadForm->scrollController->scroll[0]->Move(caretXPos - 2);
-			//5.3.2 수평스크롤바의 수평스크롤을 이동시킨다.
+			//5.3.1 수평스크롤의 이동할 범위를 구한다.
+			//<-버튼을 누를 때마다 가로스크롤의 현재 위치에서 누적해 현재 화면의 5분의 1 크기만큼 이동한다. 
+			distance = HScrollPos - (pageWidth / 5);
+			//5.3.2 캐럿이 이동한 글자의 너비만큼 수평스크롤을 이동시켜준다.
+			this->notepadForm->scrollController->scroll[0]->Move(distance);
+			//5.3.3 수평스크롤바의 수평스크롤을 이동시킨다.
 			this->notepadForm->SetScrollPos(SB_HORZ,
 				this->notepadForm->scrollController->scroll[0]->GetCurrentPos());
 		}

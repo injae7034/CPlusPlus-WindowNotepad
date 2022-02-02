@@ -53,7 +53,7 @@ NotepadForm::NotepadForm()
 	LOGFONT logFont;
 	memset(&logFont, 0, sizeof(LOGFONT));
 	logFont.lfHeight = 100;
-	wsprintf(logFont.lfFaceName, "¸¼Àº °íµñ");
+	wsprintf(logFont.lfFaceName, "±Ã¼­Ã¼");
 	this->font = Font(logFont, RGB(0, 0, 0));
 	this->textExtent = NULL;
 }

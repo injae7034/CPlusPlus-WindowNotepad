@@ -1,3 +1,7 @@
+가나  라
+가  다라
+    다라
+가나다라
 // 크기 구하기
  CRect rect;
  GetClientRect( &rect );

@@ -24,6 +24,7 @@ void RightArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	Long caretXPos = 0;
 	Long partScrollWidth = 0;
 	Long partScrollHeight = 0;
+	Long distance = 0;
 	//2. 다음으로 이동하기 전에 캐럿의 현재 가로위치를 저장한다.
 	Long previousIndex = this->notepadForm->current->GetCurrent();
 	//3. 다음으로 이동하고 현재 캐럿의 가로위치를 반환받는다.
@@ -60,8 +61,16 @@ void RightArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 				//this->notepadForm->scrollController->scroll[1]->LineNext();
 
 				//4.3.6.1 수직스크롤이 이동할 범위를 정한다. 
-				caretYPos -= pageHeight;//이렇게해야 정확히 한 줄씩 이동함.
-				this->notepadForm->scrollController->scroll[1]->Move(caretYPos);
+				//caretYPos -= pageHeight;//이렇게해야 정확히 한 줄씩 이동함.
+				distance = caretYPos - pageHeight;//distance값을 구할 때 누적 된 값을 구해야함!
+				//distance = caretYPos - partScrollHeight;
+				//partScrollHeight는 현재화면의 세로길이와 현재수직스크롤의 위치를 합한 값인데
+				//이 값을 빼주면 distance는 항상 일정한 값이 되어 누적이 없음.
+				//Move연산은 distance만큼 더해서(누적시켜서) 이동시키는게 아니라
+				//그냥 입력받은 distance로 이동하는 것이기 때문에 애초에 distance값을 구할 때
+				//누적된 값을 구해야함. 그래서 현재 캐럿의 세로 위치에서 현재 화면크기 값만 빼주면
+				//현재수직스크롤의현재위치값은 남아있어서 한줄 높이가 누적된 distance를 구할 수 있다.
+				this->notepadForm->scrollController->scroll[1]->Move(distance);
 				//4.3.6.2 수직스크롤바의 수직스크롤을 이동시킨다.
 				this->notepadForm->SetScrollPos(SB_VERT,
 					this->notepadForm->scrollController->scroll[1]->GetCurrentPos());
@@ -88,10 +97,16 @@ void RightArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//5.4 현재 캐럿의 위치가 현재화면의 가로길이와 수평스크롤의 현재 위치를 더한 값보다 크면
 		if (caretXPos > partScrollWidth)
 		{
+			
 			//5.4.1 수평스크롤이 이동할 범위를 정한다.
-			caretXPos -= pageWidth;
+			//caretXPos -= pageWidth;
+			//스크롤이 글자 한 칸씩 이동하면 이동이 너무 짧아서 이동할 때 사용자 입장에서 너무 답답함! 
+			
+			//5.4.1 수평스크롤이 이동할 범위를 정한다.
+			//->버튼을 누를 때마다 가로스크롤의 현재 위치에서 누적해 현재 화면의 5분의 1 크기만큼 이동한다. 
+			distance = (pageWidth / 5) + currentScrollPos;
 			//5.4.2 캐럿이 이동한 글자의 너비만큼 수평스크롤을 이동시켜준다.
-			this->notepadForm->scrollController->scroll[0]->Move(caretXPos + 2);
+			this->notepadForm->scrollController->scroll[0]->Move(distance);
 			//5.4.3 수평스크롤바의 수평스크롤을 이동시킨다.
 			this->notepadForm->SetScrollPos(SB_HORZ,
 				this->notepadForm->scrollController->scroll[0]->GetCurrentPos());

@@ -37,7 +37,7 @@ void CtrlEndKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//8. 수평스크롤이 이동해야할 범위를 구한다.
 	Long currentScrollPos = caretXPos - pageWidth;
 	//9. 캐럿이 이동한 글자의 너비만큼 수평스크롤을 이동시켜준다.
-	this->notepadForm->scrollController->scroll[0]->Move(currentScrollPos);
+	this->notepadForm->scrollController->scroll[0]->Move(currentScrollPos + 2);
 	//10. 수평스크롤바의 수평스크롤을 이동시킨다.
 	this->notepadForm->SetScrollPos(SB_HORZ,
 		this->notepadForm->scrollController->scroll[0]->GetCurrentPos());
