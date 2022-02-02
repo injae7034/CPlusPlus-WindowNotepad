@@ -1,5 +1,7 @@
 #include "NotepadForm.h"
 #include "GlyphCreator.h"
+#include "CommandCreator.h"
+#include "File.h"
 #include "afxdlgs.h"//CFileDialog헤더파일
 
 HHOOK hSaveMessageBoxHook;//전역변수 선언
@@ -13,9 +15,11 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_MESSAGE(WM_IME_COMPOSITION, OnComposition)
 	ON_MESSAGE(WM_IME_CHAR, OnImeChar)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
-	ON_COMMAND(IDM_FILE_OPEN, OnFileOpenClicked)
-	ON_COMMAND(IDM_FILE_SAVE, OnFileSaveClicked)
-	ON_COMMAND(IDM_FILE_SAVEDIFFERENTNAME, OnFileSaveDifferentNameClicked)
+	//해당범위(IDM_FILE_OPEN ~ IDM_FILE_SAVEDIFFERENTNAME)의 id들을 클릭하면 OnCommand함수실행
+	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_FILE_SAVEDIFFERENTNAME, OnCommand)
+	//ON_COMMAND(IDM_FILE_OPEN, OnFileOpenClicked)
+	//ON_COMMAND(IDM_FILE_SAVE, OnFileSaveClicked)
+	//ON_COMMAND(IDM_FILE_SAVEDIFFERENTNAME, OnFileSaveDifferentNameClicked)
 	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
@@ -29,288 +33,242 @@ NotepadForm::NotepadForm()
 	this->note = NULL;//NULL로 초기화시킴.
 	this->current = NULL;//NULL로 초기화시킴.
 	this->IsComposing = false;//false로 초기화시킴
+	this->IsDirty = false;//false로 초기화시킴
+	this->fileName = "제목 없음";
+	this->filePath = "";
 	//CFont에서 사용하고자 하는 글자크기와 글자체로 초기화시킴.
 	//기본생성자로 생성된 this->font에 매개변수 2개생성자로 치환(=)시킴
 	this->font = Font(300, "궁서체");
 	//기본생성자로 생성된 this->caret에 매개변수 1개생성자로 치환(=)시킴.
 	this->caret = Caret(this);
-	this->file = File(this);
 }
-#if 0
-//NotepadForm소멸자
-NotepadForm::~NotepadForm()
-{
 
-}
-#endif
-//1. 메모장 윈도우가 생성될 때
+//메모장 윈도우가 생성될 때
 int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	//1.1 CClientDC를 생성한다.
-	//CClientDC dc(this);
-	//1.2 CFont를 생성한다.
-	//CFont font;
-	//1.3 글씨크기와 글씨체를 정하다.
-	//font.CreatePointFont(this->font.Getsize(), this->font.GetStyle().c_str());
-	//1.4 폰트를 dc에 지정한다.
-	//dc.SelectObject(font);
-	//1.5 TEXTMETRIC을 생성한다.
-	//TEXTMETRIC text;
-	//1.6 글꼴의 정보를 얻는다.
-	//dc.GetTextMetrics(&text);
-	//1.7 캐럿을 생성한다.
-	//this->caret.Create(0, text.tmHeight);
-	//1.8 glyphCreator를 만든다.
+	//1. glyphCreator를 만든다.
 	GlyphCreator glyphCreator;
-	//1.9 노트를 만든다.
+	//2. 노트를 만든다.
 	this->note = glyphCreator.Create((char*)"\0");
-	//1.10 줄을 만든다.
+	//3. 줄을 만든다.
 	Glyph* row = glyphCreator.Create((char*)"\n");
-	//1.11 줄을 메모장에 추가한다.
+	//4. 줄을 메모장에 추가한다.
 	Long rowIndex;
 	rowIndex = this->note->Add(row);
-	//1.13 현재 줄의 위치를 저장한다.
+	//5. 현재 줄의 위치를 저장한다.
 	this->current = this->note->GetAt(rowIndex);
-	
-	//1.14 캐럿의 위치를 이동시킨다.
-	//this->caret.Move(0, 0);
-	//1.15 캐럿을 보여준다.
-	//this->caret.Show();
-	//m_wndStatusBar.Create(this);
 	//Menu가 notepadForm의 멤버여야 OnCreate이 종료되어도 정보가 계속 저장되어 있기때문에 뻑이 안남
 	//만약에 임시변수로 OnCreate에서만 Menu가 있으면 OnCreate이 종료될때 Menu의 모든정보도 같이 소멸됨
+	//6. CMenu를 notepadForm에 연결한다.
 	this->menu.LoadMenu(IDR_MENU1);
 	SetMenu(&this->menu);
-	//처음 만들어지는 메모장 이름을 정한다.
-	string name = this->file.GetName();
+	//7. 처음 만들어지는 메모장 이름을 정한다.
+	string name = this->fileName;
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
 
 	return 0;
 }
 
-//2. 키보드에 글자를 입력할 때
+//키보드에 글자를 입력할 때
 void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	//2.1 CClientDC를 생성한다.
+	//1. CClientDC를 생성한다.
 	CClientDC dc(this);
-	//2.2 glyphCreator를 생성한다.
+	//2. glyphCreator를 생성한다.
 	GlyphCreator glyphCreator;
-	//2.3 glyph를 생성한다.
+	//3. glyph를 생성한다.
 	Glyph* glyph = glyphCreator.Create((char*)&nChar);
 	Long index;
-	//CPoint caretPosition;
-	//2.4 CFont를 생성한다.
+	//4. CFont를 생성한다.
 	CFont font;
-	//2.5 글씨크기와 글씨체를 정하다.
+	//5. 글씨크기와 글씨체를 정하다.
 	font.CreatePointFont(this->font.Getsize(), this->font.GetStyle().c_str());
-	//2.6 폰트를 dc에 지정한다.
+	//6. 폰트를 dc에 지정한다.
 	dc.SelectObject(font);
-	//2.7 TEXTMETRIC을 생성한다.
+	//7. TEXTMETRIC을 생성한다.
 	TEXTMETRIC text;
-	//2.8 글꼴의 정보를 얻는다.
+	//8. 글꼴의 정보를 얻는다.
 	dc.GetTextMetrics(&text);
-	//2.9 캐럿을 생성한다.
-	//CreateSolidCaret(0, text.tmHeight);
+	//9. 캐럿을 생성한다.
 	this->caret.Create(0, text.tmHeight);
-	//2.10 입력받은 문자가 개행문자가 아니면
+	//10. 입력받은 문자가 개행문자가 아니면
 	if (nChar != '\n' && nChar != '\r')
 	{
-		//2.10.1 현재 줄에 글자를 추가한다.
+		//10.1 현재 줄에 글자를 추가한다.
 		index = this->current->Add(glyph);
-		//2.10.2 추가한 글자의 너비를 구한다.
+		//10.2 추가한 글자의 너비를 구한다.
 		CString letter = CString(this->current->GetContent().c_str());
 		CSize letterSize = dc.GetTextExtent(letter);
-		//2.10.3 캐럿이 이동할 위치를 정한다.
-		//caretPosition = CPoint(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
-		//2.10.3 캐럿을 이동시킨다.
+		//10.3 캐럿을 이동시킨다.
 		this->caret.Move(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
 	}
-	//2.11 입력받은 문자가 개행문자이면
+	//11. 입력받은 문자가 개행문자이면
 	else if (nChar == '\n' || nChar == '\r')
 	{
-		//2.11.1 새로운 줄을 추가한다.
+		//11.1 새로운 줄을 추가한다.
 		index = this->note->Add(glyph);
-		//2.11.2 현재 줄의 위치를 새로 저장한다.
+		//11.2 현재 줄의 위치를 새로 저장한다.
 		this->current = this->note->GetAt(index);
-		//2.11.3 캐럿이 이동할 위치를 정한다.
-		//caretPosition = CPoint(0, (this->note->GetCurrent() - 1) * text.tmHeight);
-		//2.11.3 캐럿을 이동시킨다.
+		//11.3 캐럿을 이동시킨다.
 		this->caret.Move(0, (this->note->GetCurrent() - 1) * text.tmHeight);
 	}
-	//2.12 캐럿의 위치를 이동한다.
-	//this->SetCaretPos(caretPosition);
-	//2.13 캐럿을 보이게 한다.
+	//12. 캐럿을 보이게 한다.
 	this->caret.Show();
-	//ShowCaret();
-	//2.14 isComposing을 false로 바꾼다.
+	//13. isComposing을 false로 바꾼다.
 	this->IsComposing = false;
-	//2.15 메모장 제목에 *를 추가한다.
-	string name = this->file.GetName();
+	//14. 메모장 제목에 *를 추가한다.
+	string name = this->fileName;
 	name.insert(0, "*");
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//2.16 갱신한다.
+	//15. 메모장에 변경사항이 있음을 저장한다.
+	this->IsDirty = true;
+	//16. 갱신한다.
 	Invalidate(TRUE);
 }
 
-//3. 메모장에 텍스트를 출력할 떄
+//메모장에 텍스트를 출력할 떄
 void NotepadForm::OnPaint()
 {
-	//3.1 CPaintDC를 생성한다.
+	//1. CPaintDC를 생성한다.
 	CPaintDC dc(this);
-	//3.2 텍스트의 배경을 투명하게함.
+	//2. 텍스트의 배경을 투명하게함.
 	dc.SetBkMode(TRANSPARENT);
-	//3.3 텍스트의 색깔을 정함.
+	//3. 텍스트의 색깔을 정함.
 	dc.SetTextColor(RGB(0, 0, 0));
-	//3.4 왼쪽을 기준선으로 정함.
+	//4. 왼쪽을 기준선으로 정함.
 	dc.SetTextAlign(TA_LEFT);
-	//3.5 CFont를 생성한다.
+	//5. CFont를 생성한다.
 	CFont font;
-	//3.6 글씨크기와 글씨체를 정하다.
+	//6. 글씨크기와 글씨체를 정하다.
 	font.CreatePointFont(this->font.Getsize(), this->font.GetStyle().c_str());
-	//3.7 폰트를 dc에 지정한다.
+	//7. 폰트를 dc에 지정한다.
 	dc.SelectObject(font);
-	//3.8 TEXTMETRIC을 생성한다.
+	//8. TEXTMETRIC을 생성한다.
 	TEXTMETRIC text;
-	//3.9 글꼴의 정보를 얻는다.
+	//9. 글꼴의 정보를 얻는다.
 	dc.GetTextMetrics(&text);
-	//3.10 note에 저장된 글자들을 출력한다.
+	//10. note에 저장된 글자들을 출력한다.
 	Long i = 0;
 	CString content;
-	//줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
+	//11. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
 	while (i < this->note->GetLength())
 	{
 		content = CString(this->note->GetAt(i)->GetContent().c_str());
-		//텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 150)에서 시작함.
+		//11.1 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 150)에서 시작함.
 		dc.TextOut(0, i * text.tmHeight, content);
 		i++;
 	}
-#if 0
-	//노트를 그대로 출력하면 줄이 구분이 안되고 한줄에 내용이 다나옴.
-	content = CString(this->note->GetContent().c_str());
-	dc.TextOut(0, i * 150, content);
-#endif
-
-#if 0
-	//2.8 Note에 저장된 Content를 불러온다.
-	CString content = CString(this->note->GetContent().c_str());
-	//2.9 Content를 출력한다.
-	dc.TextOut(0, 0, _T(this->note->GetContent().c_str()));
-#endif
 }
 
-//4. 한글을 입력받을 때
+//한글을 입력받을 때
 LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 {
-	//4.1 CClientDC를 생성한다.
+	//1. CClientDC를 생성한다.
 	CClientDC dc(this);
-	//4.2 glyphCreator를 생성한다.
+	//2. glyphCreator를 생성한다.
 	GlyphCreator glyphCreator;
 	WORD word = LOWORD(wParam);
 	char koreanLetter[3];
 	koreanLetter[0] = HIBYTE(word);
 	koreanLetter[1] = LOBYTE(word);
 	koreanLetter[2] = '\0';
-	//4.3 doubleByteLetter를 생성한다.
+	//3. doubleByteLetter를 생성한다.
 	Glyph* doubleByteLetter = glyphCreator.Create((char*)koreanLetter);
-	//4.4 IsComposing값이 '참'이면
+	//4. IsComposing값이 '참'이면
 	if (this->IsComposing == true)
 	{
-		//4.4.1 현재 줄의 기존 한글을 지운다.
+		//4.1 현재 줄의 기존 한글을 지운다.
 		this->current->Remove(this->current->GetLength() - 1);
 	}
-	//4.5 isComposing값이 '거짓'이면
+	//5. isComposing값이 '거짓'이면
 	else
 	{
-		//4.5.1 isComposing값을 '참'으로 바꾼다.
+		//5.1 isComposing값을 '참'으로 바꾼다.
 		this->IsComposing = true;
 	}
-	//4.6 새로 만든 DoubleByteLetter를 현재 줄에 추가한다.
+	//6. 새로 만든 DoubleByteLetter를 현재 줄에 추가한다.
 	Long letterIndex = this->current->Add(doubleByteLetter);
-	//4.7 CFont를 생성한다.
+	//7. CFont를 생성한다.
 	CFont font;
-	//4.8 글씨크기와 글씨체를 정하다.
+	//8. 글씨크기와 글씨체를 정하다.
 	font.CreatePointFont(this->font.Getsize(), this->font.GetStyle().c_str());
-	//4.9 폰트를 dc에 지정한다.
+	//9. 폰트를 dc에 지정한다.
 	dc.SelectObject(font);
-	//4.10 추가한 글자를 더한 전체 텍스트의 size를 구한다.
+	//10. 추가한 글자를 더한 전체 텍스트의 size를 구한다.
 	CString text = CString(this->current->GetContent().c_str());
 	CSize textSize = dc.GetTextExtent(text);
-	//4.11 추가한 한글의 size를 구한다.
+	//11. 추가한 한글의 size를 구한다.
 	CString letter = CString(this->current->GetAt(letterIndex)->GetContent().c_str());
 	CSize letterSize = dc.GetTextExtent(letter);
-	//4.12 캐럿을 생성한다.
+	//12. 캐럿을 생성한다.
 	TEXTMETRIC koreanCaret;
 	dc.GetTextMetrics(&koreanCaret);
 	this->caret.Create(letterSize.cx, koreanCaret.tmHeight);
 	//CreateSolidCaret(letterSize.cx, koreanCaret.tmHeight);
-	//4.13 캐럿이 이동할 위치를 정한다.
-	//CPoint caretPosition = CPoint(textSize.cx - letterSize.cx, (this->note->GetCurrent() - 1) * koreanCaret.tmHeight);
-	//4.14 캐럿을 이동시킨다.
+	//13. 캐럿을 이동시킨다.
 	this->caret.Move(textSize.cx - letterSize.cx, (this->note->GetCurrent() - 1) * koreanCaret.tmHeight);
-	//this->SetCaretPos(caretPosition);
-	//4.15 캐럿을 보이게 한다.
+	//14. 캐럿을 보이게 한다.
 	this->caret.Show();
-	//ShowCaret();
-	//4.16 메모장 제목에 *를 추가한다.
-	string name = this->file.GetName();
+	//15. 메모장 제목에 *를 추가한다.
+	string name = this->fileName;
 	name.insert(0, "*");
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//4.17 갱신한다.
+	//16. 메모장에 변경사항이 있음을 저장한다.
+	this->IsDirty = true;
+	//17. 갱신한다.
 	Invalidate(TRUE);
 
 	return ::DefWindowProc(this->m_hWnd, WM_IME_COMPOSITION, wParam, lParam);
 }
 
-//5. 완성된 한글을 입력받았을 때
+//완성된 한글을 입력받았을 때
 LRESULT NotepadForm::OnImeChar(WPARAM wParam, LPARAM lParam)
 {
-	//5.1 CClientDC를 생성한다.
+	//1. CClientDC를 생성한다.
 	CClientDC dc(this);
-	//5.2 CFont를 생성한다.
+	//2. CFont를 생성한다.
 	CFont font;
-	//5.3 글씨크기와 글씨체를 정하다.
+	//3. 글씨크기와 글씨체를 정하다.
 	font.CreatePointFont(this->font.Getsize(), this->font.GetStyle().c_str());
-	//5.4 폰트를 dc에 지정한다.
+	//4. 폰트를 dc에 지정한다.
 	dc.SelectObject(font);
-	//5.5 glyphCreator를 생성한다.
+	//5. glyphCreator를 생성한다.
 	GlyphCreator glyphCreator;
 	WORD word = LOWORD(wParam);
 	char koreanLetter[3];
 	koreanLetter[0] = HIBYTE(word);
 	koreanLetter[1] = LOBYTE(word);
 	koreanLetter[2] = '\0';
-	//5.6 doubleByteLetter를 생성한다.
+	//6. doubleByteLetter를 생성한다.
 	Glyph* doubleByteLetter = glyphCreator.Create((char*)koreanLetter);
-	//5.7 기존에 조립중이던 한글을 지운다.
+	//7. 기존에 조립중이던 한글을 지운다.
 	this->current->Remove(this->current->GetLength() - 1);
-	//5.8 현재줄에 완성된 한글을 추가한다.
+	//8. 현재줄에 완성된 한글을 추가한다.
 	this->current->Add(doubleByteLetter);
-	//5.9 IsComposing을 false로 바꾼다.
+	//9. IsComposing을 false로 바꾼다.
 	this->IsComposing = false;
-	//5.10 캐럿을 생성한다
+	//10. 캐럿을 생성한다
 	TEXTMETRIC text;
 	dc.GetTextMetrics(&text);
 	this->caret.Create(0, text.tmHeight);
-	//CreateSolidCaret(0, text.tmHeight);
-	//5.11 캐럿이 이동할 위치를 정한다.
+	//11. 캐럿이 이동할 위치를 정한다.
 	CString letter = CString(this->current->GetContent().c_str());
 	CSize letterSize = dc.GetTextExtent(letter);
-	//CPoint caretPosition = CPoint(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
-	//5.12 캐럿을 이동시킨다.
+	//12. 캐럿을 이동시킨다.
 	this->caret.Move(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
-	//SetCaretPos(caretPosition);
-	//5.13 캐럿을 보여준다.
+	//13. 캐럿을 보여준다.
 	this->caret.Show();
-	//ShowCaret();
-	//5.14 메모장 제목에 *를 추가한다.
-	string name = this->file.GetName();
+	//14 메모장 제목에 *를 추가한다.
+	string name = this->fileName;
 	name.insert(0, "*");
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//5.15 갱신한다.
+	//15. 메모장에 변경사항이 있음을 저장한다.
+	this->IsDirty = true;
+	//16. 갱신한다.
 	Invalidate(TRUE);
 
 	return 0;
@@ -339,35 +297,14 @@ void NotepadForm::OnSetFocus(CWnd* pOldWnd)
 	dc.GetTextMetrics(&text);
 	//7. 캐럿을 생성한다.
 	this->caret.Create(0, text.tmHeight);
-	//CreateSolidCaret(0, text.tmHeight);
 	//8. 현재줄의 텍스트들을 저장한다.
 	CString letter = CString(this->current->GetContent().c_str());
 	//9. 현재줄의 텍스트들의 size를 구한다.
 	CSize letterSize = dc.GetTextExtent(letter);
-	//10. 캐럿이 이동할 위치를 정한다.
-	//CPoint caretPosition = CPoint(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
-	//11. 캐럿을 이동시킨다.
+	//10. 캐럿을 이동시킨다.
 	this->caret.Move(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
-	//SetCaretPos(caretPosition);
-	//12. 캐럿을 보이게 한다.
+	//11. 캐럿을 보이게 한다.
 	this->caret.Show();
-	//ShowCaret();
-
-#if 0
-	//Caret의 위치 지정
-
-		CSize strSize;
-
-	strSize = dc.GetTextExtent(str);
-
-	pt.x = strSize.cx;
-
-	pt.y = Line * txtKey.tmHeight;
-
-	SetCaret(pt);
-
-	ShowCaret();
-#endif
 }
 
 //메모장이 Focus를 잃을 때
@@ -379,6 +316,20 @@ void NotepadForm::OnKillFocus(CWnd* pNewWnd)
 	::DestroyCaret();
 }
 
+//Command패턴
+void NotepadForm::OnCommand(UINT nId)
+{
+	//1. CommandCreator를 생성한다.
+	CommandCreator commandCreator(this);
+	//2. ConcreteCommand를 생성한다.
+	Command* command = commandCreator.Create(nId);
+	//3. ConcreteCommand의 execute를 실행한다.
+	command->Execute();
+	//4. command를 할당해제한다.
+	delete command;
+}
+
+#if 0
 //메모장 메뉴에서 불러오기를 클릭했을 떄
 void NotepadForm::OnFileOpenClicked()
 {
@@ -661,90 +612,74 @@ void NotepadForm::OnFileSaveDifferentNameClicked()
 		SetWindowText(CString(name.c_str()));
 	}
 }
+#endif
 
 //메모장에서 닫기버튼을 클릭했을 떄
 void NotepadForm::OnClose()
 {
-	//1. 메모장 제목을 알아낸다.
-	CString noteTitle;
-	GetWindowText(noteTitle);
-	string title = string(noteTitle);
-	//2. 메모장 제목에 '*'가 있으면(변경사항이 있으면)
-	if (title[0] == '*')
+	//1. file을 생성한다.
+	File file;
+	int messageBoxButton = IDCANCEL;
+	//2. 메모장에 변경 사항이 있으면
+	if (this->IsDirty == true)
 	{
-		//메세지박스 문구를 정한다.
-		string message;
-		//2.1 파일경로가 정해져 있으면
-		if (this->file.GetPath() != "")
+		//2.1 메세지박스의 메세지를 생성한다.
+		string message = "제목 없음";
+		//2.2 파일경로가 정해져 있으면
+		if (this->filePath != "")
 		{
-			message = this->file.GetPath();
+			//2.2.1 메세지를 변경한다.
+			message = this->filePath;
 		}
-		//2.2 파일 경로가 안정해져 있으면
-		else
-		{
-			message = this->file.GetName();
-		}
+		//2.3 SaveBox 메세지 내용을 만든다.
 		message.insert(0, "변경 내용을 ");
 		message += "에 저장하시겠습니까?";
-		//2.1 Save메세지박스를 출력한다.
-		int messageBoxButton = SaveMessageBox(this->GetSafeHwnd(), message.c_str(), "메모장", MB_YESNOCANCEL);
-		//3. Save메세지박스에서 Yes를 선택했으면
+		//2.4 Save메세지박스를 출력한다.
+		messageBoxButton = SaveMessageBox(this->GetSafeHwnd(), message.c_str(), "메모장", MB_YESNOCANCEL);
+		//2.5 Save메세지박스에서 Yes를 선택했으면
 		if (messageBoxButton == IDYES)
 		{
-			//1. 파일경로가 ""이 아니면(노트가 처음 생성된 경우가 아니면)
-			if (this->file.GetPath() != "")
+			//2.5.1 노트가 이미 있던 파일이면
+			if (this->filePath != "")
 			{
-				//1.1 선택한 메모장을 저장한다.
-				this->file.Save(this->file.GetName(), this->file.GetPath());
-				//1.2 '*'를 없애준다.
-				title.erase(0, 1);
-				SetWindowText(CString(title.c_str()));
-				
+				//2.5.1.1 메모장을 저장한다.
+				file.Save(this, this->filePath);
+				//2.5.1.2 메모장에 변경사항이 없음을 저장한다.
+				this->IsDirty = false;
+				//2.5.1.3 메모장 제목을 바꾼다.
+				string name = this->fileName;
+				name += " - 메모장";
+				SetWindowText(CString(name.c_str()));
 			}
-			//2.2 파일경로가 정해져 있지 않으면(노트가 처음 생성된 경우)
+			//2.5.2 노트가 처음 생성된 파일이면
 			else
 			{
-				//2.2.1 파일공통 대화상자를 생성한다.
+				//2.5.2.1 파일공통 대화상자를 생성한다.
 				LPCTSTR  filesFilter = _T("텍스트 문서(*.txt) | *.txt; | 모든 파일 | *.*;  ||");
 				CFileDialog fileDialog(FALSE, _T("txt"), "*.txt", 0, filesFilter, this, 0, 1);
-				//2.2.2 파일공통 대화상자를 출력한다.
+				//2.5.2.2 파일공통 대화상자를 출력한다.
 				if (fileDialog.DoModal() == IDOK)
 				{
-					//2.2.2.1 저장할 파일의 이름을 구한다.
-					CString fileName = fileDialog.GetFileName();
-					//2.2.2.2 저장할 파일의 경로를 구한다.
-					CString filePathName = fileDialog.GetPathName();
-					//2.5 파일의 이름에서 .txt를 제거한다.
-					string name = string(fileName);
-					Long eraseIndex = name.find(".txt");
-					name.erase(eraseIndex, 4);
-					//2.2.2.3 선택한 메모장을 저장한다.
-					this->file.Save(name, string(filePathName));
-					//2.13 메모장 제목을 바꾼다.
-					name += " - 메모장";
-					SetWindowText(CString(name.c_str()));
+					//2.5.2.2.1 저장할 파일의 이름을 구한다.
+					this->fileName = string(fileDialog.GetFileTitle());
+					//2.5.2.2.2 저장할 파일의 경로를 구한다.
+					this->filePath = string(fileDialog.GetPathName());
 				}
+				//2.5.2.3 선택한 메모장을 저장한다.
+				file.Save(this, this->filePath);
+				//2.5.2.4 메모장에 변경사항이 없음을 저장한다.
+				this->IsDirty = false;
+				//2.5.2.5 메모장 제목을 바꾼다.
+				string name = this->fileName;
+				name += " - 메모장";
+				SetWindowText(CString(name.c_str()));
 			}
-		}
-		//4. 메세지박스에서 yes나 no를 선택한 경우
-		if (messageBoxButton == IDYES || messageBoxButton == IDNO)
-		{
-			//4.1 메모장을 지운다.
-			if (this->note != NULL)
-			{
-				delete this->note;
-				//this->note를 소멸시키면 note에 있는 Row와 letter들도 다 소멸된다.
-				//this->current는 Row인데 이미 this->note를 소멸시키면서 Row들이 다 소멸되었는데
-				//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
-				//delete this->current;
-			}
-			CFrameWnd::OnClose();
 		}
 	}
-	//변경사항이 없으면(메모장 제목 앞에 '*'이 없으면)
-	else
+	//3. 메세지박스에서 CANCEL을 선택하지 않았거나 변경된 사항이 없으면
+	if (messageBoxButton != IDCANCEL || this->IsDirty == false)
 	{
-		//9.1 메모장을 지운다.
+		//3.1 메모장을 지운다.
 		if (this->note != NULL)
 		{
 			delete this->note;
@@ -753,10 +688,12 @@ void NotepadForm::OnClose()
 			//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
 			//delete this->current;
 		}
+		//3.2 메모장을 닫는다.
 		CFrameWnd::OnClose();
 	}
 }
 
+//Save메세지박스
 LRESULT CALLBACK SaveMessageBoxProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	HWND hChildWnd;
 
