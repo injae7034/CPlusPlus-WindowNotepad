@@ -18,7 +18,9 @@ public:
 	//상속받은 함수가 가상함수를 재정의하면 재정의한 함수를 사용하게 되고,
 	//상속받은 함수가 가상함수를 재정의하지않으면 추상클래스(부모클래스)의 가상함수를 그대로 사용하게 됨.
 	virtual Long Add(Glyph* glyph);//가상함수
+	virtual Long Add(Long index, Glyph* glyph);//(Insert)가상함수
 	virtual Long Remove(Long index);//가상함수
+	virtual Glyph* Split(Long index);
 	//상속받는 클래스가 부모클래스의 함수를 재정의하기 위해서는 함수 앞에 virtual을 붙여서 가상함수를 만들어야함!
 	Glyph* GetAt(Long index); 
 	virtual ~Composite() = 0;//추상클래스 소멸자 순수가상함수 상속받은 클래스에 의해 반드시 재정의되야함!

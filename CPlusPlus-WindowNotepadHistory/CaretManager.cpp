@@ -34,8 +34,10 @@ void CaretManager::Update()
     if (this->notepadForm->IsComposing == true)
     {
         //2.1 한글 한 글자의 폭을 구한다.
+        //현재 조립중인 한글 한글자를 구하려면 현재 캐럿의 가로 위치 앞의 글자를 구하면 되기 때문에
+        //현재 캐럿의 가로 위치 -1 을 해준 값을 배열 요소에서 GetAt해오면 된다!
         letterWidth = this->notepadForm->textExtent->GetTextWidth(this->notepadForm->
-            current->GetAt(this->notepadForm->current->GetLength() - 1)->GetContent());
+            current->GetAt(this->notepadForm->current->GetCurrent() - 1)->GetContent());
     }
     //3. 캐럿을 생성한다.
     this->caret->Create(letterWidth, this->notepadForm->textExtent->GetHeight());

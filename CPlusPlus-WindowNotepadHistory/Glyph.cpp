@@ -18,10 +18,21 @@ Long Glyph::Add(Glyph* glyph)
 	return -1;//배열 첨자가 없는 경우 -1을 반환 0이 첫 배열요소이고 배열요소가 없다는 뜻은 -1임.
 }
 
+//Add(Insert)
+Long Glyph::Add(Long index, Glyph* glyph)
+{
+	return -1;
+}
+
 //Remove
 Long Glyph::Remove(Long index)
 {
 	return -1;//배열 첨자가 없는 경우 -1을 반환 0이 첫 배열요소이고 배열요소가 없다는 뜻은 -1임.
+}
+
+Glyph* Glyph::Split(Long index)
+{
+	return 0;
 }
 
 //GetAt

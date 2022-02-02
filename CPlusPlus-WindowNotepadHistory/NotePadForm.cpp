@@ -99,20 +99,52 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	GlyphCreator glyphCreator;
 	//2. glyph를 생성한다.
 	Glyph* glyph = glyphCreator.Create((char*)&nChar);
-	Long index;
+	Long caretIndex;
+	Long rowIndex;
 	//3. 입력받은 문자가 개행문자가 아니면
 	if (nChar != '\n' && nChar != '\r')
 	{
-		//3.1 현재 줄에 글자를 추가한다.
-		index = this->current->Add(glyph);
+		//3.1 현재 줄의 캐럿의 가로 위치를 구한다.
+		caretIndex = this->current->GetCurrent();
+		//3.2 FileSaveCommand가 현재 줄의 length와 같으면
+		if (caretIndex == this->current->GetLength())
+		{
+			//3.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
+			caretIndex = this->current->Add(glyph);
+		}
+		//3.3 index가 현재 줄의 length와 다르면
+		else
+		{
+			//3.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
+			caretIndex = this->current->Add(caretIndex, glyph);
+		}
+		
 	}
 	//4. 입력받은 문자가 개행문자이면
 	else if (nChar == '\n' || nChar == '\r')
 	{
-		//4.1 새로운 줄을 추가한다.
-		index = this->note->Add(glyph);
-		//4.2 현재 줄의 위치를 새로 저장한다.
-		this->current = this->note->GetAt(index);
+		//4.1 현재 줄의 위치를 구한다.
+		rowIndex = this->note->GetCurrent();
+		//4.2 현재 줄의 캐럿의 위치를 구한다.
+		caretIndex = this->current->GetCurrent();
+		//4.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
+		glyph = this->current->Split(caretIndex);
+		//4.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
+		if (rowIndex == this->note->GetLength() - 1)
+		{
+			//4.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
+			rowIndex = this->note->Add(glyph);
+		}
+		//4.5 그게 아니면
+		else
+		{
+			//4.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워넣는다.
+			rowIndex = this->note->Add(rowIndex + 1, glyph);
+		}
+		//4.4 현재 줄의 위치를 새로 저장한다.
+		this->current = this->note->GetAt(rowIndex);
+		//4.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
+		this->current->First();
 	}
 	//5. 캐럿의 위치와 크기가 변경되었음을 알린다.
 	this->Notify();
@@ -135,18 +167,19 @@ void NotepadForm::OnPaint()
 	//1. CPaintDC를 생성한다.
 	CPaintDC dc(this);
 	//2. 텍스트의 배경을 투명하게함.
-	dc.SetBkMode(TRANSPARENT);
+	//dc.SetBkMode(TRANSPARENT);
 	//3. 텍스트의 색깔을 정함.
 	dc.SetTextColor(this->font.GetColor());
 	//4. 왼쪽을 기준선으로 정함.
-	dc.SetTextAlign(TA_LEFT);
+	//dc.SetTextAlign(TA_LEFT);
 	//5. CFont를 생성한다.
 	CFont font;
 	//6. 글씨크기와 글씨체를 정하다.
 	//font.CreatePointFont(this->font.GetSize(), this->font.GetFaceName().c_str());
 	font.CreateFontIndirect(&this->font.GetLogFont());
 	//7. 폰트를 dc에 지정한다.
-	dc.SelectObject(font);
+	HFONT oldFont;
+	oldFont = (HFONT)dc.SelectObject(font);
 	//8. TEXTMETRIC을 생성한다.
 	TEXTMETRIC text;
 	//9. 글꼴의 정보를 얻는다.
@@ -158,10 +191,11 @@ void NotepadForm::OnPaint()
 	while (i < this->note->GetLength())
 	{
 		content = CString(this->note->GetAt(i)->GetContent().c_str());
-		//11.1 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 150)에서 시작함.
+		//11.1 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
 		dc.TextOut(0, i * text.tmHeight, content);
 		i++;
 	}
+	dc.SelectObject(oldFont);
 	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음. 
 	font.DeleteObject();
 }
@@ -178,30 +212,48 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 	koreanLetter[2] = '\0';
 	//2. doubleByteLetter를 생성한다.
 	Glyph* doubleByteLetter = glyphCreator.Create((char*)koreanLetter);
-	//3. IsComposing값이 '참'이면
+	//3. 현재 줄의 캐럿의 가로 위치를 구한다.
+	Long index = this->current->GetCurrent();
+	//4. IsComposing값이 '참'이면
 	if (this->IsComposing == true)
 	{
-		//3.1 현재 줄의 기존 한글을 지운다.(캐럿의 현제 가로 위치에서 -1해준 글자를 제거한다.)
-		this->current->Remove(this->current->GetLength() - 1);
+		//4.1 현재 줄의 캐럿의 가로 위치 바로 앞에 있는 기존 한글을 지운다.
+		//그러기 위해서는 캐럿의 현재 가로 위치에 1감소한 값을 넣어주면 된다.
+		this->current->Remove(index - 1);
+		//4.2 기존에 있던 글자가 지워졌기 때문에 캐럿의 현재 가로 위치는 1감소했기때문에
+		//캐럿의 현재 가로 위치값을 나타내는 index역시 1 감소시켜준다.
+		//index--;
+		//갱신된 current의 위치를 index에 저장한다.
+		index = this->current->GetCurrent();
 	}
-	//4. isComposing값이 '거짓'이면
+	//5. isComposing값이 '거짓'이면
 	else
 	{
 		//4.1 isComposing값을 '참'으로 바꾼다.
 		this->IsComposing = true;
 	}
-	//5. 새로 만든 DoubleByteLetter를 현재 줄에 추가한다.
-	Long letterIndex = this->current->Add(doubleByteLetter);
-	//6. 캐럿의 위치와 크기가 변경되었음을 알린다.
+	//6. index가 현재 줄의 length와 같으면
+	if (index  == this->current->GetLength())
+	{
+		//6.1 현재 줄의 마지막 글자 뒤에 새로운 한글을 추가한다.
+		index = this->current->Add(doubleByteLetter);
+	}
+	//7. index가 현재 줄의 length와 다르면
+	else
+	{
+		//7.1 현재 줄의 index번째에 새로운 한글을 끼워 쓴다.
+		index = this->current->Add(index, doubleByteLetter);
+	}
+	//8. 캐럿의 위치와 크기가 변경되었음을 알린다.
 	this->Notify();
-	//7. 메모장 제목에 *를 추가한다.
+	//9. 메모장 제목에 *를 추가한다.
 	string name = this->fileName;
 	name.insert(0, "*");
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//8. 메모장에 변경사항이 있음을 저장한다.
+	//10. 메모장에 변경사항이 있음을 저장한다.
 	this->IsDirty = true;
-	//9. 갱신한다.
+	//11. 갱신한다.
 	Invalidate(TRUE);
 
 	return ::DefWindowProc(this->m_hWnd, WM_IME_COMPOSITION, wParam, lParam);
@@ -219,22 +271,40 @@ LRESULT NotepadForm::OnImeChar(WPARAM wParam, LPARAM lParam)
 	koreanLetter[2] = '\0';
 	//2. doubleByteLetter를 생성한다.
 	Glyph* doubleByteLetter = glyphCreator.Create((char*)koreanLetter);
-	//3. 기존에 조립중이던 한글을 지운다.
-	this->current->Remove(this->current->GetLength() - 1);
-	//4. 현재줄에 완성된 한글을 추가한다.
-	this->current->Add(doubleByteLetter);
-	//5. IsComposing을 false로 바꾼다.
+	//3. 현재 줄의 캐럿의 가로 위치를 구한다.
+	Long index = this->current->GetCurrent();
+	//4. 현재 줄의 캐럿의 가로 위치 바로 앞에 있는 기존 한글을 지운다.
+	// 그러기 위해서는 캐럿의 현재 가로 위치에 1감소한 값을 넣어주면 된다.
+	this->current->Remove(index - 1);
+	//5. 기존에 있던 글자가 지워졌기 때문에 캐럿의 현재 가로 위치는 1감소했기때문에
+	//캐럿의 현재 가로 위치값을 나타내는 index역시 1 감소시켜준다.
+	//index--;
+	//갱신된 current의 위치를 index에 저장한다.
+	index = this->current->GetCurrent();
+	//5. index가 현재 줄의 length와 같으면
+	if (index == this->current->GetLength())
+	{
+		//5.1 현재 줄의 마지막 글자 뒤에 새로운 한글을 추가한다.
+		index = this->current->Add(doubleByteLetter);
+	}
+	//6. index가 현재 줄의 length와 다르면
+	else
+	{
+		//6.1 현재 줄의 index번째에 새로운 한글을 끼워 쓴다.
+		index = this->current->Add(index, doubleByteLetter);
+	}
+	//7. IsComposing을 false로 바꾼다.
 	this->IsComposing = false;
-	//6. 캐럿이 변경되었음을 알린다.
+	//8. 캐럿이 변경되었음을 알린다.
 	this->Notify();
-	//7. 메모장 제목에 *를 추가한다.
+	//9. 메모장 제목에 *를 추가한다.
 	string name = this->fileName;
 	name.insert(0, "*");
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//8. 메모장에 변경사항이 있음을 저장한다.
+	//10. 메모장에 변경사항이 있음을 저장한다.
 	this->IsDirty = true;
-	//9. 갱신한다.
+	//11. 갱신한다.
 	Invalidate(TRUE);
 
 	return 0;

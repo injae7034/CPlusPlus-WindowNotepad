@@ -11,7 +11,9 @@ class Glyph//interface(Component)이므로 복사생성자나 치환연산자가 필요없음.
 public:
 	Glyph();//디폴트생성자
 	virtual Long Add(Glyph* glyph);
+	virtual Long Add(Long index, Glyph* glyph);//Insert
 	virtual Long Remove(Long index);
+	virtual Glyph* Split(Long index);
 	virtual Glyph* GetAt(Long index);
 	virtual ~Glyph() = 0;//추상클래스 소멸자
 	virtual Glyph* Clone() = 0;//Prototype Pattern Clone

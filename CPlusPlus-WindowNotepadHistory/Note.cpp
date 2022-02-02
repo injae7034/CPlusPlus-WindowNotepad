@@ -103,6 +103,22 @@ Long Note::Add(Glyph* glyph)
 	return index;
 }
 
+//Add(Insert)
+Long Note::Add(Long index, Glyph* glyph)
+{
+	//1. 끼워 쓸 줄의 index와 줄의 주소를 입력받는다.
+	//2. 줄을 배열 요소의 index번쨰에 끼워 넣는다.
+	index = this->glyphs.Insert(index, glyph);
+	//3. 할당량을 증가시킨다.
+	this->capacity++;
+	//4. 사용량을 증가시킨다.
+	this->length++;
+	//5. 캐럿의 현재 세로 위치(현재 줄의 위치)를 저장한다.(Note기준)
+	this->current = index;
+	//6. 현재 줄의 위치를 출력한다.(Note기준)
+	return index;
+}
+
 Long Note::Remove(Long index)
 {
 	//1. 지울 줄의 위치를 입력받는다.

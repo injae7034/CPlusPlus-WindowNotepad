@@ -1,4 +1,5 @@
 #include "Composite.h"
+#include "Row.h"
 
 //디폴트생성자
 Composite::Composite(Long capacity)
@@ -27,18 +28,27 @@ Composite::~Composite()
 
 //복사생성자
 Composite::Composite(const Composite& source)
-	:glyphs(source.glyphs)
+	:glyphs(source.glyphs)//source의 배열요소들인 주소들을 복사해옴.
+	//주소들을 복사했기때문에 this의 배열요소들은 source의 배열요소들과 똑같은 내용을 가리킴.
 {
 	Glyph* glyph;
 	Long i = 0;
+	//1. source의 length보다 작은동안 반복한다.
 	while (i < source.length)
 	{
+		//1.1 Composite의 각 배열요소의 glyph를 구한다.
 		glyph = const_cast<Composite&>(source).glyphs.GetAt(i);
+		//1.2 this의 배열요소들이 지금 현재는 source와 같은 내용들을 가리키고 있기 때문에
+		//그 배열요소들을 힙에 새로 할당한 내용들로 바꿔준다.(깊은 복사)
 		this->glyphs.Modify(i, glyph->Clone());
+		//1.3 배열첨자 및 반복제어변수를 증가시킨다.
 		i++;
 	}
+	//2. capacity를 변경한다.
 	this->capacity = source.capacity;
+	//3. length를 변경한다.
 	this->length = source.length;
+	//4. current를 변경한다.
 	this->current = source.current;
 }
 
@@ -101,6 +111,22 @@ Long Composite::Add(Glyph* glyph)
 	return index;
 }
 
+//Add(Row기준)(Insert)
+Long Composite::Add(Long index, Glyph* glyph)
+{
+	//1. 끼워 쓸 글자의 index와 글자 주소를 입력받는다.
+	//2. 글자를 배열 요소의 index번쨰에 끼워 넣는다.
+	index = this->glyphs.Insert(index, glyph);
+	//3. 할당량을 증가시킨다.
+	this->capacity++;
+	//4. 사용량을 증가시킨다.
+	this->length++;
+	//5. 다음 글자가 쓰여질 위치(캐럿의 현재 가로 위치)를 저장한다.(Row기준)
+	this->current = index + 1;
+	//6. 현재 글자의 위치를 출력한다.
+	return index;
+}
+
 //Remove
 Long Composite::Remove(Long index)
 {
@@ -121,6 +147,56 @@ Long Composite::Remove(Long index)
 	this->length--;
 	//7. index를 출력한다.
 	return index;
+}
+
+//Split
+Glyph* Composite::Split(Long index)
+{
+	//1. 현재 줄에서 분리할 위치를 입력받는다.
+	//2. 새로운 줄을 생성한다.
+	Glyph* row = new Row();
+	//3. 현재 줄에서 분리할 글자들을 새로 만든 줄에 복사한다.(깊은 복사)
+	//Long i = 0;//배열첨자
+	Glyph* letter;//분리할 글자를 담을 공간
+	//3.1 입력받은 위치가 현재 줄의 글자개수보다 작은동안 반복한다.
+	while (index < this->GetLength())
+	{
+		//3.1.1 현재 줄에서 입력받은 위치의 글자를 구한다.
+		letter = this->glyphs.GetAt(index);
+		//3.1.2 새로 만든 줄에는 저장된 배열요소가 아무것도 없기 때문에 Modify라는 개념은 어울리지X
+		//새로 만든 줄에 아무것도 배열요소가 없는 경우에 추가할 때는 Add가 어울인다.
+		//새로 만든 줄에 분리할 글자들을 담는다.(깊은 복사)
+		row->Add(letter->Clone());
+		//row->glyphs.Modify(i, letter->Clone()); glyphs는 protected이고 Composite의 자식들만
+		//이용할 수 있음, Glyph는 Composite의 자식이 아니기 때문에 glyphs에 접근할 수 X
+		//3.1.3 현재 줄의 글자들 중에서 새로 만들 줄에 담은 글자를 없앤다.
+		//기존 줄(this)에 있는 글자를 새로운 줄에 옮겼기 때문에(깊은 복사) 이제 기존 줄(this)에 있는
+		//내용(글자)와 그 내용을 저장하고 있는 주소들을 할당해제해줘야한다.
+		//Split의 뜻은 "분리하다", "떼어내다"라는 뜻이다. 그런데 새로운 줄에 내용(글자)만 새로 만들어서
+		//옮기고 기존 줄에서 그 내용들을 안없애주면 "떼어내다"가 아니라 "복사하다(copy)"가 되어버린다.
+		//따라서 Split연산의 의미에 맞게 새로운 줄에 기존줄의 내용들을 옮겼으면 기존줄에서는 그내용들을
+		//없애줘야 떼어낸다는 개념적 의미가 맞다!
+		//3.1.3.1 letter가 0이 아니면
+		if (letter != 0)
+		{
+			//3.1.3.1.1 letter의 내용(글자)을 할당해제한다.
+			delete letter;
+		}
+		//3.1.3.2 letter의 내용을 담고 있던 주소를 할당해제한다.
+		this->glyphs.Delete(index);
+		//3.1.3.3 배열에서 배열요소를 없앴기 때문에 사용량과 할당량을 감소시켜준다.
+		this->capacity--;
+		this->length--;
+		//i++; Add를 사용하면 처음부터 순차적으로 배열요소에 저장하기 때문에 배열첨자를 따로 세줄 필요가X
+		//index++;//입력받은 위치를 증가시킨다. 다음 글자를 담기 위해서
+		//index를 증가시켜줄 필요가 없음 왜냐하면 Delete를 통해서 계속 배열요소가 지워지고 있기때문에
+		//index는 계속 같은 위치에서 계속 다음 글자를 읽으면된다.
+		//글자가 배열요소에서 지워지면서 계속 앞으로 밀려오기때문에 index는 가만히 있으면 됨!.
+		//index++하면 뻑이남
+	}
+	//4. 새로 만든 row를 출력한다.
+	return row;
+	//5. 끝내다.
 }
 
 //GetAt

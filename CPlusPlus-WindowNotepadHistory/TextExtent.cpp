@@ -14,7 +14,8 @@ TextExtent::TextExtent(NotepadForm* notepadForm)
     //4. 글씨크기와 글씨체를 정하다.
     font.CreateFontIndirect(&this->notepadForm->font.GetLogFont());
     //5. 폰트를 dc에 지정한다.
-    dc.SelectObject(font);
+    HFONT oldFont;
+    oldFont = (HFONT)dc.SelectObject(font);
     //6. TEXTMETRIC을 생성한다.
     TEXTMETRIC textmetric;
     //7. 글꼴의 정보를 얻는다.
@@ -37,9 +38,12 @@ TextExtent::TextExtent(NotepadForm* notepadForm)
     }
     //9. 129번째 배열요소에 한글의 폭을 저장한다.(한글은 폭이 같기 때문에 한 개의 폭만 저장해줌.)
     //i는 최대 127까지만 이용가능하므로 그냥 숫자 128로 대입해주자!
-    letter = "가";
+    letter = "ㄱ";
     letterSize = dc.GetTextExtent(letter);
     this->widths[128] = letterSize.cx;
+    letter = "가";
+    letterSize = dc.GetTextExtent(letter);
+    this->widths[129] = letterSize.cx;
     //10. i=0 번째에 쓰레기값 대신에 스페이스를 저장한다.
     //아스키코드 0번째는 null이므로 폭이 저장될 수 없으나 쓰레기값대신 스페이스를 저장해줌.
     letter = " ";
@@ -48,6 +52,7 @@ TextExtent::TextExtent(NotepadForm* notepadForm)
     //11. 평균 폰트 높이를 저장한다.
     this->height = textmetric.tmHeight;
     //12. 끝내다.
+    dc.SelectObject(oldFont);
     DeleteObject(font);
 }
 
@@ -63,15 +68,28 @@ Long TextExtent::GetTextWidth(string content)//count(캐럿의 가로 위치)는 필요없�
     Long i = 0;
     Long width = 0;
     Long length = (Long)content.length();
+    char letter[3];
+
     //한글은 배열요소 2개를 차지하고 아스키코드 문자는 배열요소 1개를 차지하기 때문에, count를 외부에서
     //입력받지 말고, string의 length를 구하면 배열요소의 개수를 알려주기 때문에 이를 이용하자!
     while (i < length)
     {
+        letter[0] = content[i];
+        letter[1] = '\0';
         //1.1 한글이면
         if ((content[i] & 0x80))
         {
-            //1.1.1 한글의 폭을 더해준다.
-            width += this->widths[128];
+            letter[1] = content[i + 1];
+            letter[2] = '\0';
+            if (letter >= "ㄱ" && letter <= "ㅣ")
+            {
+                //1.1.1 한글의 폭을 더해준다.
+                width += this->widths[128];
+            }
+            else
+            {
+                width += this->widths[129];
+            }
             i++;//한글은 배열요소가 2개이기 때문에 1을 더해줘서 2개를 차지하게 한다.
         }
         //1.2 한글이 아니면(아스키코드 문자이면)

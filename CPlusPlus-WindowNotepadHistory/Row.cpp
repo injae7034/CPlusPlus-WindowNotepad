@@ -2,7 +2,8 @@
 
 //디폴트생성자
 Row::Row(Long capacity)
-	:Composite(capacity)
+	:Composite(capacity)//Composite의 기본생성자를 호출하면 거기서 멤버들인(capacity, length,
+	//current 등이 초기화된다.!!)
 {
 	
 }

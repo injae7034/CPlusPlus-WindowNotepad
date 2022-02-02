@@ -20,6 +20,7 @@ public:
 	virtual Long PreviousWord();
 	//Previous랑 First는 Composite와 정의가 중복되기때문에 Composite꺼 그대로 쓰면 됨.
 	virtual Long Add(Glyph* glyph);
+	virtual Long Add(Long index, Glyph* glyph);
 	virtual Long Remove(Long index);
 };
 

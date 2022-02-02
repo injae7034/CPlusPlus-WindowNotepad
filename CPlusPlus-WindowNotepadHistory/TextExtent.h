@@ -22,7 +22,7 @@ public:
 	Long* GetWidths() const;
 	Long GetHeight() const;
 private:
-	Long widths[129];
+	Long widths[130];
 	Long height;
 };
 
