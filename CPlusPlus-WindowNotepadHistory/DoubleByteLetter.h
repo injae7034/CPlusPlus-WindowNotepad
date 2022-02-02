@@ -8,7 +8,7 @@ class DoubleByteLetter :public Letter
 {
 public:
 	DoubleByteLetter();//디폴트생성자
-	DoubleByteLetter(char(*script));//매개변수1개생성자
+	DoubleByteLetter(char* script);//매개변수1개생성자
 	DoubleByteLetter(const DoubleByteLetter& source);//복사생성자
 	DoubleByteLetter& operator=(const DoubleByteLetter& source);//치환연산자
 	virtual ~DoubleByteLetter();//소멸자

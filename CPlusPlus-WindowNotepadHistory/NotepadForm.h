@@ -14,8 +14,10 @@ public:
 	~NotepadForm();//소멸자
 public:
 	Glyph* note;//주소이므로 전방선언이 필요함.
+	Glyph* current;//주소이므로 전방선언 필요함.
 protected://#
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnPaint();
 	DECLARE_MESSAGE_MAP()
 };
