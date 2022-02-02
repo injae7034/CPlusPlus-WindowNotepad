@@ -1,12 +1,17 @@
 #include "NotepadApp.h"
 #include "NotePadForm.h"
+#include <afxdisp.h>
+
 BOOL NotepadApp::InitInstance()
 {
-	NotepadForm* notepadForm = new NotepadForm;         // B
-	notepadForm->Create(0, "메모장");// C
-	notepadForm->ShowWindow(SW_SHOW);               // D
+	NotepadForm* notepadForm = new NotepadForm;
+	notepadForm->Create(0, "메모장");
+	AFX_MANAGE_STATE(AfxGetStaticModuleState());
+	CoInitialize(NULL);
+	AfxEnableControlContainer();
+	notepadForm->ShowWindow(SW_SHOW);
 	notepadForm->UpdateWindow();
-	m_pMainWnd = notepadForm;                         // E
+	m_pMainWnd = notepadForm;
 
 	return TRUE;
 }
