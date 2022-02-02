@@ -58,6 +58,10 @@ BEGIN
         MENUITEM "저장하기",                        IDM_FILE_SAVE
         MENUITEM "다른 이름으로 저장하기",                IDM_FILE_SAVEDIFFERENTNAME
     END
+    POPUP "서식"
+    BEGIN
+        MENUITEM "글꼴",                          IDM_FONT_CHANGE
+    END
 END
 
 #endif    // 한국어(대한민국) resources

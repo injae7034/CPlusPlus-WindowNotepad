@@ -16,13 +16,16 @@
 #define ID_40012                        40012
 #define ID_40013                        40013
 #define IDM_FILE                        40014
+#define IDR_MENU2                       40015
+#define ID_Menu                         40016
+#define IDM_FONT_CHANGE                 40017
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        102
-#define _APS_NEXT_COMMAND_VALUE         40015
+#define _APS_NEXT_COMMAND_VALUE         40018
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

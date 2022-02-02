@@ -59,6 +59,10 @@ void FileOpenCommand::Execute()
 				//2.5.2.2 파일공통 대화상자를 출력한다.
 				if (fileDialog.DoModal() == IDOK)
 				{
+					//notepadForm의 fileName과 filePath가 private이면 내용을 변경할 수 없음
+					//그렇다고 notepadForm의 생성자를 이용해 내용을 변경하려고하면
+					//notepadForm을 새로 만들어야해서 안됨
+					//결국에는 fileName과 filePath를 public으로 해줘야함.
 					//2.5.2.2.1 저장할 파일의 이름을 구한다.
 					this->notepadForm->fileName = string(fileDialog.GetFileTitle());
 					//2.5.2.2.2 저장할 파일의 경로를 구한다.
@@ -113,7 +117,6 @@ void FileOpenCommand::Execute()
 			this->notepadForm->current = this->notepadForm->note->GetAt(rowIndex);
 			//3.2.9 선택한 메모장의 노트(내용)를 불러온다.
 			file.Load(this->notepadForm, this->notepadForm->filePath);
-			string nstr = this->notepadForm->note->GetContent();
 			//3.2.10 메모장 제목을 바꾼다.
 			name = this->notepadForm->fileName;
 			name += " - 메모장";
@@ -121,31 +124,32 @@ void FileOpenCommand::Execute()
 			//3.2.11 flag들을 초기화시킨다.
 			this->notepadForm->IsComposing = false;//false로 초기화시킴
 			this->notepadForm->IsDirty = false;//false로 초기화시킴
-			//3.2.12 갱신한다.
-			this->notepadForm->Invalidate(TRUE);
 			//캐럿을 불러온 note(내용)에 맞게 다시 생성해준다.
-			//3.2.13 CClientDC를 생성한다.
+			//3.2.12 CClientDC를 생성한다.
 			CClientDC dc(this->notepadForm);
-			//3.2.14 CFont를 생성한다.
+			//3.2.13 CFont를 생성한다.
 			CFont font;
-			//3.2.15 글씨크기와 글씨체를 정하다.
-			font.CreatePointFont(this->notepadForm->GetFont().Getsize(), this->notepadForm->GetFont().GetStyle().c_str());
-			//3.2.16 폰트를 dc에 지정한다.
+			//3.2.14 글씨크기와 글씨체를 정하다.
+			//font.CreatePointFont(this->notepadForm->GetFont().GetSize(), this->notepadForm->GetFont().GetFaceName().c_str());
+			font.CreateFontIndirect(&this->notepadForm->font.GetLogFont());
+			//3.2.15 폰트를 dc에 지정한다.
 			dc.SelectObject(font);
-			//3.2.17 TEXTMETRIC을 생성한다.
+			//3.2.16 TEXTMETRIC을 생성한다.
 			TEXTMETRIC text;
-			//3.2.18 글꼴의 정보를 얻는다.
+			//3.2.17 글꼴의 정보를 얻는다.
 			dc.GetTextMetrics(&text);
-			//3.2.19 캐럿을 생성한다.
+			//3.2.18 캐럿을 생성한다.
 			this->notepadForm->GetCaret().Create(0, text.tmHeight);
-			//3.2.20 현재줄의 텍스트들을 저장한다.
+			//3.2.19 현재줄의 텍스트들을 저장한다.
 			CString letter = CString(this->notepadForm->current->GetContent().c_str());
-			//3.2.21 현재줄의 텍스트들의 size를 구한다.
+			//3.2.20 현재줄의 텍스트들의 size를 구한다.
 			CSize letterSize = dc.GetTextExtent(letter);
-			//3.2.22 캐럿을 이동시킨다.
+			//3.2.21 캐럿을 이동시킨다.
 			this->notepadForm->GetCaret().Move(letterSize.cx, (this->notepadForm->note->GetCurrent() - 1) * text.tmHeight);
-			//3.2.23 캐럿을 보이게 한다.
+			//3.2.22 캐럿을 보이게 한다.
 			this->notepadForm->GetCaret().Show();
+			//3.2.23 갱신한다.
+			this->notepadForm->Invalidate(TRUE);
 		}
 	}
 }

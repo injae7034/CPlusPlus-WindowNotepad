@@ -2,6 +2,7 @@
 #include "FileOpenCommand.h"
 #include "FileSaveCommand.h"
 #include "FileSaveDifferentNameCommand.h"
+#include "FontChangeCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -25,6 +26,10 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == IDM_FILE_SAVEDIFFERENTNAME)
 	{
 		command = new FileSaveDifferentNameCommand(this->notepadForm);
+	}
+	else if (nId == IDM_FONT_CHANGE)
+	{
+		command = new FontChangeCommand(this->notepadForm);
 	}
 
 	return command;
