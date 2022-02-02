@@ -5,6 +5,9 @@
 #include "Font.h"
 #include "resource.h"
 #include<afxwin.h>//CDialog 헤더파일
+#include<string>
+using namespace std;
+
 
 class TextExtent;
 class Glyph;
@@ -21,6 +24,7 @@ public:
 	Glyph* current;
 	Font font;
 	TextExtent* textExtent;
+	//ScrollController* scrollController;
 	//flag는 public으로
 	bool IsComposing;//한글이 조립중인지 아닌지 판별하기 위한 flag
 	bool IsDirty;//새파일인지 아닌지 판별하기 위한 flag
@@ -37,6 +41,8 @@ protected://#
 	afx_msg void OnPaint();
 	afx_msg void OnCommand(UINT nID);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnClose();
 	DECLARE_MESSAGE_MAP()
 private:
@@ -44,6 +50,8 @@ private:
 	//menu가 계속 notepadForm에 setMenu된채로 있게됨 단독적으로 CMenu가 있는 경우
 	//OnCreate 스택이 종료되면 CMenu가 사라지기때문에 뻑이남.
 	CMenu menu;
+	//CScrollBar horizontalScrollBar;//scrollController가 가지고 있으면 됨
+	//CScrollBar verticalScrollBar;//scrollController가 가지고 있으면 됨
 };
 
 //함수선언(함수포인터느낌)

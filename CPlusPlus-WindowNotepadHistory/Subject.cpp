@@ -30,6 +30,12 @@ Subject::~Subject()
 	}
 }
 
+//GetAt
+Observer* Subject::GetAt(Long index)
+{
+	return this->observers.GetAt(index);
+}
+
 //옵저버등록
 void Subject::Attach(Observer* observer)
 {
@@ -80,7 +86,33 @@ void Subject::Notify()
 		i++;
 	}
 }
+#if 0
+//Search
+Observer* Subject::Search(size_t key)
+{
+	//1. observer주소배열에서 원하는 자료유형의 크기를 찾을 때까지 반복한다.
+	Long i = 0;
+	Observer* observer = 0;
+	observer = this->observers.GetAt(i);
+	//2. i가 length보다 작은 동안 그리고 옵저버가 캐럿매니저가 아닌동안 반복한다.
+	while (i < this->length && sizeof(*observer) != key)
+	{
+		//2.1 옵저버 리스트에서 옵저버를 구한다.
+		observer = this->observers.GetAt(i);
+		//2.2 i를 감소시킨다.
+		i++;
+	}
+	//3.
+	if (sizeof(*observer) != key)
+	{
+		//3.1 
+		observer = 0;
 
+	}
+	//if(sizeof)
+	return observer;
+}
+#endif
 //함수포인터 정의
 int CompareObserver(void* one, void* other)
 {

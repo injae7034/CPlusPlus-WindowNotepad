@@ -9,8 +9,7 @@
 #include "CtrlHomeKeyAction.h"
 #include "EndKeyAction.h"
 #include "CtrlEndKeyAction.h"
-
-
+#include "KeyAction.h"
 
 //디폴트생성자
 KeyActionCreator::KeyActionCreator(NotepadForm* notepadForm)

@@ -4,10 +4,17 @@
 #include "KeyActionCreator.h"
 #include "Command.h"
 #include "Glyph.h"
-#include "CaretManager.h"
+#include "CaretController.h"
 #include "TextExtent.h"
 #include "File.h"
 #include "afxdlgs.h"//CFileDialog헤더파일
+#include "KeyAction.h"
+
+#include "ScrollActionCreator.h"
+#include "ScrollAction.h"
+#include "ScrollController.h"
+#include "HorizontalScroll.h"
+#include "VerticalScroll.h"
 
 HHOOK hSaveMessageBoxHook;//전역변수 선언
 
@@ -23,6 +30,8 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
 	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_FONT_CHANGE, OnCommand)
 	ON_WM_KEYDOWN()
+	ON_WM_VSCROLL()
+	ON_WM_HSCROLL()
 	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
@@ -47,13 +56,12 @@ NotepadForm::NotepadForm()
 	wsprintf(logFont.lfFaceName, "맑은 고딕");
 	this->font = Font(logFont, RGB(0, 0, 0));
 	this->textExtent = NULL;
-	//this->textExtent = new TextExtent(this);
-
 }
 
 //메모장 윈도우가 생성될 때
 int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
+	//this->ModifyStyle(0, WS_OVERLAPPEDWINDOW, SWP_DRAWFRAME);
 	//1. glyphCreator를 만든다.
 	GlyphCreator glyphCreator;
 	//2. 노트를 만든다.
@@ -88,6 +96,44 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	this->current = this->note->GetAt(rowIndex);
 	//12. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
 	this->current->First();
+	//13. scrollController를 생성한다.
+	ScrollController* scrollController = new ScrollController(this);
+	//14. 스크롤의 현재 화면의 크기를 구해준다.
+	//CRect rect;
+	//this->GetClientRect(&rect);
+	/*
+	//15. 스크롤 현재 화면의 크기에 맞게 수평 스크롤바를 생성한다.
+	scrollController->GetHorizontalScrollBar().Create(SBS_HORZ | SBS_BOTTOMALIGN | WS_CHILD
+		| WS_DISABLED, rect, this, 0);
+	scrollController->GetHorizontalScrollBar().ShowScrollBar();
+	//16. 스크롤 현재 화면의 크기에 맞게 수직 스크롤바를 생성한다.
+	scrollController->GetVerticalScrollBar().Create(SBS_VERT | SBS_RIGHTALIGN | WS_CHILD
+		| WS_DISABLED, rect, this, 0);
+	scrollController->GetVerticalScrollBar().ShowScrollBar();
+	*/
+	/*
+	//17. 수평스크롤에 대한 정보를 구한다.
+	SCROLLINFO horizontalScrollInfo;
+	scrollController->GetHorizontalScrollBar().GetScrollInfo(&horizontalScrollInfo);
+	//18. 수평스크롤에 필요한 정보를 저장한다.
+	scrollController->scroll[0] = new HorizontalScroll(scrollController, horizontalScrollInfo.nPos,
+		horizontalScrollInfo.nMin, horizontalScrollInfo.nMax, horizontalScrollInfo.nPage);
+	//19. 수직스크롤에 대한 정보를 구한다.
+	SCROLLINFO verticalScrollInfo;
+	scrollController->GetVerticalScrollBar().GetScrollInfo(&verticalScrollInfo);
+	//20. 수직스크롤에 대한 정보를 저장한다.
+	scrollController->scroll[1] = new VerticalScroll(scrollController, verticalScrollInfo.nPos,
+		verticalScrollInfo.nMin, verticalScrollInfo.nMax, verticalScrollInfo.nPage);
+	//21. 스크롤 컨트롤러가 생성되었음을 옵저버들에게 알린다.
+	//this->Notify();
+	*/
+
+	/* 이렇게 하면 OnCreate스택이 끝나면서 사라지기 때문에 당연히 CScrollBar가 생성되지 않는다.!
+	CScrollBar horizontalScrollBar;
+	horizontalScrollBar.Create(SBS_HORZ | SBS_BOTTOMALIGN | WS_CHILD,
+		CRect(5, 5, 1000, 30), this, 0);
+	horizontalScrollBar.ShowScrollBar();
+	*/
 
 	return 0;
 }
@@ -167,15 +213,13 @@ void NotepadForm::OnPaint()
 	//1. CPaintDC를 생성한다.
 	CPaintDC dc(this);
 	//2. 텍스트의 배경을 투명하게함.
-	//dc.SetBkMode(TRANSPARENT);
 	//3. 텍스트의 색깔을 정함.
 	dc.SetTextColor(this->font.GetColor());
 	//4. 왼쪽을 기준선으로 정함.
-	//dc.SetTextAlign(TA_LEFT);
+	dc.SetTextAlign(TA_LEFT);
 	//5. CFont를 생성한다.
 	CFont font;
 	//6. 글씨크기와 글씨체를 정하다.
-	//font.CreatePointFont(this->font.GetSize(), this->font.GetFaceName().c_str());
 	font.CreateFontIndirect(&this->font.GetLogFont());
 	//7. 폰트를 dc에 지정한다.
 	HFONT oldFont;
@@ -198,6 +242,57 @@ void NotepadForm::OnPaint()
 	dc.SelectObject(oldFont);
 	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음. 
 	font.DeleteObject();
+
+	/*
+	// 크기 구하기
+	CPaintDC dc(this);
+	CRect rect;
+	GetClientRect(&rect);
+	// 화면 그리기
+	CDC dcTemp;
+	dcTemp.CreateCompatibleDC(&dc);
+	HBITMAP hbmp = ::CreateCompatibleBitmap(dc, 10000, rect.Height() - 20);
+	// 가로 10000 크기로 생성 
+	HBITMAP hbmpOld = (HBITMAP)dcTemp.SelectObject(hbmp);
+	// 100마다 텍스트 출력
+	dcTemp.PatBlt(0, 0, 10000, rect.Height(), WHITENESS);
+	for (int iX = 0; iX < 10000; iX += 100)
+	{
+		CString sX;
+		sX.Format(_T("%d"), iX);
+		dcTemp.TextOut(iX, (rect.Height() / 2), sX);
+	}
+	SCROLLINFO scrInfo;
+	int iSrcX = 0;
+	if (NULL == m_ctlHScroll.GetSafeHwnd())
+	{
+		CRect rectHScroll;
+		rectHScroll.SetRect(rect.left, rect.top, rect.right, rect.bottom);
+		m_ctlHScroll.Create(WS_CHILD | WS_VISIBLE | SBS_HORZ | SBS_BOTTOMALIGN, rectHScroll, this, 0);
+		m_ctlHScroll.ShowScrollBar(TRUE);
+		scrInfo.cbSize = sizeof(scrInfo);
+		scrInfo.fMask = SIF_ALL;
+		scrInfo.nMin = 0;// 스크롤 최소값 
+		scrInfo.nMax = 10000; // 스크롤 최대값
+		scrInfo.nPage = rect.Width(); // 페이지 번호 
+		scrInfo.nTrackPos = 0; // 드래깅 상태의 트랙바 위치
+		scrInfo.nPos = 0; // 트랙바 위치 
+		m_ctlHScroll.SetScrollRange(scrInfo.nMin, scrInfo.nMax); // 범위 설정
+		m_ctlHScroll.SetScrollPos(scrInfo.nPos); // 위치 설정
+		m_ctlHScroll.SetScrollInfo(&scrInfo); // 스크롤바 정보 설정 
+	}
+	else
+	{
+		if (FALSE != m_ctlHScroll.GetScrollInfo(&scrInfo))
+		{
+			iSrcX = scrInfo.nPos; // 현재 스크롤 위치 받아옴 
+		}
+	}
+	dc.BitBlt(0, 0, rect.Width(), rect.Height(), &dcTemp, iSrcX, 0, SRCCOPY); // 더블 버퍼링
+	dcTemp.SelectObject(hbmpOld);
+	::DeleteObject(hbmp);
+	dcTemp.DeleteDC();
+	*/
 }
 
 //한글을 입력받을 때
@@ -206,54 +301,55 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 	//1. glyphCreator를 생성한다.
 	GlyphCreator glyphCreator;
 	WORD word = LOWORD(wParam);
+	//2. 키보드로부터 입력받을 정보를 바탕으로 한글을 저장한다.
 	char koreanLetter[3];
 	koreanLetter[0] = HIBYTE(word);
 	koreanLetter[1] = LOBYTE(word);
 	koreanLetter[2] = '\0';
-	//2. doubleByteLetter를 생성한다.
-	Glyph* doubleByteLetter = glyphCreator.Create((char*)koreanLetter);
 	//3. 현재 줄의 캐럿의 가로 위치를 구한다.
 	Long index = this->current->GetCurrent();
-	//4. IsComposing값이 '참'이면
+	//4. IsComposing값이 '참'이면(한글이 조립중인 상태이면)
 	if (this->IsComposing == true)
 	{
-		//4.1 현재 줄의 캐럿의 가로 위치 바로 앞에 있는 기존 한글을 지운다.
+		//4.1. 현재 줄의 캐럿의 가로 위치 바로 앞에 있는 기존 한글을 지운다.
 		//그러기 위해서는 캐럿의 현재 가로 위치에 1감소한 값을 넣어주면 된다.
 		this->current->Remove(index - 1);
-		//4.2 기존에 있던 글자가 지워졌기 때문에 캐럿의 현재 가로 위치는 1감소했기때문에
-		//캐럿의 현재 가로 위치값을 나타내는 index역시 1 감소시켜준다.
-		//index--;
-		//갱신된 current의 위치를 index에 저장한다.
+		//4.2 갱신된 current의 위치를 index에 저장한다.
 		index = this->current->GetCurrent();
+
 	}
-	//5. isComposing값이 '거짓'이면
-	else
+	//5. 현재위치의 한글을 지웠기 때문에 한글이 조립중이 아님으로 상태를 변경한다.
+	this->IsComposing = false;
+	//6. 한글이 입력되었으면(한글 조립중에 글자를 다 지워버리면 '\0'문자로 OnComposition에 입력된다.)
+	if (koreanLetter[0] != '\0')
 	{
-		//4.1 isComposing값을 '참'으로 바꾼다.
+		//6.1 doubleByteLetter를 생성한다.
+		Glyph* doubleByteLetter = glyphCreator.Create((char*)koreanLetter);
+		//6.2 index가 현재 줄의 length와 같으면
+		if (index == this->current->GetLength())
+		{
+			//6.2.1 현재 줄의 마지막 글자 뒤에 새로운 한글을 추가한다.
+			index = this->current->Add(doubleByteLetter);
+		}
+		//6.3. index가 현재 줄의 length와 다르면
+		else
+		{
+			//6.3.1 현재 줄의 index번째에 새로운 한글을 끼워 쓴다.
+			index = this->current->Add(index, doubleByteLetter);
+		}
+		//6.4 한글을 현재 위치에 추가했기때문에 한글이 조립중인 상태로 변경한다.
 		this->IsComposing = true;
 	}
-	//6. index가 현재 줄의 length와 같으면
-	if (index  == this->current->GetLength())
-	{
-		//6.1 현재 줄의 마지막 글자 뒤에 새로운 한글을 추가한다.
-		index = this->current->Add(doubleByteLetter);
-	}
-	//7. index가 현재 줄의 length와 다르면
-	else
-	{
-		//7.1 현재 줄의 index번째에 새로운 한글을 끼워 쓴다.
-		index = this->current->Add(index, doubleByteLetter);
-	}
-	//8. 캐럿의 위치와 크기가 변경되었음을 알린다.
+	//7. 캐럿의 위치와 크기가 변경되었음을 알린다.
 	this->Notify();
-	//9. 메모장 제목에 *를 추가한다.
+	//8. 메모장 제목에 *를 추가한다.
 	string name = this->fileName;
 	name.insert(0, "*");
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//10. 메모장에 변경사항이 있음을 저장한다.
+	//9. 메모장에 변경사항이 있음을 저장한다.
 	this->IsDirty = true;
-	//11. 갱신한다.
+	//10. 갱신한다.
 	Invalidate(TRUE);
 
 	return ::DefWindowProc(this->m_hWnd, WM_IME_COMPOSITION, wParam, lParam);
@@ -320,7 +416,7 @@ LRESULT NotepadForm::OnStartCompostion(WPARAM wParam, LPARAM lParam)
 void NotepadForm::OnSetFocus(CWnd* pOldWnd)
 {
 	//1. 캐럿 매니저를 생성한다.
-	CaretManager* caretManager = new CaretManager(this);
+	CaretController* caretController = new CaretController(this);
 	//2. 캐럿이 변경되었음을 옵저버들에게 알린다.
 	this->Notify();
 }
@@ -333,7 +429,7 @@ void NotepadForm::OnKillFocus(CWnd* pNewWnd)
 	//1. 옵저버 리스트에서 옵저버를 구한다.
 	Observer* observer = this->observers.GetAt(i);
 	//2. i가 0보다 크거나 같은 동안 옵저버가 캐럿매니저가 아닌동안 반복한다.
-	while (i >= 0 && dynamic_cast<CaretManager*>(observer) != 0)
+	while (i >= 0 && dynamic_cast<CaretController*>(observer) != observer)
 	{
 		//2.1 옵저버 리스트에서 옵저버를 구한다.
 		observer = this->observers.GetAt(i);
@@ -341,7 +437,7 @@ void NotepadForm::OnKillFocus(CWnd* pNewWnd)
 		i--;
 	}
 	//3. 옵저버가 CaretManager이면
-	if (dynamic_cast<CaretManager*>(observer))
+	if (dynamic_cast<CaretController*>(observer))
 	{
 		//3.1 힙에 할당된 옵저버의 내용을 할당해제한다.
 		delete observer;//힙에서 내용 할당해제
@@ -390,6 +486,50 @@ void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 	//4. 변경사항을 옵저버리스트에게 알린다.
 	this->Notify();
+}
+
+//메모장에서 세로 스크롤을 클릭할 때
+void NotepadForm::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	//1. scrollActionCreator를 생성한다.
+	ScrollActionCreator scrollActionCreator(this);
+	//2. concreteScrollAction을 생성한다.
+	ScrollAction* scrollAction = scrollActionCreator.Create(nSBCode);
+	//3. scrollAction이 NULL이 아니면
+	if (scrollAction != NULL)
+	{
+		//3.1 ConcreteScrollAction의 OnVScroll 함수를 실행한다.
+		scrollAction->OnVScroll(nSBCode, nPos, pScrollBar);
+		//3.2
+		//3.2 scrollAction을 할당해제한다.
+		delete scrollAction;
+	}
+	//4. 변경사항을 옵저버들에게 알린다.
+	this->Notify();
+	this->Invalidate();
+	//OnPaint();
+	//CWnd::OnVScroll(nSBCode, nPos, pScrollBar);	
+}
+
+//메모장에서 가로 스크롤을 클릭할 때
+void NotepadForm::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	//1. scrollActionCreator를 생성한다.
+	ScrollActionCreator scrollActionCreator(this);
+	//2. concreteScrollAction을 생성한다.
+	ScrollAction* scrollAction = scrollActionCreator.Create(nSBCode);
+	//3. scrollAction이 NULL이 아니면
+	if (scrollAction != NULL)
+	{
+		//3.1 ConcreteScrollAction의 OnHScroll 함수를 실행한다.
+		scrollAction->OnHScroll(nSBCode, nPos, pScrollBar);
+		//3.2 scrollAction을 할당해제한다.
+		delete scrollAction;
+	}
+	//4. 변경사항을 옵저버들에게 알린다.
+	this->Notify();
+	this->Invalidate();
+	//CWnd::OnHScroll(nSBCode, nPos, pScrollBar);																																		   출처: https://3001ssw.tistory.com/117?category=939609 [C++, WinAPI, Android, OpenCV 정리 블로그]
 }
 
 //메모장에서 닫기버튼을 클릭했을 떄
@@ -471,6 +611,40 @@ void NotepadForm::OnClose()
 		{
 			delete this->textExtent;
 		}
+		//NotepadForm는 Subject의 상속을 받았기 때문에 NotepadForm이 소멸될 때
+		//Subject의 소멸자가 호출되면 ScrollController를 알아서 할당해제시켜준다.
+		//ScrollController는 NotepadForm이 생성될 때 힙에 한전 할당되고 NotepadForm이 소멸될 때
+		//같이 소멸되기 때문에 따로 ScrollController를 할당해제시켜줄 필요가 없다.
+		//CaretController같은 경우는 OnSetFoucs될때마다 생성되고 OnKillFoculs될때마다 할당해제되는데
+		//이 때 NotepadForm은 소멸되지않기 때문에 반드시 OnKillFoucs에서 별도로 할당해제를 해줘야한다.
+		/*
+		//observer주소배열에서 ScrollController를 찾을 때까지 반복한다.
+		Long i = this->length - 1;
+		//1. 옵저버 리스트에서 옵저버를 구한다.
+		Observer* observer = this->observers.GetAt(i);
+		//2. i가 0보다 크거나 같은 동안 옵저버가 캐럿매니저가 아닌동안 반복한다.
+		while (i >= 0 && dynamic_cast<ScrollController*>(observer) != 0)
+		{
+			//2.1 옵저버 리스트에서 옵저버를 구한다.
+			observer = this->observers.GetAt(i);
+			//2.2 i를 감소시킨다.
+			i--;
+		}
+		//3. 옵저버가 CaretManager이면
+		if (dynamic_cast<ScrollController*>(observer))
+		{
+			//3.1 힙에 할당된 옵저버의 내용을 할당해제한다.
+			delete observer;//힙에서 내용 할당해제
+			i++;//반복문에서 i를 한번 더 -1해줬기 때문에 원상태로 돌리기 위해 +1을 해줌.
+			//3.2 옵저버리스트들 중 이전에 힙에서 할당해제된 내용의 주소를 가지고 있는
+			//멤버를 할당해제한다.
+			this->observers.Delete(i);//힙에서 내용을 가지고 있던 주소 할당해제
+			//3.3 배열요소(주소를 저장)를 한개 할당해제했으니 할당량을 감소시킨다.
+			this->capacity--;
+			//3.4 사용량을 감소시킨다.
+			this->length--;
+		}
+		*/
 		//3.3 메모장을 닫는다.
 		CFrameWnd::OnClose();
 	}
