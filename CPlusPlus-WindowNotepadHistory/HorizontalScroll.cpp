@@ -59,12 +59,12 @@ Long HorizontalScroll::LineNext()
 	//1. 현재 위치를 한글기준으로 한 칸 다음으로 이동한다.
 	Long koreanLetterWidth = this->scrollController->notepadForm->textExtent->GetTextWidth("가");
 	this->currentPos += koreanLetterWidth;
-	//2. 현재 위치가 max보다 크면
-	Long max = this->max - this->pageSize;
-	if (this->currentPos > max)
+	//2. 현재 위치가 scrollMaxPos보다 크면
+	Long scrollMaxPos = this->max - this->pageSize;
+	if (this->currentPos > scrollMaxPos)
 	{
-		//2.1 현재 위치를 max로 변경한다.
-		this->currentPos = max;
+		//2.1 현재 위치를 scrollMaxPos로 변경한다.
+		this->currentPos = scrollMaxPos;
 	}
 	//3. 변경된 현재 위치를 출력한다.
 	return this->currentPos;

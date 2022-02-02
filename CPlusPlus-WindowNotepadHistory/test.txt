@@ -48,6 +48,6 @@ dc.BitBlt( 0, 0, rect.Width(), rect.Height(), &dcTemp, iSrcX, 0, SRCCOPY ); // �
  dcTemp.SelectObject( hbmpOld ); 
 ::DeleteObject( hbmp );
 dcTemp.DeleteDC();
-
+ab                                                
 출처: https://3001ssw.tistory.com/117?category=939609
  [C++, WinAPI, Android, OpenCV 정리 블로그]

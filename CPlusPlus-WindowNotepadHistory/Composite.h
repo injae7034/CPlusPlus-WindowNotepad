@@ -31,6 +31,7 @@ public:
 	virtual Long Last();
 	virtual Long Previous();
 	virtual Long Next();
+	virtual Long Move(Long index);
 	virtual Long NextWord();
 	virtual Long PreviousWord();
 	//인라인함수

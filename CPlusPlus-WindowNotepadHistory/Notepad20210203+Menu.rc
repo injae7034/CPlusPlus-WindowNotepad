@@ -61,6 +61,7 @@ BEGIN
     POPUP "서식"
     BEGIN
         MENUITEM "글꼴",                          IDM_FONT_CHANGE
+        MENUITEM "자동 줄 바꿈",                     IDM_ROW_AUTOCHANGE
     END
 END
 

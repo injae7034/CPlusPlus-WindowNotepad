@@ -1,5 +1,7 @@
 #include "Scroll.h"
 #include "ScrollController.h"
+#include "TextExtent.h"
+#include "NotepadForm.h"
 
 //디폴트생성자
 Scroll::Scroll(ScrollController* scrollController)
@@ -57,7 +59,8 @@ Long Scroll::First()
 Long Scroll::Last()
 {
 	//1. 현재 위치를 마지막으로 이동시킨다.
-	this->currentPos = this->max;
+	Long scrollMaxPos = this->max - this->pageSize;
+	this->currentPos = scrollMaxPos;
 	//2. 현재 위치를 출력한다.
 	return this->currentPos;
 }
@@ -77,6 +80,7 @@ Long Scroll::LineNext()
 //pagePrevious
 Long Scroll::PagePrevious()
 {
+
 	//1. 현재 위치에 화면크기만큼 빼준다.
 	this->currentPos -= this->pageSize;
 	//2. 현재 위치가 음수이면
@@ -94,12 +98,12 @@ Long Scroll::PageNext()
 {
 	//1. 현재 위치에 화면크기만큼 더해준다.
 	this->currentPos += this->pageSize;
-	//2. 현재 위치가 max보다 크면
-	Long max = this->max - this->pageSize;
-	if (this->currentPos > max)
+	//2. 현재 위치가 scrollMaxPos보다 크면
+	Long scrollMaxPos = this->max - this->pageSize;
+	if (this->currentPos > scrollMaxPos)
 	{
-		//2.1 현재 위치를 max로 변경한다.
-		this->currentPos = max;
+		//2.1 현재 위치를 scrollMaxPos로 변경한다.
+		this->currentPos = scrollMaxPos;
 	}
 	//3. 현재 위치를 출력한다.
 	return this->currentPos;

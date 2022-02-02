@@ -83,6 +83,12 @@ Long Glyph::Next()
 	return -1;
 }
 
+//Move
+Long Glyph::Move(Long index)
+{
+	return index;
+}
+
 //NextWord
 Long Glyph::NextWord()
 {

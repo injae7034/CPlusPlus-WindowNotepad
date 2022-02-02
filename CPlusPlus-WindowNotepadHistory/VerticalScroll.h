@@ -16,6 +16,8 @@ public:
 	VerticalScroll& operator=(const VerticalScroll& source);//치환연산자
 	virtual Long LinePrevious();
 	virtual Long LineNext();
+	virtual Long PagePrevious();
+	virtual Long PageNext();
 	~VerticalScroll();//소멸자
 };
 

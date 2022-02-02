@@ -28,7 +28,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_MESSAGE(WM_IME_CHAR, OnImeChar)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
-	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_FONT_CHANGE, OnCommand)
+	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_ROW_AUTOCHANGE, OnCommand)
 	ON_WM_KEYDOWN()
 	ON_WM_VSCROLL()
 	ON_WM_HSCROLL()
@@ -152,6 +152,94 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//4.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
 		this->current->First();
 	}
+
+	Long distance;
+	//9. 캐럿의 현재 세로 위치를 구한다.
+	Long currentRowIndex = this->note->GetCurrent();
+	//10. caret 이동 후에 캐럿의 세로 범위(시작과 끝)을 구한다.(beginCaretYPos, endCaretYPos)
+	Long beginCaretYPos = this->textExtent->GetHeight() * (currentRowIndex);
+	Long endCaretYPos = this->textExtent->GetHeight() * (currentRowIndex + 1);
+	//11. 수직스크롤을 이동하기 전에 현재 수직스크롤의 VScrollPos(스크롤의 현재 위치)를 구한다.
+	Long VScrollPos = this->GetScrollPos(SB_VERT);
+	//12. 세로스크롤의 현재위치(VScrollPos)와 현재화면의 세로길이의 합을 구한다.
+	Long VerticalSum = VScrollPos + this->
+		scrollController->scroll[1]->GetPageSize();
+	//13. 캐럿의 세로 위치 시작점(beginCaretYPos)이 
+	//수직스크롤의 현재위치(VScrollPos)보다 메모장에서 위에 있으면
+	if (beginCaretYPos < VScrollPos)
+	{
+		//13.1 수직스크롤이 이동할 위치(distance)를 캐럿의 세로 위치 시작점으로 정한다.
+		distance = beginCaretYPos;
+		//13.2 수직스크의 현재 위치를 distance로 이동시킨다.
+		this->scrollController->scroll[1]->Move(distance);
+		//13.3 수직스크롤바의 Thumb를 수직스크롤의 현재위치로 이동시킨다.
+		this->SetScrollPos(SB_VERT,
+			this->scrollController->scroll[1]->GetCurrentPos());
+	}
+	//14. 캐럿의 세로위치 끝지점(endCaretYPos)이 수직스크롤의 현재 위치(VScrollPos)와 
+	//현재화면의 세로길이의 합(VerticalSum)보다 메모장에서 아래에 있으면
+	else if (endCaretYPos > VerticalSum)
+	{
+		//14.1 수직스크롤이 이동할 범위(distance)를 구한다.
+		//캐럿의 세로 위치 마지막 지점에서 화면의 세로길이의 차로 정한다.
+		distance = endCaretYPos - this->
+			scrollController->scroll[1]->GetPageSize();
+		//14.2 수직스크롤의 현재위치를 distance로 이동시킨다.
+		this->scrollController->scroll[1]->Move(distance);
+		//14.3 수직스크롤바의 Thumb를 수직스크롤의 현재 위치로 이동시킨다.
+		this->SetScrollPos(SB_VERT,
+			this->scrollController->scroll[1]->GetCurrentPos());
+	}
+	//15. 캐럿이 이동한 후에 캐럿의 현재 가로위치(caretXPos)를 구한다.
+	Long caretXPos = this->textExtent->GetTextWidth(this->
+		current->GetPartOfContent(this->current->GetCurrent()));
+	//16 수평스크롤이 이동하기전에 수평스크롤의 현재위치(HScrollPos)를 구한다.
+	Long HScrollPos = this->GetScrollPos(SB_HORZ);
+	//17. 수평스크롤의 현재위치(HScrollPos)와 현재화면의 가로길이의 합을 구한다.
+	Long HorizontalSum = HScrollPos + this->
+		scrollController->scroll[0]->GetPageSize();
+	//18. 캐럿의 현재 가로위치(caretXPos)가 수평스크롤의 현재위치(HScrollPos)보다
+		//메모장에서 앞에 있으면
+	if (caretXPos < HScrollPos)
+	{
+		//18.1 수평스크롤이 이동할 위치(distance)를 구한다.
+		distance = caretXPos - (this->
+			scrollController->scroll[0]->GetPageSize() / 5);
+		//18.2 distance가 음수이면
+		if (distance < 0)
+		{
+			//18.2.1 distance를 0으로 바꿔준다.
+			distance = 0;
+		}
+		//18.3 수평스크롤의 현재위치를 distance로 이동시킨다.
+		this->scrollController->scroll[0]->Move(distance);
+		//18.4 수평스크롤바의 Thumb를 수평스크롤의 현재 위치로 이동시킨다.
+		this->SetScrollPos(SB_HORZ,
+			this->scrollController->scroll[0]->GetCurrentPos());
+	}
+	//19. 캐럿의 현재 가로위치(caretXPos)가 수평스크롤의 현재위치(HScrollPos)와
+	//현재화면의 가로길이의 합(HorizontalSum)보다 메모장에서 뒤에 있으면
+	else if (caretXPos > HorizontalSum)
+	{
+		//19.1 수평스크롤이 이동할 위치(distance)를 구한다.
+		distance = caretXPos - (this->
+			scrollController->scroll[0]->GetPageSize() / 5 * 4);
+		//19.2 수평스크롤바의 Thumb의 최대 이동값(maxScrollPos)를 구한다.
+		Long maxScrollPos = this->scrollController->scroll[0]->GetMax()
+			- this->scrollController->scroll[0]->GetPageSize();
+		//19.3 distance가 maxScrollPos보다 크면
+		if (distance > maxScrollPos)
+		{
+			//19.3.1 distance에 maxScrollPos를 대입한다.
+			distance = maxScrollPos;
+		}
+		//19.4 수평스크롤의 현재위치를 distance로 이동시킨다.
+		this->scrollController->scroll[0]->Move(distance);
+		//19.5 수평스크롤바의 Thumb를 수평스크롤의 현재 위치로 이동시킨다.
+		this->SetScrollPos(SB_HORZ,
+			this->scrollController->scroll[0]->GetCurrentPos());
+	}
+
 	//5. 캐럿의 위치와 크기가 변경되었음을 알린다.
 	this->Notify();
 	//6. isComposing을 false로 바꾼다.
@@ -259,6 +347,94 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 		//6.4 한글을 현재 위치에 추가했기때문에 한글이 조립중인 상태로 변경한다.
 		this->IsComposing = true;
 	}
+
+	Long distance;
+	//9. 캐럿의 현재 세로 위치를 구한다.
+	Long currentRowIndex = this->note->GetCurrent();
+	//10. caret 이동 후에 캐럿의 세로 범위(시작과 끝)을 구한다.(beginCaretYPos, endCaretYPos)
+	Long beginCaretYPos = this->textExtent->GetHeight() * (currentRowIndex);
+	Long endCaretYPos = this->textExtent->GetHeight() * (currentRowIndex + 1);
+	//11. 수직스크롤을 이동하기 전에 현재 수직스크롤의 VScrollPos(스크롤의 현재 위치)를 구한다.
+	Long VScrollPos = this->GetScrollPos(SB_VERT);
+	//12. 세로스크롤의 현재위치(VScrollPos)와 현재화면의 세로길이의 합을 구한다.
+	Long VerticalSum = VScrollPos + this->
+		scrollController->scroll[1]->GetPageSize();
+	//13. 캐럿의 세로 위치 시작점(beginCaretYPos)이 
+	//수직스크롤의 현재위치(VScrollPos)보다 메모장에서 위에 있으면
+	if (beginCaretYPos < VScrollPos)
+	{
+		//13.1 수직스크롤이 이동할 위치(distance)를 캐럿의 세로 위치 시작점으로 정한다.
+		distance = beginCaretYPos;
+		//13.2 수직스크의 현재 위치를 distance로 이동시킨다.
+		this->scrollController->scroll[1]->Move(distance);
+		//13.3 수직스크롤바의 Thumb를 수직스크롤의 현재위치로 이동시킨다.
+		this->SetScrollPos(SB_VERT,
+			this->scrollController->scroll[1]->GetCurrentPos());
+	}
+	//14. 캐럿의 세로위치 끝지점(endCaretYPos)이 수직스크롤의 현재 위치(VScrollPos)와 
+	//현재화면의 세로길이의 합(VerticalSum)보다 메모장에서 아래에 있으면
+	else if (endCaretYPos > VerticalSum)
+	{
+		//14.1 수직스크롤이 이동할 범위(distance)를 구한다.
+		//캐럿의 세로 위치 마지막 지점에서 화면의 세로길이의 차로 정한다.
+		distance = endCaretYPos - this->
+			scrollController->scroll[1]->GetPageSize();
+		//14.2 수직스크롤의 현재위치를 distance로 이동시킨다.
+		this->scrollController->scroll[1]->Move(distance);
+		//14.3 수직스크롤바의 Thumb를 수직스크롤의 현재 위치로 이동시킨다.
+		this->SetScrollPos(SB_VERT,
+			this->scrollController->scroll[1]->GetCurrentPos());
+	}
+	//15. 캐럿이 이동한 후에 캐럿의 현재 가로위치(caretXPos)를 구한다.
+	Long caretXPos = this->textExtent->GetTextWidth(this->
+		current->GetPartOfContent(this->current->GetCurrent()));
+	//16 수평스크롤이 이동하기전에 수평스크롤의 현재위치(HScrollPos)를 구한다.
+	Long HScrollPos = this->GetScrollPos(SB_HORZ);
+	//17. 수평스크롤의 현재위치(HScrollPos)와 현재화면의 가로길이의 합을 구한다.
+	Long HorizontalSum = HScrollPos + this->
+		scrollController->scroll[0]->GetPageSize();
+	//18. 캐럿의 현재 가로위치(caretXPos)가 수평스크롤의 현재위치(HScrollPos)보다
+		//메모장에서 앞에 있으면
+	if (caretXPos < HScrollPos)
+	{
+		//18.1 수평스크롤이 이동할 위치(distance)를 구한다.
+		distance = caretXPos - (this->
+			scrollController->scroll[0]->GetPageSize() / 5);
+		//18.2 distance가 음수이면
+		if (distance < 0)
+		{
+			//18.2.1 distance를 0으로 바꿔준다.
+			distance = 0;
+		}
+		//18.3 수평스크롤의 현재위치를 distance로 이동시킨다.
+		this->scrollController->scroll[0]->Move(distance);
+		//18.4 수평스크롤바의 Thumb를 수평스크롤의 현재 위치로 이동시킨다.
+		this->SetScrollPos(SB_HORZ,
+			this->scrollController->scroll[0]->GetCurrentPos());
+	}
+	//19. 캐럿의 현재 가로위치(caretXPos)가 수평스크롤의 현재위치(HScrollPos)와
+	//현재화면의 가로길이의 합(HorizontalSum)보다 메모장에서 뒤에 있으면
+	else if (caretXPos > HorizontalSum)
+	{
+		//19.1 수평스크롤이 이동할 위치(distance)를 구한다.
+		distance = caretXPos - (this->
+			scrollController->scroll[0]->GetPageSize() / 5 * 4);
+		//19.2 수평스크롤바의 Thumb의 최대 이동값(maxScrollPos)를 구한다.
+		Long maxScrollPos = this->scrollController->scroll[0]->GetMax()
+			- this->scrollController->scroll[0]->GetPageSize();
+		//19.3 distance가 maxScrollPos보다 크면
+		if (distance > maxScrollPos)
+		{
+			//19.3.1 distance에 maxScrollPos를 대입한다.
+			distance = maxScrollPos;
+		}
+		//19.4 수평스크롤의 현재위치를 distance로 이동시킨다.
+		this->scrollController->scroll[0]->Move(distance);
+		//19.5 수평스크롤바의 Thumb를 수평스크롤의 현재 위치로 이동시킨다.
+		this->SetScrollPos(SB_HORZ,
+			this->scrollController->scroll[0]->GetCurrentPos());
+	}
+
 	//7. 캐럿의 위치와 크기가 변경되었음을 알린다.
 	this->Notify();
 	//8. 메모장 제목에 *를 추가한다.
@@ -308,6 +484,94 @@ LRESULT NotepadForm::OnImeChar(WPARAM wParam, LPARAM lParam)
 		//6.1 현재 줄의 index번째에 새로운 한글을 끼워 쓴다.
 		index = this->current->Add(index, doubleByteLetter);
 	}
+
+	Long distance;
+	//9. 캐럿의 현재 세로 위치를 구한다.
+	Long currentRowIndex = this->note->GetCurrent();
+	//10. caret 이동 후에 캐럿의 세로 범위(시작과 끝)을 구한다.(beginCaretYPos, endCaretYPos)
+	Long beginCaretYPos = this->textExtent->GetHeight() * (currentRowIndex);
+	Long endCaretYPos = this->textExtent->GetHeight() * (currentRowIndex + 1);
+	//11. 수직스크롤을 이동하기 전에 현재 수직스크롤의 VScrollPos(스크롤의 현재 위치)를 구한다.
+	Long VScrollPos = this->GetScrollPos(SB_VERT);
+	//12. 세로스크롤의 현재위치(VScrollPos)와 현재화면의 세로길이의 합을 구한다.
+	Long VerticalSum = VScrollPos + this->
+		scrollController->scroll[1]->GetPageSize();
+	//13. 캐럿의 세로 위치 시작점(beginCaretYPos)이 
+	//수직스크롤의 현재위치(VScrollPos)보다 메모장에서 위에 있으면
+	if (beginCaretYPos < VScrollPos)
+	{
+		//13.1 수직스크롤이 이동할 위치(distance)를 캐럿의 세로 위치 시작점으로 정한다.
+		distance = beginCaretYPos;
+		//13.2 수직스크의 현재 위치를 distance로 이동시킨다.
+		this->scrollController->scroll[1]->Move(distance);
+		//13.3 수직스크롤바의 Thumb를 수직스크롤의 현재위치로 이동시킨다.
+		this->SetScrollPos(SB_VERT,
+			this->scrollController->scroll[1]->GetCurrentPos());
+	}
+	//14. 캐럿의 세로위치 끝지점(endCaretYPos)이 수직스크롤의 현재 위치(VScrollPos)와 
+	//현재화면의 세로길이의 합(VerticalSum)보다 메모장에서 아래에 있으면
+	else if (endCaretYPos > VerticalSum)
+	{
+		//14.1 수직스크롤이 이동할 범위(distance)를 구한다.
+		//캐럿의 세로 위치 마지막 지점에서 화면의 세로길이의 차로 정한다.
+		distance = endCaretYPos - this->
+			scrollController->scroll[1]->GetPageSize();
+		//14.2 수직스크롤의 현재위치를 distance로 이동시킨다.
+		this->scrollController->scroll[1]->Move(distance);
+		//14.3 수직스크롤바의 Thumb를 수직스크롤의 현재 위치로 이동시킨다.
+		this->SetScrollPos(SB_VERT,
+			this->scrollController->scroll[1]->GetCurrentPos());
+	}
+	//15. 캐럿이 이동한 후에 캐럿의 현재 가로위치(caretXPos)를 구한다.
+	Long caretXPos = this->textExtent->GetTextWidth(this->
+		current->GetPartOfContent(this->current->GetCurrent()));
+	//16 수평스크롤이 이동하기전에 수평스크롤의 현재위치(HScrollPos)를 구한다.
+	Long HScrollPos = this->GetScrollPos(SB_HORZ);
+	//17. 수평스크롤의 현재위치(HScrollPos)와 현재화면의 가로길이의 합을 구한다.
+	Long HorizontalSum = HScrollPos + this->
+		scrollController->scroll[0]->GetPageSize();
+	//18. 캐럿의 현재 가로위치(caretXPos)가 수평스크롤의 현재위치(HScrollPos)보다
+		//메모장에서 앞에 있으면
+	if (caretXPos < HScrollPos)
+	{
+		//18.1 수평스크롤이 이동할 위치(distance)를 구한다.
+		distance = caretXPos - (this->
+			scrollController->scroll[0]->GetPageSize() / 5);
+		//18.2 distance가 음수이면
+		if (distance < 0)
+		{
+			//18.2.1 distance를 0으로 바꿔준다.
+			distance = 0;
+		}
+		//18.3 수평스크롤의 현재위치를 distance로 이동시킨다.
+		this->scrollController->scroll[0]->Move(distance);
+		//18.4 수평스크롤바의 Thumb를 수평스크롤의 현재 위치로 이동시킨다.
+		this->SetScrollPos(SB_HORZ,
+			this->scrollController->scroll[0]->GetCurrentPos());
+	}
+	//19. 캐럿의 현재 가로위치(caretXPos)가 수평스크롤의 현재위치(HScrollPos)와
+	//현재화면의 가로길이의 합(HorizontalSum)보다 메모장에서 뒤에 있으면
+	else if (caretXPos > HorizontalSum)
+	{
+		//19.1 수평스크롤이 이동할 위치(distance)를 구한다.
+		distance = caretXPos - (this->
+			scrollController->scroll[0]->GetPageSize() / 5 * 4);
+		//19.2 수평스크롤바의 Thumb의 최대 이동값(maxScrollPos)를 구한다.
+		Long maxScrollPos = this->scrollController->scroll[0]->GetMax()
+			- this->scrollController->scroll[0]->GetPageSize();
+		//19.3 distance가 maxScrollPos보다 크면
+		if (distance > maxScrollPos)
+		{
+			//19.3.1 distance에 maxScrollPos를 대입한다.
+			distance = maxScrollPos;
+		}
+		//19.4 수평스크롤의 현재위치를 distance로 이동시킨다.
+		this->scrollController->scroll[0]->Move(distance);
+		//19.5 수평스크롤바의 Thumb를 수평스크롤의 현재 위치로 이동시킨다.
+		this->SetScrollPos(SB_HORZ,
+			this->scrollController->scroll[0]->GetCurrentPos());
+	}
+
 	//7. IsComposing을 false로 바꾼다.
 	this->IsComposing = false;
 	//8. 캐럿이 변경되었음을 알린다.

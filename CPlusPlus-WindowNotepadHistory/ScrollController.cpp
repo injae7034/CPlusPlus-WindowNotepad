@@ -70,18 +70,21 @@ void ScrollController::Update()
 	this->notepadForm->SetScrollInfo(SB_HORZ, &scrollInfo);
 	//7. 현재 화면의 세로 길이를 구한다.
 	pageSize = rect.Height();
-	//8. 현재 화면에서 텍스트의 총 세로 길이(용지최대세로길이)를 구한다.
-	max = this->notepadForm->textExtent->GetHeight() * this->notepadForm->note->GetLength();
-	//9. 수직스크롤에 대한 정보를 갱신해준다.
+	//8.페이지 단위로 이동할 때 화면에서 위에 줄이 잘리지 않도록 여백을 구해서 max에 더해준다.
+	Long letterHeight = this->notepadForm->textExtent->GetHeight();
+	Long blank = pageSize - (pageSize / letterHeight * letterHeight);
+	//9. 현재 화면에서 텍스트의 총 세로 길이(용지최대세로길이)를 구한다.
+	max = this->notepadForm->textExtent->GetHeight() * (this->notepadForm->note->GetLength());
+	//10. 수직스크롤에 대한 정보를 갱신해준다.
 	this->scroll[1]->min = 0;
-	this->scroll[1]->max = max;
+	this->scroll[1]->max = max + blank;//페이지단위 이동시 남는 공간을 더해줌.
 	this->scroll[1]->currentPos = this->notepadForm->GetScrollPos(SB_VERT);
 	this->scroll[1]->pageSize = pageSize;
 	scrollInfo.nMin = this->scroll[1]->min;
 	scrollInfo.nMax = this->scroll[1]->max;
 	scrollInfo.nPos = this->scroll[1]->currentPos;
 	scrollInfo.nPage = this->scroll[1]->pageSize;
-	//10. 수직스크롤바에 대한 수직스크롤 정보를 갱신해준다.
+	//11. 수직스크롤바에 대한 수직스크롤 정보를 갱신해준다.
 	this->notepadForm->SetScrollInfo(SB_VERT, &scrollInfo);
 }
 

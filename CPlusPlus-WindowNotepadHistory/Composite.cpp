@@ -276,6 +276,25 @@ Long Composite::Next()
 	return this->current;
 }
 
+Long Composite::Move(Long index)
+{
+	//1. index가 Note의 줄의 개수보다 작으면
+	if (index < this->length)
+	{
+		//1.1 Note의 현재 줄을 index로 이동시킨다.
+		this->current = index;
+	}
+	//2. index가 Note의 줄의 개수보다 크거나 같으면
+	else
+	{
+		//2.1 Note의 현재 줄을 마지막줄로 이동시킨다.
+		this->current = this->length - 1;
+	}
+	//3. 현재 줄의 위치를 출력한다.
+	return this->current;
+}
+
+
 //줄에서 캐럿을 단어단위로 오른쪽으로 이동시키기(Row기준)
 Long Composite::NextWord()
 {
