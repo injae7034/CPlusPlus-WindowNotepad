@@ -1,8 +1,6 @@
 #include "File.h"
 #include "NotepadForm.h"
 #include "GlyphCreator.h"
-//#include<iostream>
-//#include<fstream>
 #include<string>
 #include<cstdio>
 
@@ -11,21 +9,21 @@ using namespace std;
 
 //기본생성자
 File::File(NotepadForm *notepadForm)
-	:name(""), position("")
+	:name("제목 없음"), path("")
 {
     this->notepadForm = notepadForm;
 }
 
 //매개변수 3개 생성자
-File::File(NotepadForm* noterpadForm, string name, string positon)
-	:name(name), position(positon)
+File::File(NotepadForm* notepadForm, string name, string path)
+	:name(name), path(path)
 {
     this->notepadForm = notepadForm;
 }
 
 //복사생성자
 File::File(const File& source)
-	:name(source.name), position(source.position)
+	:name(source.name), path(source.path)
 {
     this->notepadForm = source.notepadForm;
 }
@@ -35,7 +33,7 @@ File& File::operator=(const File& source)
 {
     this->notepadForm = source.notepadForm;
 	this->name = source.name;
-	this->position = source.position;
+	this->path = source.path;
 
     return *this;
 }
@@ -47,14 +45,14 @@ File::~File()
 }
 
 //가져오기
-void File::Load(string name)
+void File::Load(string name, string path)
 {
     this->name = name;
-    this->name += ".txt";
+    this->path = path;
 
     FILE* file;
 
-    file = fopen((char*)this->name.c_str(), "rt");
+    file = fopen((char*)this->path.c_str(), "rt");
     if (file != NULL)
     {
         GlyphCreator glyphCreator;
@@ -184,15 +182,15 @@ void File::Load(string name)
 #endif
 
 //보관하기
-void File::Save(string name)
+void File::Save(string name, string path)
 {
     this->name = name;
-    this->name += ".txt";
+    this->path = path;
     //반복제어변수
     Long i;
     FILE* file;
     //파일을 열어줌
-    file = fopen((char*)this->name.c_str(), "wt");
+    file = fopen((char*)this->path.c_str(), "wt");
     if (file != NULL)
     {
         //fprintf(file, "Hello World?");

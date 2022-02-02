@@ -1,5 +1,8 @@
 #include "NotepadForm.h"
 #include "GlyphCreator.h"
+#include "afxdlgs.h"//CFileDialog헤더파일
+
+HHOOK hSaveMessageBoxHook;//전역변수 선언
 
 BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_WM_CREATE()
@@ -10,8 +13,10 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_MESSAGE(WM_IME_COMPOSITION, OnComposition)
 	ON_MESSAGE(WM_IME_CHAR, OnImeChar)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
+	ON_COMMAND(IDM_FILE_OPEN, OnFileOpenClicked)
+	ON_COMMAND(IDM_FILE_SAVE, OnFileSaveClicked)
+	ON_COMMAND(IDM_FILE_SAVEDIFFERENTNAME, OnFileSaveDifferentNameClicked)
 	ON_WM_CLOSE()
-	//ON_MESSAGE(WM_IME_SETCONTEXT, OnSetContext)
 END_MESSAGE_MAP()
 
 //NotepadForm생성자
@@ -57,7 +62,7 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//this->caret.Create(0, text.tmHeight);
 	//1.8 glyphCreator를 만든다.
 	GlyphCreator glyphCreator;
-	//1.9 메모장을 만든다.
+	//1.9 노트를 만든다.
 	this->note = glyphCreator.Create((char*)"\0");
 	//1.10 줄을 만든다.
 	Glyph* row = glyphCreator.Create((char*)"\n");
@@ -66,14 +71,20 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	rowIndex = this->note->Add(row);
 	//1.13 현재 줄의 위치를 저장한다.
 	this->current = this->note->GetAt(rowIndex);
-	//1.12 저장된 메모장을 불러온다.
-	this->file.Load("연습장");
+	
 	//1.14 캐럿의 위치를 이동시킨다.
 	//this->caret.Move(0, 0);
 	//1.15 캐럿을 보여준다.
 	//this->caret.Show();
-	//1.16 갱신한다.
-	Invalidate(TRUE);
+	//m_wndStatusBar.Create(this);
+	//Menu가 notepadForm의 멤버여야 OnCreate이 종료되어도 정보가 계속 저장되어 있기때문에 뻑이 안남
+	//만약에 임시변수로 OnCreate에서만 Menu가 있으면 OnCreate이 종료될때 Menu의 모든정보도 같이 소멸됨
+	this->menu.LoadMenu(IDR_MENU1);
+	SetMenu(&this->menu);
+	//처음 만들어지는 메모장 이름을 정한다.
+	string name = this->file.GetName();
+	name += " - 메모장";
+	SetWindowText(CString(name.c_str()));
 
 	return 0;
 }
@@ -134,7 +145,12 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//ShowCaret();
 	//2.14 isComposing을 false로 바꾼다.
 	this->IsComposing = false;
-	//2.15 갱신한다.
+	//2.15 메모장 제목에 *를 추가한다.
+	string name = this->file.GetName();
+	name.insert(0, "*");
+	name += " - 메모장";
+	SetWindowText(CString(name.c_str()));
+	//2.16 갱신한다.
 	Invalidate(TRUE);
 }
 
@@ -237,7 +253,12 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 	//4.15 캐럿을 보이게 한다.
 	this->caret.Show();
 	//ShowCaret();
-	//4.16 갱신한다.
+	//4.16 메모장 제목에 *를 추가한다.
+	string name = this->file.GetName();
+	name.insert(0, "*");
+	name += " - 메모장";
+	SetWindowText(CString(name.c_str()));
+	//4.17 갱신한다.
 	Invalidate(TRUE);
 
 	return ::DefWindowProc(this->m_hWnd, WM_IME_COMPOSITION, wParam, lParam);
@@ -284,7 +305,12 @@ LRESULT NotepadForm::OnImeChar(WPARAM wParam, LPARAM lParam)
 	//5.13 캐럿을 보여준다.
 	this->caret.Show();
 	//ShowCaret();
-	//5.14 갱신한다.
+	//5.14 메모장 제목에 *를 추가한다.
+	string name = this->file.GetName();
+	name.insert(0, "*");
+	name += " - 메모장";
+	SetWindowText(CString(name.c_str()));
+	//5.15 갱신한다.
 	Invalidate(TRUE);
 
 	return 0;
@@ -353,30 +379,408 @@ void NotepadForm::OnKillFocus(CWnd* pNewWnd)
 	::DestroyCaret();
 }
 
-
-void NotepadForm::OnClose()
+//메모장 메뉴에서 불러오기를 클릭했을 떄
+void NotepadForm::OnFileOpenClicked()
 {
-	//9.1 메모장을 저장한다.
-	this->file.Save("연습장");
-	//9.2 메모장을 지운다.
-	if (this->note != NULL)
+	//1. 메모장 제목을 알아낸다.
+	CString noteTitle;
+	GetWindowText(noteTitle);
+	string title = string(noteTitle);
+	//2. 메모장 제목에 '*'가 있으면(변경사항이 있으면)
+	if (title[0] == '*')
 	{
-		delete this->note;
-		//this->note를 소멸시키면 note에 있는 Row와 letter들도 다 소멸된다.
-		//this->current는 Row인데 이미 this->note를 소멸시키면서 Row들이 다 소멸되었는데
-		//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
-		//delete this->current;
+		//메세지박스 문구를 정한다.
+		string message;
+		//2.1 파일경로가 정해져 있으면
+		if (this->file.GetPath() != "")
+		{
+			message = this->file.GetPath();
+		}
+		//2.2 파일 경로가 안정해져 있으면
+		else
+		{
+			message = this->file.GetName();
+		}
+		message.insert(0, "변경 내용을 ");
+		message += "에 저장하시겠습니까?";
+		//2.1 Save메세지박스를 출력한다.
+		int messageBoxButton = SaveMessageBox(this->GetSafeHwnd(), message.c_str(), "메모장", MB_YESNOCANCEL);
+
+		//3. Save메세지박스에서 Yes를 선택했으면
+		if (messageBoxButton == IDYES)
+		{
+			//1. 파일경로가 ""이 아니면(노트가 처음 생성된 경우가 아니면)
+			if (this->file.GetPath() != "")
+			{
+				//1.1 선택한 메모장을 저장한다.
+				this->file.Save(this->file.GetName(), this->file.GetPath());
+				//1.2 '*'를 없애준다.
+				title.erase(0, 1);
+				SetWindowText(CString(title.c_str()));
+				
+			}
+			//2.2 파일경로가 정해져 있지 않으면(노트가 처음 생성된 경우)
+			else
+			{
+				//2.2.1 파일공통 대화상자를 생성한다.
+				LPCTSTR  filesFilter = _T("텍스트 문서(*.txt) | *.txt; | 모든 파일 | *.*;  ||");
+				CFileDialog fileDialog(FALSE, _T("txt"), "*.txt", 0, filesFilter, this, 0, 1);
+				//2.2.2 파일공통 대화상자를 출력한다.
+				if (fileDialog.DoModal() == IDOK)
+				{
+					//2.2.2.1 저장할 파일의 이름을 구한다.
+					CString fileName = fileDialog.GetFileName();
+					//2.2.2.2 저장할 파일의 경로를 구한다.
+					CString filePathName = fileDialog.GetPathName();
+					//2.5 파일의 이름에서 .txt를 제거한다.
+					string name = string(fileName);
+					Long eraseIndex = name.find(".txt");
+					name.erase(eraseIndex, 4);
+					//2.2.2.3 선택한 메모장을 저장한다.
+					this->file.Save(name, string(filePathName));
+					//2.13 메모장 제목을 바꾼다.
+					name += " - 메모장";
+					SetWindowText(CString(name.c_str()));
+				}
+			}
+		}
+		//4. 메세지박스에서 yes나 no를 선택한 경우
+		if (messageBoxButton == IDYES || messageBoxButton == IDNO)
+		{
+			//3.1 파일공통 대화상자를 생성한다.
+			LPCTSTR  filesFilter = _T("텍스트 문서(*.txt) | *.txt; | 모든 파일 | *.*;  ||");
+			CFileDialog fileDialog(TRUE, _T("txt"), NULL, 0, filesFilter, this, 0, 1);
+			//3.2 파일공통 대화상자를 출력한다.
+			if (fileDialog.DoModal() == IDOK)
+			{
+				//3.2.1 불러올 파일의 이름을 구한다.
+				CString fileName = fileDialog.GetFileName();
+				//3.2.2 불러올 파일의 경로를 구한다.
+				CString filePathName = fileDialog.GetPathName();
+				//3.2.3 파일의 이름에서 .txt를 제거한다.
+				string name = string(fileName);
+				Long eraseIndex = name.find(".txt");
+				name.erase(eraseIndex, 4);
+				//3.2.4 기존 메모장의 note를 지운다.
+				//메모장에 note는 한개밖에 없다 따라서 다른 메모장을 불러오는 순간 기존note는 없애고
+				//새로 불러오는 메모장의 note를 Load를 통해 불러오는 새로운 메모장에 출력해줘야함!!
+				if (this->note != NULL)
+				{
+					delete this->note;
+					//this->note를 소멸시키면 note에 있는 Row와 letter들도 다 소멸된다.
+					//this->current는 Row인데 이미 this->note를 소멸시키면서 Row들이 다 소멸되었는데
+					//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
+					//delete this->current;
+				}
+				//불러오는 메모장을 위해 새로운 note를 만듬.
+				//3.2.5 glyphCreator를 만든다.
+				GlyphCreator glyphCreator;
+				//3.2.6 노트를 만든다.
+				this->note = glyphCreator.Create((char*)"\0");
+				//3.2.7 줄을 만든다.
+				Glyph* row = glyphCreator.Create((char*)"\n");
+				//3.2.8 줄을 메모장에 추가한다.
+				Long rowIndex;
+				rowIndex = this->note->Add(row);
+				//3.2.9 현재 줄의 위치를 저장한다.
+				this->current = this->note->GetAt(rowIndex);
+				//3.2.10 선택한 메모장의 노트(내용)를 불러온다.
+				this->file.Load(name, string(filePathName));
+				//3.2.11 메모장 제목을 바꾼다.
+				name += " - 메모장";
+				SetWindowText(CString(name.c_str()));
+				//3.2.12 갱신한다.
+				Invalidate(TRUE);
+				//캐럿을 불러온 note(내용)에 맞게 다시 생성해준다.
+				//3.2.13 CClientDC를 생성한다.
+				CClientDC dc(this);
+				//3.2.14 CFont를 생성한다.
+				CFont font;
+				//3.2.15 글씨크기와 글씨체를 정하다.
+				font.CreatePointFont(this->font.Getsize(), this->font.GetStyle().c_str());
+				//3.2.16 폰트를 dc에 지정한다.
+				dc.SelectObject(font);
+				//3.2.17 TEXTMETRIC을 생성한다.
+				TEXTMETRIC text;
+				//3.2.18 글꼴의 정보를 얻는다.
+				dc.GetTextMetrics(&text);
+				//3.2.19 캐럿을 생성한다.
+				this->caret.Create(0, text.tmHeight);
+				//3.2.20 현재줄의 텍스트들을 저장한다.
+				CString letter = CString(this->current->GetContent().c_str());
+				//3.2.21 현재줄의 텍스트들의 size를 구한다.
+				CSize letterSize = dc.GetTextExtent(letter);
+				//3.2.22 캐럿을 이동시킨다.
+				this->caret.Move(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
+				//3.2.23 캐럿을 보이게 한다.
+				this->caret.Show();
+			}
+		}
 	}
-	CFrameWnd::OnClose();
+	//변경사항이 없으면(제목 앞에 '*'이 없으면)
+	else
+	{
+		//3.1 파일공통 대화상자를 생성한다.
+		LPCTSTR  filesFilter = _T("텍스트 문서(*.txt) | *.txt; | 모든 파일 | *.*;  ||");
+		CFileDialog fileDialog(TRUE, _T("txt"), NULL, 0, filesFilter, this, 0, 1);
+		//3.2 파일공통 대화상자를 출력한다.
+		if (fileDialog.DoModal() == IDOK)
+		{
+			//3.2.1 불러올 파일의 이름을 구한다.
+			CString fileName = fileDialog.GetFileName();
+			//3.2.2 불러올 파일의 경로를 구한다.
+			CString filePathName = fileDialog.GetPathName();
+			//3.2.3 파일의 이름에서 .txt를 제거한다.
+			string name = string(fileName);
+			Long eraseIndex = name.find(".txt");
+			name.erase(eraseIndex, 4);
+			//3.2.4 기존 메모장의 note를 지운다.
+			//메모장에 note는 한개밖에 없다 따라서 다른 메모장을 불러오는 순간 기존note는 없애고
+			//새로 불러오는 메모장의 note를 Load를 통해 불러오는 새로운 메모장에 출력해줘야함!!
+			if (this->note != NULL)
+			{
+				delete this->note;
+				//this->note를 소멸시키면 note에 있는 Row와 letter들도 다 소멸된다.
+				//this->current는 Row인데 이미 this->note를 소멸시키면서 Row들이 다 소멸되었는데
+				//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
+				//delete this->current;
+			}
+			//불러오는 메모장을 위해 새로운 note를 만듬.
+			//3.2.5 glyphCreator를 만든다.
+			GlyphCreator glyphCreator;
+			//3.2.6 노트를 만든다.
+			this->note = glyphCreator.Create((char*)"\0");
+			//3.2.7 줄을 만든다.
+			Glyph* row = glyphCreator.Create((char*)"\n");
+			//3.2.8 줄을 메모장에 추가한다.
+			Long rowIndex;
+			rowIndex = this->note->Add(row);
+			//3.2.9 현재 줄의 위치를 저장한다.
+			this->current = this->note->GetAt(rowIndex);
+			//3.2.10 선택한 메모장의 노트(내용)를 불러온다.
+			this->file.Load(name, string(filePathName));
+			//3.2.11 메모장 제목을 바꾼다.
+			name += " - 메모장";
+			SetWindowText(CString(name.c_str()));
+			//3.2.12 갱신한다.
+			Invalidate(TRUE);
+			//캐럿을 불러온 note(내용)에 맞게 다시 생성해준다.
+			//3.2.13 CClientDC를 생성한다.
+			CClientDC dc(this);
+			//3.2.14 CFont를 생성한다.
+			CFont font;
+			//3.2.15 글씨크기와 글씨체를 정하다.
+			font.CreatePointFont(this->font.Getsize(), this->font.GetStyle().c_str());
+			//3.2.16 폰트를 dc에 지정한다.
+			dc.SelectObject(font);
+			//3.2.17 TEXTMETRIC을 생성한다.
+			TEXTMETRIC text;
+			//3.2.18 글꼴의 정보를 얻는다.
+			dc.GetTextMetrics(&text);
+			//3.2.19 캐럿을 생성한다.
+			this->caret.Create(0, text.tmHeight);
+			//3.2.20 현재줄의 텍스트들을 저장한다.
+			CString letter = CString(this->current->GetContent().c_str());
+			//3.2.21 현재줄의 텍스트들의 size를 구한다.
+			CSize letterSize = dc.GetTextExtent(letter);
+			//3.2.22 캐럿을 이동시킨다.
+			this->caret.Move(letterSize.cx, (this->note->GetCurrent() - 1) * text.tmHeight);
+			//3.2.23 캐럿을 보이게 한다.
+			this->caret.Show();
+		}
+	}
 }
 
-
-#if 0
-//6. 한글 조립과정을 다른 윈도우에서 안보이게 하기 위한 조치
-LRESULT NotepadForm::OnSetContext(WPARAM wParam, LPARAM lParam)
+//메모장 메뉴에서 저장하기를 클릭했을 때
+void NotepadForm::OnFileSaveClicked()
 {
-	lParam &= ~(ISC_SHOWUICOMPOSITIONWINDOW | ISC_SHOWUIALLCANDIDATEWINDOW);
+	//1. 파일경로가 ""이 아니면(노트가 처음 생성된 경우가 아니면)
+	if (this->file.GetPath() != "")
+	{
+		//1.1 선택한 메모장을 저장한다.
+		this->file.Save(this->file.GetName(), this->file.GetPath());
+		//1.2 메모장 제목을 알아낸다.
+		CString noteTitle;
+		GetWindowText(noteTitle);
+		string title = string(noteTitle);
+		//1.3 메모장 제목에 '*'가 있으면(변경사항이 있으면)
+		if (title[0] == '*')
+		{
+			//1.3.4 '*'를 없애준다.
+			title.erase(0, 1);
+			SetWindowText(CString(title.c_str()));
+		}
+	}
+	//2.2 파일경로가 정해져 있지 않으면(노트가 처음 생성된 경우)
+	else
+	{
+		//2.2.1 파일공통 대화상자를 생성한다.
+		LPCTSTR  filesFilter = _T("텍스트 문서(*.txt) | *.txt; | 모든 파일 | *.*;  ||");
+		CFileDialog fileDialog(FALSE, _T("txt"), "*.txt", 0, filesFilter, this, 0, 1);
+		//2.2.2 파일공통 대화상자를 출력한다.
+		if (fileDialog.DoModal() == IDOK)
+		{
+			//2.2.2.1 저장할 파일의 이름을 구한다.
+			CString fileName = fileDialog.GetFileName();
+			//2.2.2.2 저장할 파일의 경로를 구한다.
+			CString filePathName = fileDialog.GetPathName();
+			//2.5 파일의 이름에서 .txt를 제거한다.
+			string name = string(fileName);
+			Long eraseIndex = name.find(".txt");
+			name.erase(eraseIndex, 4);
+			//2.2.2.3 선택한 메모장을 저장한다.
+			this->file.Save(name, string(filePathName));
+			//2.13 메모장 제목을 바꾼다.
+			name += " - 메모장";
+			SetWindowText(CString(name.c_str()));
+		}
+	}	
+}
+
+//메모장에서 다른 이름으로 저장하기 버튼을 클릭했을 떄
+void NotepadForm::OnFileSaveDifferentNameClicked()
+{
+	//2.2.1 파일공통 대화상자를 생성한다.
+	LPCTSTR  filesFilter = _T("텍스트 문서(*.txt) | *.txt; | 모든 파일 | *.*;  ||");
+	CFileDialog fileDialog(FALSE, _T("txt"), "*.txt", 0, filesFilter, this, 0, 1);
+	//2.2.2 파일공통 대화상자를 출력한다.
+	if (fileDialog.DoModal() == IDOK)
+	{
+		//2.2.2.1 저장할 파일의 이름을 구한다.
+		CString fileName = fileDialog.GetFileName();
+		//2.2.2.2 저장할 파일의 경로를 구한다.
+		CString filePathName = fileDialog.GetPathName();
+		//2.5 파일의 이름에서 .txt를 제거한다.
+		string name = string(fileName);
+		Long eraseIndex = name.find(".txt");
+		name.erase(eraseIndex, 4);
+		//2.2.2.3 선택한 메모장을 저장한다.
+		this->file.Save(name, string(filePathName));
+		//2.13 메모장 제목을 바꾼다.
+		name += " - 메모장";
+		SetWindowText(CString(name.c_str()));
+	}
+}
+
+//메모장에서 닫기버튼을 클릭했을 떄
+void NotepadForm::OnClose()
+{
+	//1. 메모장 제목을 알아낸다.
+	CString noteTitle;
+	GetWindowText(noteTitle);
+	string title = string(noteTitle);
+	//2. 메모장 제목에 '*'가 있으면(변경사항이 있으면)
+	if (title[0] == '*')
+	{
+		//메세지박스 문구를 정한다.
+		string message;
+		//2.1 파일경로가 정해져 있으면
+		if (this->file.GetPath() != "")
+		{
+			message = this->file.GetPath();
+		}
+		//2.2 파일 경로가 안정해져 있으면
+		else
+		{
+			message = this->file.GetName();
+		}
+		message.insert(0, "변경 내용을 ");
+		message += "에 저장하시겠습니까?";
+		//2.1 Save메세지박스를 출력한다.
+		int messageBoxButton = SaveMessageBox(this->GetSafeHwnd(), message.c_str(), "메모장", MB_YESNOCANCEL);
+		//3. Save메세지박스에서 Yes를 선택했으면
+		if (messageBoxButton == IDYES)
+		{
+			//1. 파일경로가 ""이 아니면(노트가 처음 생성된 경우가 아니면)
+			if (this->file.GetPath() != "")
+			{
+				//1.1 선택한 메모장을 저장한다.
+				this->file.Save(this->file.GetName(), this->file.GetPath());
+				//1.2 '*'를 없애준다.
+				title.erase(0, 1);
+				SetWindowText(CString(title.c_str()));
+				
+			}
+			//2.2 파일경로가 정해져 있지 않으면(노트가 처음 생성된 경우)
+			else
+			{
+				//2.2.1 파일공통 대화상자를 생성한다.
+				LPCTSTR  filesFilter = _T("텍스트 문서(*.txt) | *.txt; | 모든 파일 | *.*;  ||");
+				CFileDialog fileDialog(FALSE, _T("txt"), "*.txt", 0, filesFilter, this, 0, 1);
+				//2.2.2 파일공통 대화상자를 출력한다.
+				if (fileDialog.DoModal() == IDOK)
+				{
+					//2.2.2.1 저장할 파일의 이름을 구한다.
+					CString fileName = fileDialog.GetFileName();
+					//2.2.2.2 저장할 파일의 경로를 구한다.
+					CString filePathName = fileDialog.GetPathName();
+					//2.5 파일의 이름에서 .txt를 제거한다.
+					string name = string(fileName);
+					Long eraseIndex = name.find(".txt");
+					name.erase(eraseIndex, 4);
+					//2.2.2.3 선택한 메모장을 저장한다.
+					this->file.Save(name, string(filePathName));
+					//2.13 메모장 제목을 바꾼다.
+					name += " - 메모장";
+					SetWindowText(CString(name.c_str()));
+				}
+			}
+		}
+		//4. 메세지박스에서 yes나 no를 선택한 경우
+		if (messageBoxButton == IDYES || messageBoxButton == IDNO)
+		{
+			//4.1 메모장을 지운다.
+			if (this->note != NULL)
+			{
+				delete this->note;
+				//this->note를 소멸시키면 note에 있는 Row와 letter들도 다 소멸된다.
+				//this->current는 Row인데 이미 this->note를 소멸시키면서 Row들이 다 소멸되었는데
+				//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
+				//delete this->current;
+			}
+			CFrameWnd::OnClose();
+		}
+	}
+	//변경사항이 없으면(메모장 제목 앞에 '*'이 없으면)
+	else
+	{
+		//9.1 메모장을 지운다.
+		if (this->note != NULL)
+		{
+			delete this->note;
+			//this->note를 소멸시키면 note에 있는 Row와 letter들도 다 소멸된다.
+			//this->current는 Row인데 이미 this->note를 소멸시키면서 Row들이 다 소멸되었는데
+			//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
+			//delete this->current;
+		}
+		CFrameWnd::OnClose();
+	}
+}
+
+LRESULT CALLBACK SaveMessageBoxProc(int nCode, WPARAM wParam, LPARAM lParam) {
+	HWND hChildWnd;
+
+	CString msg;// = TEXT("");
+
+	if (nCode == HCBT_ACTIVATE) {
+		hChildWnd = (HWND)wParam;
+		if (GetDlgItem(hChildWnd, IDYES) != NULL) {
+			msg = "저장(&S)";
+			SetWindowText(GetDlgItem(hChildWnd, IDYES), msg);
+		}
+
+		if (GetDlgItem(hChildWnd, IDNO) != NULL) {
+			msg = "저장 안 함(&N)";
+			SetWindowText(GetDlgItem(hChildWnd, IDNO), msg);
+		}
+		UnhookWindowsHookEx(hSaveMessageBoxHook);
+}
 
 	return 0;
 }
-#endif
+
+int SaveMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT nType) {
+	hSaveMessageBoxHook = SetWindowsHookEx(WH_CBT, &SaveMessageBoxProc, 0, GetCurrentThreadId());
+
+	return MessageBox(hWnd, lpText, lpCaption, nType);
+}
