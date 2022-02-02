@@ -28,7 +28,6 @@ public:
 
 //인라인함수정의
 //GetScript는 반환값이 char이나 char*로 다르기때문에 여기서 인라인함수정의를 하지X
-//AccountBook이랑 다름
 inline Long Glyph::GetCapacity() const
 {
 	return -1;//Glyph에서는 처리할게 없음 Composite가서 처리하면 됨.

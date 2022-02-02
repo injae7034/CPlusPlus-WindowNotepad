@@ -3,8 +3,7 @@
 //디폴트생성자
 SingleByteLetter::SingleByteLetter()
 {
-	this->script = '\0';
-	//문자초기화는 널문자(\0)로 한다. (빈칸)""은 문자열이라서 string에서 초기화 할 때 사용함.
+	this->script = '\0';//문자초기화는 널문자(\0)로 한다. (빈칸)""은 문자열이라서 string에서 초기화 할 때 사용함.
 }
 
 //매개변수 1개 생성자
@@ -43,8 +42,8 @@ Glyph* SingleByteLetter::Clone()
 string SingleByteLetter::GetContent()
 {
 	string script;
-	script.push_back(this->script);
-	//script.push_back('\0');
+	script += this->script;
+	//script += '\0';
 
 	return script;
 }

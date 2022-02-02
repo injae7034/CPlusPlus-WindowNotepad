@@ -16,8 +16,7 @@ public:
 	Long Remove(Long index);
 	Glyph* GetAt(Long index);
 	virtual ~Composite() = 0;//추상클래스 소멸자
-	//추상클래스(구체적 내용X)이므로 Clone을 선언X, Concrete Prototype,
-	//즉 구체적인 내용이 있는 자식들(Row, Note) 헤더파일에서 Clone메소드를 선언해주고 cpp에서 정의해주면 됨.
+	//추상클래스(구체적 내용X)이므로 Clone을 선언X, Concrete Prototype, 즉 구체적인 내용이 있는 자식들(Row, Note) 헤더파일에서 Clone메소드를 선언해주고 cpp에서 정의해주면 됨.
 	//인라인함수
 	Long GetCapacity() const;
 	Long GetLength() const;
@@ -38,3 +37,4 @@ inline Long Composite::GetLength() const
 }
 
 #endif // !_COMPOSITE_H
+

@@ -42,8 +42,8 @@ string Note::GetContent()
 	Long index = 0;
 	while (index < this->length)
 	{
-		content.append(this->glyphs.GetAt(index)->GetContent());
-		content.push_back('\n');
+		content += this->glyphs.GetAt(index)->GetContent();
+		content += '\n';
 		index++;
 	}
 

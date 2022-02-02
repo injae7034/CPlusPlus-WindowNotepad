@@ -41,7 +41,7 @@ string Row::GetContent()
 	Long index = 0;
 	while (index < this->length)
 	{
-		content.append(this->glyphs.GetAt(index)->GetContent());
+		content += this->glyphs.GetAt(index)->GetContent();
 		index++;
 	}
 

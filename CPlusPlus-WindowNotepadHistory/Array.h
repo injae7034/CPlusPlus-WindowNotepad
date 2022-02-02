@@ -229,7 +229,6 @@ Long Array<T>::Delete(Long index)
 	if (this->front != 0)
 	{
 		delete[] this->front;
-		//댕글링 포인터를 막기 위해서
 		this->front = 0;
 	}
 	//5. 할당량이 1보다 크면
@@ -360,7 +359,7 @@ Long Array<T> ::Modify(Long index, T object)
 template <typename T>
 Long Array<T>::LinearSearchUnique(void* key, int(*compare)(void*, void*))
 {
-	Long index = -1;//위치는 0베이스 못찾았을 경우 찾은게 없다는 뜻으로 -1이 반환됨.
+	Long index = -1;//위치는 0베이스
 	Long i = 0;//0베이스
 
 	//1. 찾고자 하는 값을 입력받는다.
@@ -381,8 +380,7 @@ Long Array<T>::LinearSearchUnique(void* key, int(*compare)(void*, void*))
 }
 
 template <typename T>
-void Array<T>::LinearSearchDuplicate(void* key, Long* (*indexes), Long* count,
-	int(*compare)(void*, void*))
+void Array<T>::LinearSearchDuplicate(void* key, Long* (*indexes), Long* count, int(*compare)(void*, void*))
 {
 	Long i = 0;
 	Long j = 0;
@@ -469,8 +467,7 @@ Long Array<T>::BinarySearchUnique(void* key, int(*compare)(void*, void*))
 }
 
 template <typename T>
-void Array<T>::BinarySearchDuplicate(void* key, Long* (*indexes), Long* count,
-	int(*compare)(void*, void*))
+void Array<T>::BinarySearchDuplicate(void* key, Long* (*indexes), Long* count, int(*compare)(void*, void*))
 {
 	Long first = 0;
 	Long middle;
@@ -684,10 +681,8 @@ Array<T>::Array(const Array& source)
 	//source배열이 할당해제되더라도 별개로 힙에 this array배열을 저장하기 위해서 배열요소를 옮김
 	//this->front = source.front 는 source.front에 할당된 힙의 주소를 단순히 복사한거라서
 	//만약에 source.front의 힙을 할당해제하게되면 this->front는 댕글링포인터가됨.
-	//그것을 방지하기 위해 this.front를 힙에 새로 할당하고 source.front의 내용을 this.front에 
-	//하나하나 다 옮김. 그렇게되면 source.front배열을 할당해제하더라도 this->front는 별개로 
-	//자신의 배열을 가지고 있기때문에 문제가 없음.
-	//얕은 복사
+	//그것을 방지하기 위해 this.front를 힙에 새로 할당하고 source.front의 내용을 this.front에 하나하나 다 옮김.
+	//그렇게되면 source.front배열을 할당해제하더라도 this->front는 별개로 자신의 배열을 가지고 있기때문에 문제가 없음.
 	while (i < source.length)
 	{
 		this->front[i] = source.front[i];
@@ -716,7 +711,6 @@ Array<T>& Array<T>::operator=(const Array& source)
 	//4. 사용량을 정한다.
 	this->length = 0;
 	//5. source배열의 배열요소를 옮긴다.
-	//얕은 복사
 	while (i < source.length)
 	{
 		this->front[i] = source.front[i];

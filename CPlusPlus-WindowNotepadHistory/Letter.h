@@ -11,9 +11,7 @@ public:
 	//Letter(const Letter& source);//복사생성자 필요없음
 	//Letter& operator=(const Letter& source);//치환연산자 필요없음
 	virtual ~Letter() = 0;//추상클래스 소멸자
-	//추상클래스(구체적 내용X)이므로 Clone을 선언X, Concrete Prototype,
-	//즉, 구체적인 내용이 있는 자식들(SingleByterLetter, DoubleByteLetter) 헤더파일에서
-	//Clone메소드를 선언해주고 cpp에서 정의해주면 됨.
+	//추상클래스(구체적 내용X)이므로 Clone을 선언X, Concrete Prototype, 즉 구체적인 내용이 있는 자식들(SingleByterLetter, DoubleByteLetter) 헤더파일에서 Clone메소드를 선언해주고 cpp에서 정의해주면 됨.
 	//인라인함수정의
 	//GetScript는 반환값이 char이나 char*로 다르기때문에 여기서 인라인함수정의를 하지X
 	//논리함수 필요없음

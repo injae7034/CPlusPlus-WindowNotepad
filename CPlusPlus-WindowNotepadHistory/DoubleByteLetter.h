@@ -22,8 +22,7 @@ private:
 };
 
 //인라인함수 정의
-//char*(*(포인터)주소로 배열에 접근함)문자배열의 주소를 반환하면 됨 배열 자체를 반환하는게 말이 안되고,
-//비효율적임. 배열 주소를 알면 접근할 수 있기 때문에
+//char*(*(포인터)주소로 배열에 접근함)문자배열의 주소를 반환하면 됨 배열 자체를 반환하는게 말이 안되고 비효율적임. 배열 주소를 알면 접근할 수 있기 때문에
 inline char* DoubleByteLetter::GetScript() const
 {
 	return const_cast<char*>(this->script);

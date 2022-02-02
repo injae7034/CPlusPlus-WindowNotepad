@@ -9,9 +9,8 @@ DoubleByteLetter::DoubleByteLetter()
 }
 
 //매개변수 1개 생성자
-DoubleByteLetter::DoubleByteLetter(char(*script))
-// char(*script)는 배열포인터이고 char* script는 그냥 포인터(주소)를 저장한거임
-//개념상 문자배열이기 때문에 배열포인터(배열의 시작주소)를 입력하는것이 맞다
+DoubleByteLetter::DoubleByteLetter(char(*script))// char(*script)는 배열포인터이고 char* script는 그냥 주소를 저장한거임
+//개념상 배열포인터(배열의 시작주소)를 입력하는것이 맞다
 {
 	//문자배열은 매개변수로 이용할 때 시작주소(char*)를 입력한다.
 	this->script[0] = script[0];
@@ -51,9 +50,9 @@ Glyph* DoubleByteLetter::Clone()
 string DoubleByteLetter::GetContent()
 {
 	string script;
-	script.push_back(this->script[0]);
-	script.push_back(this->script[1]);
-	//script.push_back('\0');
+	script += this->script[0];
+	script += this->script[1];
+	//script += '\0';
 
 	return script;
 }

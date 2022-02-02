@@ -39,7 +39,7 @@ Glyph* Glyph::Clone()
 //GetContent
 string Glyph::GetContent()
 {
-	return "\0";//Content가 없기 때문에 널문자를 반환함.
+	return "\0";
 }
 
 
