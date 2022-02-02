@@ -18,6 +18,8 @@ public:
 protected://#
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnSetFocus(CWnd* pOldWnd);
+	afx_msg void OnKillFocus(CWnd* pNewWnd);
 	afx_msg LRESULT OnStartCompostion(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnComposition(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnImeChar(WPARAM wParam, LPARAM lParam);

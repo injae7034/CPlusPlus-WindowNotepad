@@ -20,10 +20,12 @@ public:
 	//인라인함수
 	Long GetCapacity() const;
 	Long GetLength() const;
+	Long GetCurrent() const;
 protected://상속받은 subclass들이 superclass의 데이터멤버에 접근하기 위해서 protected로 해줘야함.
 	Array<Glyph*> glyphs;
 	Long capacity;
 	Long length;
+	Long current;//다음 글자가 쓰여질 칸의 위치(캐럿의 위치), 다음 줄이 쓰여질 줄의 위치
 };
 
 //인라인함수정의
@@ -34,6 +36,10 @@ inline Long Composite::GetCapacity() const
 inline Long Composite::GetLength() const
 {
 	return this->length;
+}
+inline Long Composite::GetCurrent() const
+{
+	return this->current;
 }
 
 #endif // !_COMPOSITE_H

@@ -24,6 +24,7 @@ public:
 	//여기서 실제로는 안쓰이고 자식에게 넘겨주는 역할을 하기때문에 virtual을 붙여줘야함
 	virtual Long GetCapacity() const;
 	virtual Long GetLength() const;
+	virtual Long GetCurrent() const;
 };
 
 //인라인함수정의
@@ -35,6 +36,10 @@ inline Long Glyph::GetCapacity() const
 inline Long Glyph::GetLength() const
 {
 	return -1;//Glyph에서는 처리할게 없음 Composite가서 처리하면 됨.
+}
+inline Long Glyph::GetCurrent() const
+{
+	return -1;
 }
 
 #endif // !_GLYPH_H

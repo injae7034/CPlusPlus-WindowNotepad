@@ -6,6 +6,7 @@ Composite::Composite(Long capacity)
 {
 	this->capacity = capacity;
 	this->length = 0;
+	this->current = 0;
 }
 
 //소멸자
@@ -38,6 +39,7 @@ Composite::Composite(const Composite& source)
 	}
 	this->capacity = source.capacity;
 	this->length = source.length;
+	this->current = source.current;
 }
 
 //치환연산자
@@ -67,6 +69,7 @@ Composite& Composite::operator=(const Composite& source)
 	}
 	this->capacity = source.capacity;
 	this->length = source.length;
+	this->current = source.current;
 
 	return *this;
 }
@@ -90,7 +93,9 @@ Long Composite::Add(Glyph* glyph)
 	}
 	//4. 사용량을 증가시킨다.
 	this->length++;
-	//5. 위치를 출력한다.
+	//5. 다음 줄 또는 다음 글자가 쓰여질 위치를 저장한다.
+	this->current = index + 1;
+	//6. 현재 줄의 위치 또는 현재 글자의 위치를 출력한다.
 	return index;
 }
 
@@ -98,6 +103,8 @@ Long Composite::Add(Glyph* glyph)
 Long Composite::Remove(Long index)
 {
 	//1. 지울 위치를 입력받는다.
+	//2. 글자나 줄을 지우고 나면 지울 위치가 다음 글자를 추가할 위치가 되기 때문에 current에 저장한다.
+	this->current = index;
 	//2. 해당위치의 배열요소를 지운다.
 	index = this->glyphs.Delete(index);
 	//3. 할당량을 감소시킨다.
