@@ -1,4 +1,5 @@
 #include "Row.h"
+#include "TextOutVisitor.h"
 
 //디폴트생성자
 Row::Row(Long capacity)
@@ -85,4 +86,9 @@ string Row::GetPartOfContent(Long current)
 	//2. 줄을 반환한다.
 	return content;
 	//3. 끝내다.
+}
+
+void Row::Accept(TextOutVisitor* textOutVisitor)
+{
+	textOutVisitor->VisitRowTextOut(this);
 }

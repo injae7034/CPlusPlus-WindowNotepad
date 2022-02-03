@@ -5,6 +5,7 @@
 typedef signed long int Long;
 
 using namespace std;
+class TextOutVisitor;
 
 class Glyph//interface(Component)이므로 복사생성자나 치환연산자가 필요없음.
 {
@@ -42,6 +43,7 @@ public:
 	virtual Long GetCapacity() const { return -1; }
 	virtual Long GetLength() const { return -1; }
 	virtual Long GetCurrent() const { return -1; }
+	virtual void Accept(TextOutVisitor* textOutVisitor) {}
 };
 
 #endif // !_GLYPH_H

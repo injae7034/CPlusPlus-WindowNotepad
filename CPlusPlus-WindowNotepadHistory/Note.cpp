@@ -1,5 +1,6 @@
 #include "Note.h"
 #include "Letter.h"
+#include "TextOutVisitor.h"
 
 //디폴트생성자
 Note::Note(Long capacity)

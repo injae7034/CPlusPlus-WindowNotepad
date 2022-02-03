@@ -3,6 +3,7 @@
 
 #include "Glyph.h"
 typedef signed long int Long;
+class TextOutVisitor;
 
 class Letter :public Glyph
 {
@@ -13,6 +14,7 @@ public:
 	//추상클래스(구체적 내용X)이므로 Clone을 선언X, Concrete Prototype, 즉 구체적인 내용이 있는 자식들(SingleByterLetter, DoubleByteLetter) 헤더파일에서 Clone메소드를 선언해주고 cpp에서 정의해주면 됨.
 	//인라인함수정의
 	virtual bool IsSelected() const;
+	virtual void Accept(TextOutVisitor* textOutVisitor);
 protected:
 	bool isSelceted;
 };
