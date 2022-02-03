@@ -36,6 +36,7 @@ TextExtent::TextExtent(NotepadForm* notepadForm)
         this->widths[i] = letterSize.cx;
         i++;
     }
+    
     //9. 129번째 배열요소에 한글의 폭을 저장한다.(한글은 폭이 같기 때문에 한 개의 폭만 저장해줌.)
     //i는 최대 127까지만 이용가능하므로 그냥 숫자 128로 대입해주자!
     letter = "ㄱ";
@@ -49,6 +50,9 @@ TextExtent::TextExtent(NotepadForm* notepadForm)
     letter = " ";
     letterSize = dc.GetTextExtent(letter);
     this->widths[0] = letterSize.cx;
+    letter = "        ";
+    letterSize = dc.GetTextExtent(letter);
+    this->widths[9] = letterSize.cx;
     //11. 평균 폰트 높이를 저장한다.
     this->height = textmetric.tmHeight;
     //12. 끝내다.

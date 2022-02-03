@@ -290,6 +290,10 @@ void Note::CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 	Long* endingRowPos, Long* endingLetterPos)
 {
 	//1. 첫줄, 첫칸으로 보낸다.
+	*startingRowPos = 0;
+	*startingLetterPos = 0;
+	*endingRowPos = 0;
+	*endingLetterPos = 0;
 	Long rowIndex = 0;
 	Long letterIndex = 0;
 	Long letterCount = 0;
@@ -333,12 +337,12 @@ void Note::CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 	//3. 줄의 위치가 줄의 개수보다 작은동안 그리고 true인동안 반복한다.
 	while (rowIndex < rowCount && isSelected == true)
 	{
-		//3.1 줄의 글자개수를 구한다.
-		letterCount = this->GetAt(rowIndex)->GetLength();
-		//3.2 글자 위치를 원위치시킨다.
-		letterIndex = index;
-		//3.3 줄을 구한다.
+		//3.1 줄을 구한다.
 		row = this->GetAt(rowIndex);
+		//3.2 줄의 글자개수를 구한다.
+		letterCount = row->GetLength();
+		//3.3 글자 위치를 원위치시킨다.
+		letterIndex = index;
 		//3.4 글자위치가 글자개수보다 작은동안 그리고 true인동안 반복한다.
 		while (letterIndex < letterCount && isSelected == true)
 		{
@@ -350,7 +354,7 @@ void Note::CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 				//3.4.2.1 마지막 줄의 위치를 저장한다.
 				*endingRowPos = rowIndex;
 				//3.4.2.2 마지막 글자의 위치를 저장한다.
-				*endingLetterPos = letterIndex + 1;
+				*endingLetterPos = letterIndex;
 			}
 			//3.4.3 글자가 선택되어 있지 않으면
 			else
@@ -365,90 +369,4 @@ void Note::CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 		rowIndex++;
 		index = 0;
 	}
-
-#if 0
-	//1. 첫줄, 첫칸으로 보낸다.
-	Long rowIndex = this->First();
-	Long letterIndex = 0;
-	Long letterCount = 0;
-	Long rowCount = this->length;
-	Glyph* row = 0;
-	Glyph* letter = 0;
-	bool isSelected = false;
-	//2. 줄의 위치가 줄의 개수보다 작은동안 그리고 false인동안 반복한다.
-	while (rowIndex < rowCount && isSelected == false)
-	{
-		//2.1 줄의 글자개수를 구한다.
-		letterCount = this->GetAt(rowIndex)->GetLength();
-		//2.2 글자 위치를 원위치시킨다.
-		letterIndex = this->GetAt(rowIndex)->First();
-		//2.3 줄을 구한다.
-		row = this->GetAt(rowIndex);
-		//2.4 글자위치가 글자개수보다 작은동안 그리고 false인동안 반복한다.
-		while (letterIndex < letterCount && isSelected == false)
-		{
-			//2.4.1 글자를 구한다.
-			letter = row->GetAt(letterIndex);
-			//2.4.2 글자가 선택되어 있으면
-			if (letter->IsSelected() == true)
-			{
-				//2.4.2.1 isSelected를 true로 바꾼다.
-				isSelected = true;
-				//2.4.2.2 시작 줄의 위치를 저장한다.
-				*startingRowPos = this->GetCurrent();
-				//2.4.2.3 시작 글자의 위치를 저장한다.
-				*startingLetterPos = row->GetCurrent();
-			}
-			//2.4.3 글자 위치를 증가시킨다.
-			row->Next();
-			letterIndex++;
-		}
-		//2.5 줄의 위치를 증가시킨다.
-		this->Next();
-		rowIndex++;
-	}
-	//3. 현재 줄과 글자를 원위치시켜준다.
-	rowIndex = this->Move(*startingRowPos);
-	Long index = this->GetAt(rowIndex)->Move(*startingLetterPos);
-	//3. 줄의 위치가 줄의 개수보다 작은동안 그리고 true인동안 반복한다.
-	while (rowIndex < rowCount && isSelected == true)
-	{
-		//3.1 줄의 글자개수를 구한다.
-		letterCount = this->GetAt(rowIndex)->GetLength();
-		//3.2 글자 위치를 원위치시킨다.
-		letterIndex = this->GetAt(rowIndex)->Move(index);
-		//3.3 줄을 구한다.
-		row = this->GetAt(rowIndex);
-		//3.4 글자위치가 글자개수보다 작은동안 그리고 true인동안 반복한다.
-		while (letterIndex < letterCount && isSelected == true)
-		{
-			//3.4.1 글자를 구한다.
-			letter = row->GetAt(letterIndex);
-			//3.4.2 글자가 선택되어 있으면
-			if (letter->IsSelected() == true)
-			{
-				//3.4.2.1 마지막 줄의 위치를 저장한다.
-				*endingRowPos = this->GetCurrent();
-				//3.4.2.2 마지막 글자의 위치를 저장한다.
-				*endingLetterPos = row->GetCurrent() + 1;
-			}
-			//3.4.3 글자가 선택되어 있지 않으면
-			else
-			{
-				//3.4.3.1 isSelected를 false로 바꾼다.
-				isSelected = false;
-			}
-			//3.4.3 글자 위치를 증가시킨다.
-			row->Next();
-			letterIndex++;
-		}
-		//3.5 줄의 위치를 증가시킨다.
-		this->Next();
-		rowIndex++;
-		index = 0;
-	}
-	//4. 현재 줄의 위치와 마지막 글자 위치를 재조정해준다.
-	rowIndex = this->Move(*endingRowPos);
-	this->GetAt(rowIndex)->Move(*endingLetterPos);
-#endif
 }

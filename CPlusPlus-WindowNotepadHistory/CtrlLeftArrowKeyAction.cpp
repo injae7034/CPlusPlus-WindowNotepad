@@ -23,12 +23,7 @@ void CtrlLeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//4. 현재 줄을 이동한 후의 줄로 변경한다.
 	this->notepadForm->current = this->notepadForm->note->GetAt(this->notepadForm->note->GetCurrent());
 	//5. 줄에서 캐럿을 단어단위로 이동한다.
-	Long i = this->notepadForm->current->First();
-	while (i < currentCaretindex)
-	{
-		//5.1 캐럿을 다음으로 이동시킨다.
-		i = this->notepadForm->current->Next();
-	}
+	this->notepadForm->current->Move(currentCaretindex);
 }
 
 //소멸자

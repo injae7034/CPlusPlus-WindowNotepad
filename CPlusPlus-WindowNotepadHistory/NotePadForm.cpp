@@ -105,31 +105,6 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	this->scrollController = new ScrollController(this);
 	//15. pageMoveController를 생성한다.
 	this->pageMoveController = new PageMoveController(this);
-	//테스트
-	rowIndex = this->note->Next();
-	this->current = this->note->GetAt(rowIndex);
-	Glyph* letter = 0;
-	letterIndex = this->current->First();
-	while (letterIndex < this->current->GetLength())
-	{
-		letter = this->current->GetAt(letterIndex);
-		letter->Select(true);
-		this->current->Next();
-		letterIndex++;
-	}
-	rowIndex = this->note->Next();
-	this->current = this->note->GetAt(rowIndex);
-	letterIndex = this->current->First();
-	while (letterIndex < this->current->GetLength())
-	{
-		letter = this->current->GetAt(letterIndex);
-		letter->Select(true);
-		this->current->Next();
-		letterIndex++;
-	}
-	rowIndex = this->note->First();
-	this->current = this->note->GetAt(rowIndex);
-	letterIndex = this->current->First();
 
 	return 0;
 }
@@ -218,7 +193,7 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 }
 
-//메모장에 텍스트를 출력할 떄
+//메모장에 텍스트를 출력할 떄//출력시 Visitor패턴적용
 void NotepadForm::OnPaint()
 {
 	//1. CPaintDC를 생성한다.
@@ -240,92 +215,70 @@ void NotepadForm::OnPaint()
 	//9. 글꼴의 정보를 얻는다.
 	dc.GetTextMetrics(&text);
 	//10. note에 저장된 글자들을 출력한다.
-	Long i = 0;
+	Long rowIndex = 0;
 	Long currentXPos;
 	Long currentYPos;
 	CString content;
-	//테스트
-	Long j = 0;
+
+	Long currentWidth = 0;
+	Long letterWidth = 0;
+	Long letterCount = 0;
+	Long letterIndex = 0;
 	Glyph* row = 0;
 	Glyph* letter = 0;
-	CString rowContent;
-	
+
 	//11. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
-	while (i < 1)
+	while (rowIndex < this->note->GetLength())
 	{
-		//11.1 현재 줄의 글자들을 구한다.
-		content = CString(this->note->GetAt(i)->GetContent().c_str());
+		//11.1 현재 줄을 구한다.
+		row = this->note->GetAt(rowIndex);
 		//11.2 스크롤의 위치를 구한다.
 		currentXPos = this->GetScrollPos(SB_HORZ);
 		currentYPos = this->GetScrollPos(SB_VERT);
-		//11.3 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
-		//11.3 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
-		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
-		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, content);
-#if 0
-		//테스트
-		//줄을 구한다.
-		row = this->note->GetAt(i);
-		//현재 줄의 글자를 구한다.
-		j = 0;
-		rowContent = "";
-		while (j < row->GetLength())
+		//11.3 현재줄의 첫 글자를 구한다.
+		letterIndex = 0;
+		currentWidth = 0;
+		letterWidth = 0;
+		//11.4 현재줄의 개수를 구한다.
+		letterCount = row->GetLength();
+		//11.5 현재글자 위치가 줄의 글자개수보다 작은동안 반복한다.
+		while (letterIndex < letterCount)
 		{
-			letter = row->GetAt(j);
+			//11.5.1 현재 글자를 구한다.
+			letter = row->GetAt(letterIndex);
+			//11.5.2 현재 글자의 내용을 구한다.
 			content = CString(letter->GetContent().c_str());
-			//11.2 스크롤의 위치를 구한다.
-			rowContent += content;
-			j++;
+			//11.5.3 글자의 너비를 구한다.
+			//처음엔 0에서 시작해야하기 때문에 currentWidth += letterWidth가 
+			//letterWidth = this->textExtent->GetTextWidth((string)content) 보다 앞에 있어야함.
+			//그래서 현재 글자 너비를 구해서 다음 글자의 시작점으로 삼아주면 됨
+			//첫글자의 시작점은 0이고 다음 글자의 시작점은 첫글자의 너비이다!!!
+			currentWidth += letterWidth;
+			letterWidth = this->textExtent->GetTextWidth((string)content);
+			//11.5.3. 현재 글자가 선택이 안되어있으면
+			if (letter->IsSelected() == false)
+			{
+				//11.5.3.1 글자를 화면에 출력한다.
+				dc.SetBkColor(RGB(255, 255, 255));
+				dc.SetTextColor(RGB(0, 0, 0));
+				dc.TextOut(currentWidth -currentXPos, rowIndex * text.tmHeight
+					- currentYPos, content);
+			}
+			//11.5.4 현재 글자가 선택이 되어있으면
+			else
+			{
+				//11.5.4.1
+				dc.SetBkColor(GetSysColor(COLOR_HIGHLIGHT));//red, green, blue 세개 색깔 
+				dc.SetTextColor(RGB(255, 255, 255));
+				dc.TextOut(currentWidth -currentXPos, rowIndex * text.tmHeight
+					- currentYPos, content);
+			}
+			letterIndex++;
 		}
-		currentXPos = this->GetScrollPos(SB_HORZ);
-		currentYPos = this->GetScrollPos(SB_VERT);
-		//11.3 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
 		//11.3 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
 		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
-		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, rowContent);
-#endif
-		i++;
-	}
-	//테스트
-	Long startingRowPos = 0;
-	Long startingLetterPos = 0;
-	Long endingRowPos = 0;
-	Long endingLetterPos = 0;
-	this->note->CalculateSelectedRange(&startingRowPos, &startingLetterPos,
-		&endingRowPos, &endingLetterPos);
-	dc.SetBkColor(GetSysColor(COLOR_HIGHLIGHT));//red, green, blue 세개 색깔 
-	i = startingRowPos;
-	while (i <= endingRowPos)
-	{
-		//11.1 현재 줄의 글자들을 구한다.
-		content = CString(this->note->GetAt(i)->GetContent().c_str());
-		//11.2 스크롤의 위치를 구한다.
-		currentXPos = this->GetScrollPos(SB_HORZ);
-		currentYPos = this->GetScrollPos(SB_VERT);
-		//11.3 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
-		//11.3 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
-		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
-		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, content);
-		i++;
-	}
-	//11. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
-	//this->note->Move(i);
-	//this->current = this->note->GetAt(i);
-	//this->current->First();
-	dc.SetBkColor(RGB(255, 255, 255));
-	//dc.SetBkMode(TRANSPARENT);
-	while (i < this->note->GetLength())
-	{
-		//11.1 현재 줄의 글자들을 구한다.
-		content = CString(this->note->GetAt(i)->GetContent().c_str());
-		//11.2 스크롤의 위치를 구한다.
-		currentXPos = this->GetScrollPos(SB_HORZ);
-		currentYPos = this->GetScrollPos(SB_VERT);
-		//11.3 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
-		//11.3 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
-		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
-		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, content);
-		i++;
+		//dc.TextOut(0 - currentXPos, rowIndex * text.tmHeight - currentYPos, content);
+		rowIndex++;
 	}
 	dc.SelectObject(oldFont);
 	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음. 
