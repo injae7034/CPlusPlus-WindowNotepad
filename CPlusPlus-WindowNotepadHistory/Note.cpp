@@ -305,12 +305,12 @@ void Note::CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 	//2. 줄의 위치가 줄의 개수보다 작은동안 그리고 false인동안 반복한다.
 	while (rowIndex < rowCount && isSelected == false)
 	{
-		//2.1 줄의 글자개수를 구한다.
-		letterCount = this->GetAt(rowIndex)->GetLength();
+		//2.1 줄을 구한다.
+		row = this->GetAt(rowIndex);
+		//2.2 줄의 글자개수를 구한다.
+		letterCount = row->GetLength();
 		//2.2 글자 위치를 원위치시킨다.
 		letterIndex = 0;
-		//2.3 줄을 구한다.
-		row = this->GetAt(rowIndex);
 		//2.4 글자위치가 글자개수보다 작은동안 그리고 false인동안 반복한다.
 		while (letterIndex < letterCount && isSelected == false)
 		{
