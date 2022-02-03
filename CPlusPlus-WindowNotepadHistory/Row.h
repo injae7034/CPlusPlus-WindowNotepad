@@ -13,7 +13,7 @@ public:
 	virtual Glyph* Clone();//Prototype Patter Clone
 	virtual string GetContent();
 	virtual string GetPartOfContent(Long current);
-	virtual void Accept(TextOutVisitor* textOutVisitor);
+	virtual void Accept(GlyphVisitor* glyphVisitor);
 };
 
 #endif // !_ROW_H

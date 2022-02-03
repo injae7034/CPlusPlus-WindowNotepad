@@ -5,7 +5,6 @@
 #include "Array.h"
 
 typedef signed long int Long;
-class TextOutVisitor;
 
 //Composite을 Row기준으로 작성하고 Note에서 Note기준으로 오버라이딩(재정의)해서 이용함. 
 class Composite :public Glyph

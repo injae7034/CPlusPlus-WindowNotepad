@@ -12,7 +12,7 @@
 #include "KeyAction.h"
 #include "PageUpKeyAction.h"
 #include "PageDownKeyAction.h"
-#include "KeyActions/BackSpaceKeyAction.h"
+#include "BackSpaceKeyAction.h"
 #include "DeleteKeyAction.h"
 #include "ShiftRightArrowKeyAction.h"
 #include "ShiftCtrlRightArrowKeyAction.h"

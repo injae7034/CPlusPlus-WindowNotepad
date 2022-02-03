@@ -1,5 +1,5 @@
 #include "Row.h"
-#include "TextOutVisitor.h"
+#include "GlyphVisitor.h"
 
 //디폴트생성자
 Row::Row(Long capacity)
@@ -88,7 +88,8 @@ string Row::GetPartOfContent(Long current)
 	//3. 끝내다.
 }
 
-void Row::Accept(TextOutVisitor* textOutVisitor)
+//Visitor Pattern
+void Row::Accept(GlyphVisitor* glyphVisitor)
 {
-	textOutVisitor->VisitRowTextOut(this);
+	glyphVisitor->VisitRow(this);
 }

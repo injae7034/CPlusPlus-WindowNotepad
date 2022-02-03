@@ -1,6 +1,6 @@
 #include "Note.h"
 #include "Letter.h"
-#include "TextOutVisitor.h"
+#include "GlyphVisitor.h"
 
 //디폴트생성자
 Note::Note(Long capacity)
@@ -370,4 +370,10 @@ void Note::CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 		rowIndex++;
 		index = 0;
 	}
+}
+
+//Visitor Pattern
+void Note::Accept(GlyphVisitor* glyphVisitor)
+{
+	glyphVisitor->VisitNote(this);
 }

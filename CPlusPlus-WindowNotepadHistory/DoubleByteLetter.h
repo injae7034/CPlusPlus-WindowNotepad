@@ -14,6 +14,7 @@ public:
 	virtual ~DoubleByteLetter();//소멸자
 	virtual Glyph* Clone();//Prototype Pattern Clone
 	virtual string GetContent();
+	virtual void Accept(GlyphVisitor* glyphVisitor);
 	//인라인함수
 	char* GetScript() const;
 

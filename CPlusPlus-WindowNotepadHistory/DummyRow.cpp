@@ -1,4 +1,5 @@
 #include "DummyRow.h"
+#include "GlyphVisitor.h"
 
 //디폴트생성자
 DummyRow::DummyRow(Long capacity)
@@ -33,4 +34,10 @@ DummyRow::~DummyRow()
 Glyph* DummyRow::Clone()
 {
 	return new DummyRow(*this);
+}
+
+//Visitor Pattern
+void DummyRow::Accept(GlyphVisitor* glyphVisitor)
+{
+	glyphVisitor->VisitDummyRow(this);
 }

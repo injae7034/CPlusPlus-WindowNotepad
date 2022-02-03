@@ -1,4 +1,5 @@
 #include "DoubleByteLetter.h"
+#include "GlyphVisitor.h"
 
 //디폴트생성자
 DoubleByteLetter::DoubleByteLetter()
@@ -56,4 +57,10 @@ string DoubleByteLetter::GetContent()
 	//script += '\0';
 
 	return script;
+}
+
+//Visitor Pattern
+void DoubleByteLetter::Accept(GlyphVisitor* glyphVisitor)
+{
+	glyphVisitor->VisitDoubleByteLetter(this);
 }

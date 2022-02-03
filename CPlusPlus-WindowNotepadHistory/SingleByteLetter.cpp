@@ -1,4 +1,5 @@
 #include "SingleByteLetter.h"
+#include "GlyphVisitor.h"
 
 //디폴트생성자
 SingleByteLetter::SingleByteLetter()
@@ -47,4 +48,10 @@ string SingleByteLetter::GetContent()
 	//script += '\0';
 
 	return script;
+}
+
+//Visitor Pattern
+void SingleByteLetter::Accept(GlyphVisitor* glyphVisitor)
+{
+	glyphVisitor->VisitSingleByteLetter(this);
 }

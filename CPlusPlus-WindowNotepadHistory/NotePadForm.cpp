@@ -18,8 +18,9 @@
 #include "DummyRow.h"
 #include "PageMoveController.h"
 #include "RowAutoChange.h"
-#include "RowTextOutVisitor.h"
-#include "LetterTextOutVisitor.h"
+
+#include "TextingOutVisitor.h"
+#include "SelectingVisitor.h"
 
 HHOOK hSaveMessageBoxHook;//전역변수 선언
 
@@ -206,6 +207,140 @@ void NotepadForm::OnPaint()
 {
 	//1. CPaintDC를 생성한다.
 	CPaintDC dc(this);
+	//2. 선택 안된 범위를 출력할 연산을 생성한다.
+	TextingOutVisitor textingOutVisitor = TextingOutVisitor(this, &dc, 0, 0);
+	//3. 선택된 범위를 출력할 연산을 생성한다.
+	SelectingVisitor selectingVisitor = SelectingVisitor(this, &dc, 0, 0);
+	//4. 선택이 안된 범위를 출력한다.
+	this->note->Accept(&textingOutVisitor);
+	//5. 선택된 범위를 출력한다.
+	this->note->Accept(&selectingVisitor);
+	
+	
+
+#if 0
+	//1. CPaintDC를 생성한다.
+	CPaintDC dc(this);
+	//2. 왼쪽을 기준선으로 정함.
+	dc.SetTextAlign(TA_LEFT);
+	//3. CFont를 생성한다.
+	CFont font;
+	//4. 글씨크기와 글씨체를 정하다.
+	font.CreateFontIndirect(&this->font.GetLogFont());
+	//5. 폰트를 dc에 지정한다.
+	HFONT oldFont;
+	oldFont = (HFONT)dc.SelectObject(font);
+	dc.SelectObject(oldFont);
+	//8. 선택된 범위를 구한다.
+	Glyph* row = 0;
+	Glyph* letter = 0;
+	Long startingRowPos = 0;
+	Long startingLetterPos = 0;
+	Long endingRowPos = 0;
+	Long endingLetterPos = 0;
+	this->note->CalculateSelectedRange(&startingRowPos,
+		&startingLetterPos, &endingRowPos, &endingLetterPos);
+	Long sum = startingRowPos + startingLetterPos + endingRowPos + endingLetterPos;
+	Long selectedRange = (this->note->GetLength() - 1) +
+		(this->note->GetAt(this->note->GetLength() - 1)->GetLength() - 1);
+	//9. 선택 안된 범위를 출력할 연산을 생성한다.
+	TextingOutVisitor textingOutVisitor = TextingOutVisitor(this, &dc, 0, 0);
+	//10. 선택된 범위를 출력할 연산을 생성한다.
+	SelectingVisitor selectingVisitor = SelectingVisitor(this, &dc, 0, 0);
+	//11. 선택된 범위가 없으면
+	if (sum == 0)
+	{
+		//11.1 노트 전체를 선택없이 출력한다.
+		this->note->Accept(&textingOutVisitor);
+	}
+	//12. 노트의 모든 부분이 선택되어 있으면
+	else if (sum == selectedRange)
+	{
+		//12.1 노트 전체를 선택된 채로 출력한다.
+		this->note->Accept(&selectingVisitor);
+	}
+	//13. 선택된 범위가 부분이면
+	else if (sum > 0)
+	{
+		//13.1 선택된 줄의 전까지 줄단위로 선택없이 출력한다.
+		Long rowIndex = 0;
+		while (rowIndex < startingRowPos)
+		{
+			//13.1 현재 줄을 구한다.
+			row = this->note->GetAt(rowIndex);
+			//13.2 줄의 위치를 업데이트해준다.
+			textingOutVisitor = TextingOutVisitor(this, &dc, 0, rowIndex);
+			//13.3 줄단위로 선택없이 출력한다.
+			row->Accept(&textingOutVisitor);
+			//13.4 줄의 위치를 증가시킨다.
+			rowIndex++;
+		}
+		Long letterIndex = 0;
+		Long currentWidth = 0;
+		Long letterWidth = 0;
+		Long letterCount = 0;
+		string content;
+		//13.2 선택된 줄의 시작부터 선택된 줄의 마지막까지 출력한다.
+		while (rowIndex <= endingRowPos)
+		{
+			//13.2.1 현재 줄을 구한다.
+			row = this->note->GetAt(rowIndex);
+			//13.2.2 현재 줄의 글자위치를 원위치시켜준다.
+			letterIndex = 0;
+			//13.2.3 현재 줄의 글자개수를 구한다.
+			letterCount = row->GetLength();
+			//13.2.4 현재글자 위치가 줄의 글자개수보다 작은동안 반복한다.
+			while (letterIndex < letterCount)
+			{
+				//13.2.4.1 현재 글자를 구한다.
+				letter = row->GetAt(letterIndex);
+				//13.2.4.2 현재 글자의 내용을 구한다.
+				content = CString(letter->GetContent().c_str());
+				//13.2.4.3 현재 글자가 출력될 가로 위치를 구한다.
+				currentWidth += letterWidth;
+				letterWidth = this->textExtent->GetTextWidth((string)content);
+				//13.2.4.4 현재 글자가 선택이 안되었으면
+				if (letter->IsSelected() == false)
+				{
+					//13.2.4.4.1 textingOutVisitor에 현재 글자의 위치를 업데이트한다.
+					textingOutVisitor = TextingOutVisitor(this, &dc, currentWidth, rowIndex);
+					//13.2.4.4.2 현재 글자를 선택없이 출력한다.
+					letter->Accept(&textingOutVisitor);
+				}
+				//13.2.4.5 현재 글자가 선택이 되어있으면
+				else
+				{
+					//13.2.4.5.1 textingOutVisitor에 현재 글자의 위치를 업데이트한다.
+					selectingVisitor = SelectingVisitor(this, &dc, currentWidth, rowIndex);
+					//13.2.4.5.2 현재 글자를 선택없이 출력한다.
+					letter->Accept(&textingOutVisitor);
+				}
+				letterIndex++;
+			}
+			rowIndex++;
+		}
+		//13.3 마지막 줄까지 반복한다.
+		while (rowIndex < this->note->GetLength())
+		{
+			//13.1 현재 줄을 구한다.
+			row = this->note->GetAt(rowIndex);
+			//13.2 줄의 위치를 업데이트해준다.
+			textingOutVisitor = TextingOutVisitor(this, &dc, 0, rowIndex);
+			//13.3 줄단위로 선택없이 출력한다.
+			row->Accept(&textingOutVisitor);
+			//13.4 줄의 위치를 증가시킨다.
+			rowIndex++;
+		}
+	}
+
+	dc.SelectObject(oldFont);
+	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음. 
+	font.DeleteObject();
+#endif
+
+#if 0
+	//1. CPaintDC를 생성한다.
+	CPaintDC dc(this);
 	//2. 왼쪽을 기준선으로 정함.
 	dc.SetTextAlign(TA_LEFT);
 	//3. CFont를 생성한다.
@@ -249,17 +384,17 @@ void NotepadForm::OnPaint()
 	Long letterWidth = 0;
 	Long letterCount = 0;
 	Long letterIndex = 0;
-	
+	//9.2 스크롤의 위치를 구한다.
+	currentXPos = this->GetScrollPos(SB_HORZ);
+	currentYPos = this->GetScrollPos(SB_VERT);
+
 	Glyph* letter = 0;
 	//8. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
 	while (rowIndex < this->note->GetLength())
 	{
 		//9.1 현재 줄을 구한다.
 		row = this->note->GetAt(rowIndex);
-		
-		//9.2 스크롤의 위치를 구한다.
-		currentXPos = this->GetScrollPos(SB_HORZ);
-		currentYPos = this->GetScrollPos(SB_VERT);
+
 		//9.3 현재줄의 첫 글자를 구한다.
 		letterIndex = 0;
 		currentWidth = 0;
@@ -316,6 +451,145 @@ void NotepadForm::OnPaint()
 	dc.SelectObject(oldFont);
 	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음. 
 	font.DeleteObject();
+#endif
+
+/*
+	//1. CPaintDC를 생성한다.
+	CPaintDC dc(notepadForm);
+	//2. 왼쪽을 기준선으로 정함.
+	dc.SetTextAlign(TA_LEFT);
+	//3. CFont를 생성한다.
+	CFont font;
+	//4. 글씨크기와 글씨체를 정하다.
+	font.CreateFontIndirect(&notepadForm->font.GetLogFont());
+	//5. 폰트를 dc에 지정한다.
+	HFONT oldFont;
+	oldFont = (HFONT)dc.SelectObject(font);
+	//6. TEXTMETRIC을 생성한다.
+	TEXTMETRIC text;
+	//7. 글꼴의 정보를 얻는다.
+	dc.GetTextMetrics(&text);
+	//8. note에 저장된 글자들을 출력한다.
+	Long rowIndex = 0;
+	Long currentXPos;
+	Long currentYPos;
+	CString content;
+
+	Long currentWidth = 0;
+	Long letterWidth = 0;
+	Long letterCount = 0;
+	Long letterIndex = 0;
+	Glyph* row = 0;
+	Glyph* letter = 0;
+
+	//9. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
+	while (rowIndex < notepadForm->note->GetLength())
+	{
+		//9.1 현재 줄을 구한다.
+		row = notepadForm->note->GetAt(rowIndex);
+		//9.2 스크롤의 위치를 구한다.
+		currentXPos = notepadForm->GetScrollPos(SB_HORZ);
+		currentYPos = notepadForm->GetScrollPos(SB_VERT);
+		//9.3 현재줄의 첫 글자를 구한다.
+		letterIndex = 0;
+		currentWidth = 0;
+		letterWidth = 0;
+		//9.4 현재줄의 개수를 구한다.
+		letterCount = row->GetLength();
+		//9.5 현재글자 위치가 줄의 글자개수보다 작은동안 반복한다.
+		while (letterIndex < letterCount)
+		{
+			//9.5.1 현재 글자를 구한다.
+			letter = row->GetAt(letterIndex);
+			//9.5.2 현재 글자의 내용을 구한다.
+			content = CString(letter->GetContent().c_str());
+			//9.5.3 글자의 너비를 구한다.
+			//처음엔 0에서 시작해야하기 때문에 currentWidth += letterWidth가 
+			//letterWidth = this->textExtent->GetTextWidth((string)content) 보다 앞에 있어야함.
+			//그래서 현재 글자 너비를 구해서 다음 글자의 시작점으로 삼아주면 됨
+			//첫글자의 시작점은 0이고 다음 글자의 시작점은 첫글자의 너비이다!!!
+			currentWidth += letterWidth;
+			letterWidth = notepadForm->textExtent->GetTextWidth((string)content);
+			//만약에 글자가 탭문자이면 내용을 띄어쓰기 8개로 바꿔준다.
+			if (content == "\t")
+			{
+				content = "        ";
+			}
+			//9.5.3. 현재 글자가 선택이 안되어있으면
+			if (letter->IsSelected() == false)
+			{
+				//9.5.3.1 글자를 화면에 출력한다.
+				dc.SetBkColor(RGB(255, 255, 255));
+				//텍스트의 색깔을 정함. 이렇게해야 나중에 글꼴상자에서 색깔을 바꾸면 반영할 수 있음.
+				dc.SetTextColor(notepadForm->font.GetColor());
+				//dc.SetTextColor(RGB(0, 0, 0));//이렇게하면 나중에 글꼴에서 글자색을 바꿀수없음
+				dc.TextOut(currentWidth - currentXPos, rowIndex * text.tmHeight
+					- currentYPos, content);
+			}
+			//9.5.4 현재 글자가 선택이 되어있으면
+			else
+			{
+				//9.5.4.1
+				dc.SetBkColor(GetSysColor(COLOR_HIGHLIGHT));//red, green, blue 세개 색깔 
+				dc.SetTextColor(RGB(255, 255, 255));//이렇게하면 나중에 글꼴에서 글자색을 바꿀수 없음
+				dc.TextOut(currentWidth - currentXPos, rowIndex * text.tmHeight
+					- currentYPos, content);
+			}
+			letterIndex++;
+		}
+		//9.6 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
+		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
+		//dc.TextOut(0 - currentXPos, rowIndex * text.tmHeight - currentYPos, content);
+		rowIndex++;
+	}
+	dc.SelectObject(oldFont);
+	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음. 
+	font.DeleteObject();
+*/
+
+	/*
+	//1. CPaintDC를 생성한다.
+	CPaintDC dc(notepadForm);
+	//2. 텍스트의 색깔을 정함.
+	dc.SetTextColor(notepadForm->font.GetColor());
+	//3. 왼쪽을 기준선으로 정함.
+	dc.SetTextAlign(TA_LEFT);
+	//4. CFont를 생성한다.
+	CFont font;
+	//5. 글씨크기와 글씨체를 정하다.
+	font.CreateFontIndirect(&notepadForm->font.GetLogFont());
+	//6. 폰트를 dc에 지정한다.
+	HFONT oldFont;
+	oldFont = (HFONT)dc.SelectObject(font);
+	//7. TEXTMETRIC을 생성한다.
+	TEXTMETRIC text;
+	//8. 글꼴의 정보를 얻는다.
+	dc.GetTextMetrics(&text);
+	//9. note에 저장된 글자들을 출력한다.
+	Long i = 0;
+	Long currentXPos;
+	Long currentYPos;
+	CString content;
+	//10. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
+	while (i < notepadForm->note->GetLength())
+	{
+		//10.1 현재 줄의 글자들을 구한다.
+		content = CString(notepadForm->note->GetAt(i)->GetContent().c_str());
+		//10.2 스크롤의 위치를 구한다.
+		currentXPos = notepadForm->GetScrollPos(SB_HORZ);
+		currentYPos = notepadForm->GetScrollPos(SB_VERT);
+		//10.3 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
+		// 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
+		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
+		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, content);
+		//dc.TextOut(0, i * text.tmHeight, content);
+		//this->Notify(); 여기서 Notify 해주면 안됨! 캐럿이 계속 남게되고 안사라짐.
+		i++;
+	}
+	dc.SelectObject(oldFont);
+	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음. 
+	font.DeleteObject();
+	*/
 }
 
 //한글을 입력받을 때

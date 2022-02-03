@@ -1,7 +1,6 @@
 #include "Composite.h"
 #include "Row.h"
 #include "DummyRow.h"
-#include "TextOutVisitor.h"
 
 //디폴트생성자
 Composite::Composite(Long capacity)

@@ -11,6 +11,7 @@ public:
 	DummyRow& operator=(const DummyRow& source);//치환연산자
 	virtual ~DummyRow();//소멸자
 	virtual Glyph* Clone();//Prototype Patter Clone
+	virtual void Accept(GlyphVisitor* glyphVisitor);
 };
 
 #endif // !_DUMMYROW_H
