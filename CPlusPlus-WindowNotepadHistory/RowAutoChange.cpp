@@ -83,17 +83,17 @@ void RowAutoChange::Undo()
 	{
 		//1.1 메모장에서 rowIndex번째 줄을 구한다.
 		row = this->notepadForm->note->GetAt(rowIndex);
-		//1.2 DummyRow이면
+		//1.2 가짜줄(DummyRow)이면
 		if (dynamic_cast<DummyRow*>(row))
 		{
-			//1.2.1 DummyRow 이전 줄(Row)을 구한다.
+			//1.2.1 가짜줄(DummyRow) 이전의 진짜줄(Row)을 구한다.
 			previousRow = this->notepadForm->note->GetAt(rowIndex - 1);
-			//1.2.2 DummyRow를 이전 줄(Row)에 합친다.
+			//1.2.2 가짜줄(DummyRow)을 이전의 진짜줄(Row)에 합친다.
 			row->Join(previousRow);
-			//1.2.3 Note에서 DummyRow의 주소를 지운다.
+			//1.2.3 Note에서 가짜줄(DummyRow)의 주소를 지운다.
 			this->notepadForm->note->Remove(rowIndex);
 		}
-		//1.3 DummyRow가 아니면
+		//1.3 가짜줄(DummyRow)이 아니면(진짜줄(Row)이면)
 		else
 		{
 			//1.3.1 다음 줄로 이동한다.
@@ -103,8 +103,8 @@ void RowAutoChange::Undo()
 }
 
 //자동개행 후 줄과 캐럿의 위치를 통해 자동개행 전 원래 줄과 캐럿의 위치를 구한다
-void RowAutoChange::GetOriginPos(Long changedCaretPos, Long changedRowPos,
-	Long* originCaretPos, Long* originRowPos)
+void RowAutoChange::GetOriginPos(Long changedLetterPos, Long changedRowPos,
+	Long* originLetterPos, Long* originRowPos)
 {
 	//1. 자동개행 후 줄과 캐럿의 위치를 입력받는다.
 	//2. 자동개행 후 캐럿이 있는 곳까지 줄의 개수를 구한다.
@@ -162,91 +162,18 @@ void RowAutoChange::GetOriginPos(Long changedCaretPos, Long changedRowPos,
 			//7.3.2 글자 개수를 구한다.
 			letterCount = row->GetLength();
 			//7.3.3 자동개행 후 캐럿의 위치에 글자개수를 더해준다.
-			changedCaretPos += letterCount;
+			changedLetterPos += letterCount;
 			//7.3.4 i를 증가시킨다.
 			i++;
 		}
 	}
 	//8. 자동개행 전 원래 캐럿의 위치를 저장한다.(출력한다.)
-	*originCaretPos = changedCaretPos;
-
-#if 0
-	//자동개행 후 줄의 위치를 구해 줄을 구하고 진짜줄(Row)가 나올 동안 -1을 하면서 거슬러 올라간다.
-	//5. 자동개행 후 줄의 위치를 입력해 줄을 구한다.
-	row = this->notepadForm->note->GetAt(changedRowPos);
-	//6. 구한 줄이 가짜 줄인 동안 반복한다.
-	while (dynamic_cast<DummyRow*>(row))
-	{
-		//6.1 자동개행 후 캐럿의 위치에서 줄의 글자개수만큼 더해준다.
-		//개수는 줄마다 다르다 영문만 있는 줄이 한글만 있는 줄이나 한글이랑 영문이랑 섞인 줄보다
-		//개수가 더많다 즉, 줄마다 개수가 달라지기 때문에 줄을 더해주면 안되고 줄마다 길이를 구해서
-		//그에 맞게 개수를 더해줘야한다.!!
-		changedCaretPos += row->GetLength();
-		//6.2 줄의 위치를 감소시킨다.
-		changedRowPos--;
-		//6.3 줄을 구한다.
-		row = this->notepadForm->note->GetAt(changedRowPos);
-	}
-	//7. 자동개행 전 줄의 위치를 저장한다.(출력한다.)
-	*originCaretPos = changedCaretPos;
-	//8. 끝내다.
-#endif
-#if 0
-	//2. 현재 줄을 구한다.
-	Glyph *row= this->notepadForm->note->GetAt(changedRowPos);
-	//3. 현재 줄이 가짜줄인동안 반복한다.
-	Long rowIndex = changedRowPos;
-	while (dynamic_cast<DummyRow*>(row))
-	{
-		//3.1 줄의 위치를 감소시킨다.
-		rowIndex--;
-		//3.2 줄을 구한다.
-		row = this->notepadForm->note->GetAt(rowIndex);
-	}
-	//4. 자동개행 전 원래 줄의 위치를 저장한다.
-	*originRowPos = rowIndex;
-	//5. 줄의 위치가 입력 받은 현재 줄의 위치보다 작은동안 반복한다.
-	Long caretIndex = 0;
-	Long count = 0;// originCaretPos
-	while (rowIndex < changedRowPos)
-	{
-		//5.1 줄을 구한다.
-		row = this->notepadForm->note->GetAt(rowIndex);
-		//5.2 줄에서 캐럿을 처음으로 보낸다.
-		caretIndex = row->First();
-		//5.3 캐럿이 현재 줄의 글자개수보다 작은동안 반복한다.
-		while (caretIndex < row->GetLength())
-		{
-			//5.3.1 현재 줄에서 캐럿을 다음으로 보낸다.
-			caretIndex = row->Next();
-			//5.3.2 count를 센다.
-			count++;
-		}
-		//5.4 현재 줄을 1 증가시킨다.
-		rowIndex++;
-	}
-	//6. 줄을 구한다.(rowIndex=changedRowPos)
-	row = this->notepadForm->note->GetAt(rowIndex);
-	//7. 줄에서 캐럿을 처음으로 보낸다.
-	caretIndex = row->First();
-	//8. 캐럿이 입력받은 캐럿의 위치보다 작은동안 반복한다.
-	while (caretIndex < changedCaretPos)
-	{
-		//8.1 현재 줄에서 캐럿을 다음으로 보낸다.
-		caretIndex = row->Next();
-		//8.2 count를 센다.
-		count++;
-	}
-	//9. 자동개행 전 원래 캐럿의 위치를 저장한다.
-	*originCaretPos = count;
-	//10. 자동개행 전 원래 줄의 위치와 자동개행 전 원래 캐럿의 위치를 출력한다.
-	//11. 끝내다.
-#endif
+	*originLetterPos = changedLetterPos;
 }
 
 //자동개행 전 원래 줄과 캐럿의 위치를 통해 자동개행 후 줄과 캐럿의 위치를 구한다.
-void RowAutoChange::GetChangedPos(Long originCaretPos, Long originRowPos,
-	Long* changedCaretPos, Long* changedRowPos)
+void RowAutoChange::GetChangedPos(Long originLetterPos, Long originRowPos,
+	Long* changedLetterPos, Long* changedRowPos)
 {
 	//1. 자동개행 전 원래 줄과 캐럿의 위치를 입력받는다.
 	//2. 자동개행 전 캐럿이 있는 곳까지 줄의 개수를 구한다.
@@ -286,10 +213,10 @@ void RowAutoChange::GetChangedPos(Long originCaretPos, Long originRowPos,
 	row = this->notepadForm->note->GetAt(realRowPos);
 	Long letterCount = row->GetLength();
 	//5. 원래 캐럿의 위치가 현재 줄의 글자개수보다 큰동안 반복한다.
-	while (originCaretPos > letterCount)
+	while (originLetterPos > letterCount)
 	{
 		//5.1 원래 캐럿의 위치에 현재 줄의 글자개수를 뺀다.
-		originCaretPos -= letterCount;
+		originLetterPos -= letterCount;
 		//5.2 i를 증가시킨다.
 		i++;
 		//5.3 row를 구한다.
@@ -299,57 +226,8 @@ void RowAutoChange::GetChangedPos(Long originCaretPos, Long originRowPos,
 	//6. 자동개행후 줄의 위치를 저장한다.(출력한다.)
 	*changedRowPos = i;
 	//7. 자동개행 후 캐럿의 위치를 저장한다.(출력한다.)
-	*changedCaretPos = originCaretPos;
+	*changedLetterPos = originLetterPos;
 	//8. 끝내다.
-#if 0
-	//1. 자동개행 전 원래 줄과 캐럿의 위치를 입력받는다.
-	//2. 자동개행 전 원래 줄의 위치(originRowPos)보다 작거나 같은 동안
-	//그리고 rowIndex가 note의 줄의 개수보다 작은동안 반복한다.
-	Long rowLength = this->notepadForm->note->GetLength();
-	Long nextRowPos = originRowPos + 1;
-	Long rowIndex = 0;
-	Glyph* row = 0;
-	Long i = 0;
-	while (i <= nextRowPos && rowIndex < rowLength)
-	{
-		//2.1 row를 구한다.
-		row = this->notepadForm->note->GetAt(rowIndex);
-		//2.2 row가 진짜 줄이면
-		if (dynamic_cast<Row*>(row))
-		{
-			//2.2.1 반복제어변수를 센다.
-			i++;
-		}
-		//2.3 rowIndex를 센다.
-		rowIndex++;
-	}
-	//3. rowIndex를 통해 현재 줄을 구한다.
-	i = rowIndex;
-	row = this->notepadForm->note->GetAt(i);
-	//4. 현재줄이 가짜줄인동안 반복한다.
-	while (dynamic_cast<DummyRow*>(row))
-	{
-		//4.1 줄의 위치를 감소시킨다.
-		i--;
-		//4.2 줄을 구한다.
-		row = this->notepadForm->note->GetAt(i);
-	}
-	//5. i가 rowIndex보다 작은동안 반복한다.
-	Long count = originCaretPos;
-	row = this->notepadForm->note->GetAt(i);
-	rowLength = row->GetLength();
-	while (i < rowIndex)
-	{
-		//5.1 현재 캐럿의 위치에서 현재 줄의 개수만큼 뺀다.
-		count -= rowLength;
-		//5.2 i를 증가시킨다.
-		i++;
-	}
-	//6. rowIndex와 count를 출력한다.
-	*changedRowPos = rowIndex;
-	*changedCaretPos = count;
-	//7. 끝내다.
-#endif
 }
 
 //소멸자
