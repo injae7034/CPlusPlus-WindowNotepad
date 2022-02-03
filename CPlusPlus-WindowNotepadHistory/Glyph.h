@@ -10,11 +10,12 @@ class Glyph//interface(Component)이므로 복사생성자나 치환연산자가 필요없음.
 {
 public:
 	Glyph();//디폴트생성자
-	virtual Long Add(Glyph* glyph);
-	virtual Long Add(Long index, Glyph* glyph);//Insert
-	virtual Long Remove(Long index);
-	virtual Glyph* Split(Long index);
-	virtual Glyph* GetAt(Long index);
+	virtual Long Add(Glyph* glyph) { return -1; }
+	virtual Long Add(Long index, Glyph* glyph) { return -1; }//Insert
+	virtual Long Remove(Long index) { return -1; }
+	virtual Glyph* Split(Long index, bool isDummyRow = false) { return 0; }
+	virtual void Join(Glyph* row) {}
+	virtual Glyph* GetAt(Long index) { return 0; }
 	virtual ~Glyph() = 0;//추상클래스 소멸자
 	virtual Glyph* Clone() = 0;//Prototype Pattern Clone
 	virtual string GetContent() = 0;//dynamic_cast나 형변환을 안하기 위해서 만듬
@@ -22,14 +23,14 @@ public:
 	//Glyph에 GetScript가 없기때문에 이런일이 발생함 GetScript는 반환값이 single이랑 double
 	//두개가 달라서 여기서 GetScript를 정의할 수 없기때문에 나중에 main함수에서 Glyph*자료형일때는
 	//GetScript를 사용할 수 없다
-	virtual string GetPartOfContent(Long current);
-	virtual Long First();
-	virtual Long Last();
-	virtual Long Previous();
-	virtual Long Next();
-	virtual Long Move(Long index);
-	virtual Long NextWord();
-	virtual Long PreviousWord();
+	virtual string GetPartOfContent(Long current) { return "\0"; }
+	virtual Long First() { return 0; }
+	virtual Long Last() { return 0; }
+	virtual Long Previous() { return 0; }
+	virtual Long Next() { return 0; }
+	virtual Long Move(Long index) { return 0; }
+	virtual Long NextWord() { return 0; }
+	virtual Long PreviousWord() { return 0; }
 	//인라인함수
 	//여기서 실제로는 안쓰이고 자식에게 넘겨주는 역할을 하기때문에 virtual을 붙여줘야함
 	virtual Long GetCapacity() const;

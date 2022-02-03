@@ -15,6 +15,7 @@
 #include "ScrollController.h"
 #include "HorizontalScroll.h"
 #include "VerticalScroll.h"
+#include "DummyRow.h"
 
 HHOOK hSaveMessageBoxHook;//전역변수 선언
 
@@ -32,6 +33,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_WM_KEYDOWN()
 	ON_WM_VSCROLL()
 	ON_WM_HSCROLL()
+	ON_WM_SIZE()
 	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
@@ -620,8 +622,9 @@ void NotepadForm::OnKillFocus(CWnd* pNewWnd)
 		//2.2 옵저버 리스트에서 옵저버를 구한다.
 		observer = this->observers.GetAt(i);
 	}
-	//3. 옵저버가 CaretManager이면
-	if (dynamic_cast<CaretController*>(observer))
+	//3. 옵저버가 CaretManager이면(i < this->length를 넣어주는 이유는 캐럿이 없는데 
+	//킬포커스를 하는경우가, 킬포커스를 연속 2번하는 경우가 생길 수 있기때문에, 그럼 뻑이 나기 때문에)
+	if (i < this->length && dynamic_cast<CaretController*>(observer))
 	{
 		//3.1 힙에 할당된 옵저버의 내용을 할당해제한다.
 		delete observer;//힙에서 내용 할당해제
@@ -708,6 +711,106 @@ void NotepadForm::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 		delete scrollAction;
 	}
 	//4. 변경사항을 옵저버들에게 알린다.
+	this->Notify();
+	this->Invalidate();
+}
+
+//메모장에서 화면의 크기가 변경될 때
+void NotepadForm::OnSize(UINT nType, int cx, int cy)
+{
+	//1. 현재 메모장의 창의 상태(최소화, 최대화, 이전 크기로 복원)와 가로 길이와 세로 길이를 입력받는다.
+	CFrameWnd::OnSize(nType, cx, cy);
+	//2. 현재 메모장의 상태가 최소화가 아니면(최소화이면 cx와 cy 값이 둘다 0이 되고, 
+	//cx가 0이면 아래에서 cx크기로 반복을 돌리는데 무한반복이 발생해서 최소화버튼을 누르면 뻑이남!) 
+	if (nType != SIZE_MINIMIZED)
+	{
+		Long caretIndex = 0;
+		Long rowTextWidth = 0;
+		Glyph* glyph = 0;
+		Long rowIndex = 0;
+		Glyph* row = 0;
+		Glyph* previousRow = 0;
+		//2.1. 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
+		UINT state = this->GetMenu()->
+			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
+		//2.2 자동 줄 바꿈 메뉴가 체크되어 있으면
+		if (state == MF_CHECKED)
+		{
+			//현재화면의 크기에 변경이 있으면 자동개행을 취소하고 일단 다시 원상태로 돌린다.
+			//DummyRow의 내용을 다시 Row에 옮기고 DummyRow를 전부 할당해제한다.
+			//2.2.1 Note의 총 줄의 개수보다 작은동안 반복한다.
+			while (rowIndex < this->note->GetLength())
+			{
+				//2.2.1.1 메모장에서 rowIndex번째 줄을 구한다.
+				row = this->note->GetAt(rowIndex);
+				//2.2.1.2 DummyRow이면
+				if (dynamic_cast<DummyRow*>(row))
+				{
+					//2.2.1.2.1 DummyRow 이전 줄(Row)을 구한다.
+					previousRow = this->note->GetAt(rowIndex - 1);
+					//2.2.1.2.2 DummyRow를 이전 줄(Row)에 합친다.
+					row->Join(previousRow);
+					//2.2.1.2.3 Note에서 DummyRow의 주소를 지운다.
+					this->note->Remove(rowIndex);
+				}
+				//2.2.1.3 DummyRow가 아니면
+				else
+				{
+					//2.2.1.3.1 다음 줄로 이동한다.
+					rowIndex++;
+				}
+			}
+			//화면의 크기 변경에 따라 다시 자동개행을 해준다.
+			//2.2.2 rowIndex를 원위치시킨다.
+			rowIndex = 0;
+			//2.2.3 Note의 총 줄의 개수보다 작은동안 반복한다.
+			while (rowIndex < this->note->GetLength())
+			{
+				//2.2.3.1 Note의 rowIndex번째 줄을 구한다.
+				row = this->note->GetAt(rowIndex);
+				//2.2.3.2 caretIndex를 원위치시킨다.
+				caretIndex = 0;
+				//2.2.3.3 caretIndex를 증가시킨다.
+				caretIndex++;
+				//2.2.3.4 rowIndex번째 줄에서 caretIndex까지 텍스트의 가로길이를 측정한다.
+				rowTextWidth = this->textExtent->GetTextWidth
+				(row->GetPartOfContent(caretIndex).c_str());
+				//2.2.3.5 caretIndex가 rowIndex번째 줄의 총글자 개수보다 작은동안 
+				//그리고 rowIndex번째 줄의 가로길이가 현재화면의 가로길이(cx)보다 작은동안 반복한다.
+				while (caretIndex < row->GetLength() && rowTextWidth <= cx)
+				{
+					//2.2.3.5.1 caretIndex를 증가시킨다.
+					caretIndex++;
+					//2.2.3.5.2 증가된 caretIndex까지의 가로 길이를 측정한다.
+					rowTextWidth = this->textExtent->GetTextWidth
+					(row->GetPartOfContent(caretIndex));
+				}
+				//2.2.3.6 rowIndex번째 줄의 가로 길이가 현재 화면의 가로 길이(cx)보다 크면
+				if (rowTextWidth > cx)
+				{
+					//2.2.3.6.1 caretIndex까지의 길이가 현재화면의 가로 길이(cx)보다 크기 때문에 
+					//이 선택문에 들어왔다. 그래서 캐럿이 이전으로 한 칸 이동을 해서 길이를 재면
+					//현재화면의 가로 길이(cx)보다 작다. 캐럿(caretIndex)은 다음 글자를 적을 위치를
+					//반영하기 때문에 항상 현재 글자보다 한칸 앞서 있다
+					//그래서 caretIndex-1에서 split을 해야 화면을 넘는 글자를 다음 줄로 보낼 수 있다.
+					caretIndex--;
+					//2.2.3.6.2 rowIndex번째 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의
+					//글자부터 rowIndex번째 줄에서 caretIndex 다음 위치에 있는 글자들을 나눈다.
+					//(DummyRow생성)
+					glyph = row->Split(caretIndex, true);
+					//2.2.3.6.3 새로운 줄을 rowIndex번째 줄의 다음 위치에 끼워넣는다.
+					rowIndex = this->note->Add(rowIndex + 1, glyph);
+				}
+				//2.2.3.7 caretIndex가 rowIndex번째 줄의 총글자 개수보다 크거나 같으면
+				else if (caretIndex >= row->GetLength())
+				{
+					//2.2.3.7.1 다음 줄로 이동한다.
+					rowIndex++;
+				}
+			}
+		}
+		
+	}
 	this->Notify();
 	this->Invalidate();
 }

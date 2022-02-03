@@ -1,5 +1,6 @@
 #include "Composite.h"
 #include "Row.h"
+#include "DummyRow.h"
 
 //디폴트생성자
 Composite::Composite(Long capacity)
@@ -150,21 +151,31 @@ Long Composite::Remove(Long index)
 }
 
 //Split
-Glyph* Composite::Split(Long index)
+Glyph* Composite::Split(Long index, bool isDummyRow)
 {
-	//1. 현재 줄에서 분리할 위치를 입력받는다.
-	//2. 새로운 줄을 생성한다.
-	Glyph* row = new Row();
-	//3. 현재 줄에서 분리할 글자들을 새로 만든 줄에 복사한다.(깊은 복사)
-	//Long i = 0;//배열첨자
+	//1. 현재 줄에서 분리할 위치와 자동개행으로 줄이 분리됬는지 여부를 입력받는다.
+	Glyph* row = 0;
+	//2. 자동개행으로 줄이 분리된게 아니면
+	if (isDummyRow == false)
+	{
+		//2.1 새로운 Row를 생성한다.
+		row = new Row();
+	}
+	//3. 자동개행으로 줄이 불리되었으면
+	else
+	{
+		//3.1 DummyRow를 생성한다.
+		row = new DummyRow();
+	}
+	//4. 현재 줄에서 분리할 글자들을 새로 만든 줄에 복사한다.(깊은 복사)
 	Glyph* letter;//분리할 글자를 담을 공간
-	//3.1 입력받은 위치가 현재 줄의 글자개수보다 작은동안 반복한다.
+	//4.1 입력받은 위치가 현재 줄의 글자개수보다 작은동안 반복한다.
 	while (index < this->GetLength())
 	{
-		//3.1.1 현재 줄에서 입력받은 위치의 글자를 구한다.
+		//4.1.1 현재 줄에서 입력받은 위치의 글자를 구한다.
 		letter = this->glyphs.GetAt(index);
-		//3.1.2 새로 만든 줄에는 저장된 배열요소가 아무것도 없기 때문에 Modify라는 개념은 어울리지X
-		//새로 만든 줄에 아무것도 배열요소가 없는 경우에 추가할 때는 Add가 어울인다.
+		//4.1.2 새로 만든 줄에는 저장된 배열요소가 아무것도 없기 때문에 Modify라는 개념은 어울리지X
+		//새로 만든 줄에 아무것도 배열요소가 없는 경우에 추가할 때는 Add가 어울린다.
 		//새로 만든 줄에 분리할 글자들을 담는다.(깊은 복사)
 		row->Add(letter->Clone());
 		//row->glyphs.Modify(i, letter->Clone()); glyphs는 protected이고 Composite의 자식들만
@@ -191,12 +202,39 @@ Glyph* Composite::Split(Long index)
 		//index++;//입력받은 위치를 증가시킨다. 다음 글자를 담기 위해서
 		//index를 증가시켜줄 필요가 없음 왜냐하면 Delete를 통해서 계속 배열요소가 지워지고 있기때문에
 		//index는 계속 같은 위치에서 계속 다음 글자를 읽으면된다.
-		//글자가 배열요소에서 지워지면서 계속 앞으로 밀려오기때문에 index는 가만히 있으면 됨!.
+		//글자가 배열요소에서 지워지면서 계속 앞으로 밀려오기때문에 index는 가만히 있으면 됨!
 		//index++하면 뻑이남
 	}
 	//4. 새로 만든 row를 출력한다.
 	return row;
 	//5. 끝내다.
+}
+
+//Join
+void Composite::Join(Glyph* row)
+{
+	//1. 현재 DummyRow의 이전 줄(Row)의 위치를 입력받는다.
+	Glyph* letter = 0;//DummyRow의 글자를 담을 공간
+	Long caretIndex = 0;//현재 줄에서 캐럿위치 초기화
+	//2. DummyRow의 글자개수보다 작은동안 반복한다.
+	while (caretIndex < this->length)
+	{
+		//2.1 DummyRow의 글자를 저장한다.
+		letter = this->glyphs.GetAt(caretIndex);
+		//2.2 DummyRow의 이전 줄(Row)에 글자를 추가한다.
+		row->Add(letter->Clone());
+		//2.3 letter가 0이 아니면
+		if (letter != 0)
+		{
+			//2.3.1 letter의 내용(글자)을 할당해제한다.
+			delete letter;
+		}
+		//2.4 letter의 내용을 담고 있던 주소를 할당해제한다.
+		this->glyphs.Delete(caretIndex);
+		//2.5 배열에서 배열요소를 없앴기 때문에 사용량과 할당량을 감소시켜준다.
+		this->capacity--;
+		this->length--;
+	}
 }
 
 //GetAt

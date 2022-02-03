@@ -20,7 +20,8 @@ public:
 	virtual Long Add(Glyph* glyph);//가상함수
 	virtual Long Add(Long index, Glyph* glyph);//(Insert)가상함수
 	virtual Long Remove(Long index);//가상함수
-	virtual Glyph* Split(Long index);
+	virtual Glyph* Split(Long index, bool isDummyRow = false);
+	virtual void Join(Glyph* row);
 	//상속받는 클래스가 부모클래스의 함수를 재정의하기 위해서는 함수 앞에 virtual을 붙여서 가상함수를 만들어야함!
 	Glyph* GetAt(Long index); 
 	virtual ~Composite() = 0;//추상클래스 소멸자 순수가상함수 상속받은 클래스에 의해 반드시 재정의되야함!

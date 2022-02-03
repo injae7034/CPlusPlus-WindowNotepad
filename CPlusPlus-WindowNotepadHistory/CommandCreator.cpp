@@ -3,6 +3,7 @@
 #include "FileSaveCommand.h"
 #include "FileSaveDifferentNameCommand.h"
 #include "FontChangeCommand.h"
+#include "RowAutoChangeCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -30,6 +31,10 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == IDM_FONT_CHANGE)
 	{
 		command = new FontChangeCommand(this->notepadForm);
+	}
+	else if (nId == IDM_ROW_AUTOCHANGE)
+	{
+		command = new RowAutoChangeCommand(this->notepadForm);
 	}
 
 	return command;
