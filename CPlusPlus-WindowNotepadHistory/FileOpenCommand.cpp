@@ -20,7 +20,7 @@ void FileOpenCommand::Execute()
 	int messageBoxButton = IDCANCEL;
 	string name;
 	//2. 메모장에 변경사항이 있으면
-	if (this->notepadForm->IsDirty == true)
+	if (this->notepadForm->isDirty == true)
 	{
 		//2.1 메세지박스의 메세지를 생성한다.
 		string message = "제목 없음";
@@ -44,7 +44,7 @@ void FileOpenCommand::Execute()
 				//2.5.1.1 메모장을 저장한다.
 				file.Save(this->notepadForm, this->notepadForm->filePath);
 				//2.5.1.2 메모장에 변경사항이 없음을 저장한다.
-				this->notepadForm->IsDirty = false;
+				this->notepadForm->isDirty = false;
 				//2.5.1.3 메모장 제목을 바꾼다.
 				string name = this->notepadForm->fileName;
 				name += " - 메모장";
@@ -71,7 +71,7 @@ void FileOpenCommand::Execute()
 				//2.5.2.3 선택한 메모장을 저장한다.
 				file.Save(this->notepadForm, this->notepadForm->filePath);
 				//2.5.2.4 메모장에 변경사항이 없음을 저장한다.
-				this->notepadForm->IsDirty = false;
+				this->notepadForm->isDirty = false;
 				//2.5.2.5 메모장 제목을 바꾼다.
 				string name = this->notepadForm->fileName;
 				name += " - 메모장";
@@ -80,7 +80,7 @@ void FileOpenCommand::Execute()
 		}
 	}
 	//3. 메세지박스에서 CANCEL을 선택하지 않았거나 변경된 사항이 없으면
-	if (messageBoxButton != IDCANCEL || this->notepadForm->IsDirty == false)
+	if (messageBoxButton != IDCANCEL || this->notepadForm->isDirty == false)
 	{
 		//3.1 파일공통 대화상자를 생성한다.
 		LPCTSTR  filesFilter = _T("텍스트 문서(*.txt) | *.txt; | 모든 파일 | *.*;  ||");
@@ -122,8 +122,8 @@ void FileOpenCommand::Execute()
 			name += " - 메모장";
 			this->notepadForm->SetWindowText(CString(name.c_str()));
 			//3.2.11 flag들을 초기화시킨다.
-			this->notepadForm->IsComposing = false;//false로 초기화시킴
-			this->notepadForm->IsDirty = false;//false로 초기화시킴
+			this->notepadForm->isComposing = false;//false로 초기화시킴
+			this->notepadForm->isDirty = false;//false로 초기화시킴
 			//3.3.12 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
 			rowIndex = this->notepadForm->note->First();
 			//3.3.13 현재 줄의 위치를 다시 저장한다.

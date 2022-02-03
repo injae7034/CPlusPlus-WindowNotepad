@@ -38,7 +38,7 @@ void RowAutoChange::DoAllRows()
 		rowTextWidth = 0;
 		//3.4 letterIndex가 rowIndex번째 줄의 총글자 개수보다 작은동안 
 		//그리고 rowIndex번째 줄의 가로길이가 현재화면의 가로길이보다 작은동안 반복한다.
-		while (letterIndex < row->GetLength() && rowTextWidth <= pageWidth)
+		while (letterIndex < row->GetLength() && rowTextWidth < pageWidth)
 		{
 			//3.4.1 증가된 letterIndex까지의 가로 길이를 측정한다.
 			rowTextWidth = this->notepadForm->textExtent->GetTextWidth
@@ -46,8 +46,8 @@ void RowAutoChange::DoAllRows()
 			//3.4.2 letterIndex를 증가시킨다.
 			letterIndex++;
 		}
-		//3.5 rowIndex번째 줄의 가로 길이가 현재 화면의 가로 길이보다 크면
-		if (rowTextWidth > pageWidth)
+		//3.5 rowIndex번째 줄의 가로 길이가 현재 화면의 가로 길이보다 크거나 같으면
+		if (rowTextWidth >= pageWidth)
 		{
 			//3.5.1 letterIndex까지의 길이가 현재화면의 가로 길이(cx)보다 크기 때문에 
 			//이 선택문에 들어왔다. 그래서 캐럿이 이전으로 한 칸 이동을 해서 길이를 재면
@@ -129,7 +129,9 @@ void RowAutoChange::DoRow()
 		letterIndex = 0;
 		//5.3 rowTextWidth를 원위치시킨다.
 		rowTextWidth = 0;
-		while (letterIndex < row->GetLength() && rowTextWidth <= pageWidth)
+		//5.4 letterIndex가 rowIndex번째 줄의 총글자 개수보다 작은동안 
+		//그리고 rowIndex번째 줄의 가로길이가 현재화면의 가로길이보다 작은동안 반복한다.
+		while (letterIndex < row->GetLength() && rowTextWidth < pageWidth)
 		{
 			//5.4.1 증가된 letterIndex까지의 가로 길이를 측정한다.
 			rowTextWidth = this->notepadForm->textExtent->GetTextWidth
@@ -137,8 +139,8 @@ void RowAutoChange::DoRow()
 			//5.4.2 letterIndex를 증가시킨다.
 			letterIndex++;
 		}
-		//5.5 rowIndex번째 줄의 가로 길이가 현재 화면의 가로 길이보다 크면
-		if (rowTextWidth > pageWidth)
+		//5.5 rowIndex번째 줄의 가로 길이가 현재 화면의 가로 길이보다 크거나 같으면
+		if (rowTextWidth >= pageWidth)
 		{
 			//5.5.1 letterIndex까지의 길이가 현재화면의 가로 길이(cx)보다 크기 때문에 
 			//이 선택문에 들어왔다. 그래서 캐럿이 이전으로 한 칸 이동을 해서 길이를 재면

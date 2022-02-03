@@ -31,36 +31,34 @@ void FontChangeCommand::Execute()
         //NotepadForm의 Font의 멤버에 내용을 변경하고 싶으면 현재 여기서
         //NotepadForm의 Font의 생성자를 호출해서 내용을 변경하면 된다.
         //주소록의 Correct에서 사용한 원리와 같음!!!
-        //2.1 폰트대화상자에서 선택한 글꼴의 정보를 얻는다.
+        //3.1 폰트대화상자에서 선택한 글꼴의 정보를 얻는다.
         fontDialog.GetCurrentFont(&logFont);
-        //2.2 폰트대화상자에서 선택한 글꼴의 색을 얻는다.
+        //3.2 폰트대화상자에서 선택한 글꼴의 색을 얻는다.
         selectedColor = fontDialog.GetColor();
-        //2.3 notepadForm의 font에 선택한 글꼴의 정보를 저장한다.
+        //3.3 notepadForm의 font에 선택한 글꼴의 정보를 저장한다.
         //private멤버의 내용에 접근하고 싶으면 인라인함수(Get)를 이용하고
         //private멤버의 내용을 변경하고 싶으면 생성자를 이용한다!
         this->notepadForm->font = Font(logFont, selectedColor);
-        //2.4 기존 글꼴 정보를 가지고 있는 TextExtent를 할당해제(소멸)해준다.
+        //3.4 기존 글꼴 정보를 가지고 있는 TextExtent를 할당해제(소멸)해준다.
         if (this->notepadForm->textExtent != NULL)
         {
             delete this->notepadForm->textExtent;
         }
-        //2.5 새로 선택한 글꼴 정보를 반영한 TextExtent를 힙에 할당(생성)한다.
+        //3.5 새로 선택한 글꼴 정보를 반영한 TextExtent를 힙에 할당(생성)한다.
         this->notepadForm->textExtent = new TextExtent(this->notepadForm);
-        //2.6 캐럿의 크기와 위치가 변경되었음을 알린다.
+        //3.6 캐럿의 크기와 위치가 변경되었음을 알린다.
         this->notepadForm->Notify();
-
-        //4.4 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
+        //3.7 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
         UINT state = this->notepadForm->GetMenu()->
             GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-        //4.5 자동 줄 바꿈 메뉴가 체크되어 있으면
+        //3.8 자동 줄 바꿈 메뉴가 체크되어 있으면
         if (state == MF_CHECKED)
         {
-            //4.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+            //3.9.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
             //OnSize에서 부분자동개행을 하도록 한다. 
             this->notepadForm->SendMessage(WM_SIZE);
         }
-
-        //2.7 변경사항을 갱신한다.
+        //3.9 변경사항을 갱신한다.
         this->notepadForm->Invalidate(TRUE);
     }
 }

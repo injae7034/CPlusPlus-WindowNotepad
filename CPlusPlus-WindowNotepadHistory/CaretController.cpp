@@ -30,7 +30,7 @@ void CaretController::Update()
     Long rowTextWidth = this->notepadForm->textExtent->GetTextWidth(this->notepadForm->
         current->GetPartOfContent(this->notepadForm->current->GetCurrent()));
     //2. 한글이 조립중이면
-    if (this->notepadForm->IsComposing == true)
+    if (this->notepadForm->isComposing == true)
     {
         //2.1 한글 한 글자의 폭을 구한다.
         //현재 조립중인 한글 한글자를 구하려면 현재 캐럿의 가로 위치 앞의 글자를 구하면 되기 때문에

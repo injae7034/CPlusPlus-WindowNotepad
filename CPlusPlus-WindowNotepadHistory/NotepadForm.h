@@ -8,6 +8,7 @@
 #include<string>
 using namespace std;
 
+class SelectingTexts;
 class CaretController;
 class PageMoveController;
 class ScrollController;
@@ -26,18 +27,18 @@ public:
 	Glyph* current;
 	Font font;
 	TextExtent* textExtent;
+	SelectingTexts* selectingTexts;
 	ScrollController* scrollController;
 	PageMoveController* pageMoveController;
 	CaretController* caretController;
-	//PageMoveController와 CaretController는 서로 연관화할 필요없음
-	//PageMoveController* pageMoveController; 
-	//CaretController* caretController;
 	//flag는 public으로
-	bool IsComposing;//한글이 조립중인지 아닌지 판별하기 위한 flag
-	bool IsDirty;//새파일인지 아닌지 판별하기 위한 flag
-	//bool IsOnScroll;//캐럿이랑 별개로 스크롤바를 통해 스크롤만 이동하는지 판별하기 위한 flag
+	bool isSelecting;//텍스트 선택을 하는 중인지 아닌지 판별하기 위한 flag
+	bool isComposing;//한글이 조립중인지 아닌지 판별하기 위한 flag
+	bool isDirty;//새파일인지 아닌지 판별하기 위한 flag
 	string fileName;//현재 열려있는 메모장의 파일명
 	string filePath;//현재 열려있는 메모장의 파일경로
+	Long selectedStartXPos;//선택이 시작되는 x좌표
+	Long selectedStartYPos;//선택이 시작되는 y좌표
 	//인라인함수 정의
 	Long GetPreviousPageWidth() const;
 protected://#
@@ -62,8 +63,6 @@ private:
 	//OnCreate 스택이 종료되면 CMenu가 사라지기때문에 뻑이남.
 	CMenu menu;
 	Long previousPageWidth;
-	//CScrollBar horizontalScrollBar;//scrollController가 가지고 있으면 됨
-	//CScrollBar verticalScrollBar;//scrollController가 가지고 있으면 됨
 };
 
 //인라인함수정의

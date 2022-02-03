@@ -32,7 +32,7 @@ void FileSaveDifferentNameCommand::Execute()
 	//4. 선택한 메모장을 저장한다.
 	file.Save(this->notepadForm, this->notepadForm->filePath);
 	//5. 메모장에 변경사항이 없음을 저장한다.
-	this->notepadForm->IsDirty = false;
+	this->notepadForm->isDirty = false;
 	//6. 메모장 제목을 바꾼다.
 	string name = this->notepadForm->fileName;
 	name += " - 메모장";

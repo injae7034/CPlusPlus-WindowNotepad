@@ -21,13 +21,17 @@
 #define IDM_FONT_CHANGE                 40017
 #define ID_40018                        40018
 #define IDM_ROW_AUTOCHANGE              40019
+#define ID_40020                        40020
+#define ID_40021                        40021
+#define IDM                             40022
+#define IDM_COPY                        40023
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        102
-#define _APS_NEXT_COMMAND_VALUE         40020
+#define _APS_NEXT_COMMAND_VALUE         40024
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

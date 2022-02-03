@@ -1,6 +1,6 @@
 #include "ShiftRightArrowKeyAction.h"
 #include "Glyph.h"
-#include "SelectText.h"
+#include "SelectingTexts.h"
 
 //디폴트생성자
 ShiftRightArrowKeyAction::ShiftRightArrowKeyAction(NotepadForm* notepadForm)
@@ -16,28 +16,37 @@ void ShiftRightArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	Long previousLetterIndex = this->notepadForm->current->GetCurrent();
 	//2. 다음으로 이동하기 전에 줄의 위치를 저장한다.
 	Long previousRowIndex = this->notepadForm->note->GetCurrent();
-	//3. 다음으로 이동하고 현재 글자의 위치를 반환받는다.
+	//3. 선택이 처음 시작되면
+	if (this->notepadForm->isSelecting == false)
+	{
+		//3.1 선택이 진행되고 있는 중으로 상태를 바꾼다.
+		this->notepadForm->isSelecting = true;
+		//3.2 선택이 시작되는 캐럿의 x좌표를 저장한다.
+		this->notepadForm->selectedStartXPos = previousLetterIndex;
+		//3.3 선택이 시작되는 캐럿의 y좌표를 저장한다.
+		this->notepadForm->selectedStartYPos = previousRowIndex;
+	}
+	//4. 다음으로 이동하고 현재 글자의 위치를 반환받는다.
 	Long currentLetterIndex = this->notepadForm->current->Next();
 	Long currentRowIndex = this->notepadForm->note->GetCurrent();
-	//4. 캐럿의 이동이 없었으면(캐럿이 줄의 마지막에 위치하고 있었기 때문에)
+	//5. 캐럿의 이동이 없었으면(캐럿이 줄의 마지막에 위치하고 있었기 때문에)
 	if (previousLetterIndex == currentLetterIndex)
 	{
-		//4.1 다음 줄로 이동시킨다.
+		//5.1 다음 줄로 이동시킨다.
 		currentRowIndex = this->notepadForm->note->Next();
-		//4.2 줄의 이동이 있었으면(이동하기 전의 줄이 노트의 마지막 줄이 아니면)
+		//5.2 줄의 이동이 있었으면(이동하기 전의 줄이 노트의 마지막 줄이 아니면)
 		if (previousRowIndex != currentRowIndex)
 		{
-			//4.2.1 현재 줄을 다음으로 이동한 줄로 변경한다.
+			//5.2.1 현재 줄을 다음으로 이동한 줄로 변경한다.
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
-			//4.2.2 캐럿의 현재 위치를 처음으로 보낸다.(현재 줄이 다음 줄로 옮겨졌기 때문에
+			//5.2.2 캐럿의 현재 위치를 처음으로 보낸다.(현재 줄이 다음 줄로 옮겨졌기 때문에
 			//캐럿은 이전 줄의 마지막 위치에서 다음 줄의 처음 위치로 이동한다.)
 			currentLetterIndex = this->notepadForm->current->First();
 		}
 	}
-	//5. 글자를 선택한다.
-	SelectText selectText(this->notepadForm);
-	selectText.DoNext(previousRowIndex, previousLetterIndex, currentRowIndex,
-		currentLetterIndex);	
+	//6. 글자를 선택한다.
+	this->notepadForm->selectingTexts->DoNext(previousRowIndex, previousLetterIndex,
+		currentRowIndex, currentLetterIndex);
 }
 
 //소멸자

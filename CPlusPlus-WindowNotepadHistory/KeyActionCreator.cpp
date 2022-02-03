@@ -27,6 +27,10 @@
 #include "ShiftCtrlEndKeyAction.h"
 #include "ShiftCtrlHomeKeyAction.h"
 #include "CtrlAKeyAction.h"
+#include "ShiftCtrlBackSpaceKeyAction.h"
+#include "ShiftCtrlDeleteKeyAction.h"
+#include "CtrlBackSpaceKeyAction.h"
+#include "CtrlDeleteKeyAction.h"
 
 //디폴트생성자
 KeyActionCreator::KeyActionCreator(NotepadForm* notepadForm)
@@ -62,6 +66,18 @@ KeyAction* KeyActionCreator::Create(UINT nChar)
 	else if (shiftPressedCheck & 0x8000 && ctrlPressedCheck & 0x8000 && nChar == VK_END)
 	{
 		keyAction = new ShiftCtrlEndKeyAction(this->notepadForm);
+	}
+	//Shift키와 Ctrl키를 누른 채 BackSpace키를 눌렀으면
+	//(캐럿이 있는 곳에서 줄의 처음까지 글자들을 다 지워버림)
+	else if (shiftPressedCheck & 0x8000 && ctrlPressedCheck & 0x8000 && nChar == VK_BACK)
+	{
+		keyAction = new ShiftCtrlBackSpaceKeyAction(this->notepadForm);
+	}
+	//Shift키와 Ctrl키를 누른 채 Delete키를 눌렀으면
+	//(캐럿이 있는 곳에서 줄의 마지막까지 글자들을 다 지워버림)
+	else if (shiftPressedCheck & 0x8000 && ctrlPressedCheck & 0x8000 && nChar == VK_DELETE)
+	{
+		keyAction = new ShiftCtrlDeleteKeyAction(this->notepadForm);
 	}
 	//7. Shift키를 누른 채 오른쪽 방향키를 눌렀으면(오른쪽으로 한 글자 이동하면서 글자선택)
 	else if (shiftPressedCheck & 0x8000 && nChar == VK_RIGHT)
@@ -128,6 +144,18 @@ KeyAction* KeyActionCreator::Create(UINT nChar)
 		ctrlPressedCheck & 0x8000 && nChar == 'A')
 	{
 		keyAction = new CtrlAKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 BackSpace키를 눌렀으면
+	//(캐럿이 있는 곳에서 왼쪽으로 단어단위로 글자들을 지워버림)
+	else if (ctrlPressedCheck & 0x8000 && nChar == VK_BACK)
+	{
+		keyAction = new CtrlBackSpaceKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 Delete키를 눌렀으면
+	//(캐럿이 있는 곳에서 오른쪽으로 단어단위로 글자들을 지워버림)
+	else if (ctrlPressedCheck & 0x8000 && nChar == VK_DELETE)
+	{
+		keyAction = new CtrlDeleteKeyAction(this->notepadForm);
 	}
 	//19. 오른쪽 방향키를 눌렀으면(오른쪽으로 한 글자 이동)
 	else if (nChar == VK_RIGHT)

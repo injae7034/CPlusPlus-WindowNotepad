@@ -63,6 +63,11 @@ BEGIN
         MENUITEM "글꼴",                          IDM_FONT_CHANGE
         MENUITEM "자동 줄 바꿈",                     IDM_ROW_AUTOCHANGE
     END
+    POPUP "편집"
+    BEGIN
+        MENUITEM "복사하기",                        IDM_COPY
+        MENUITEM "붙여넣기",                        ID_40021
+    END
 END
 
 #endif    // 한국어(대한민국) resources
