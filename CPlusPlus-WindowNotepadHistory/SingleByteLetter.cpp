@@ -3,6 +3,7 @@
 //디폴트생성자
 SingleByteLetter::SingleByteLetter()
 {
+	this->isSelceted = false;
 	this->script = '\0';//문자초기화는 널문자(\0)로 한다. (빈칸)""은 문자열이라서 string에서 초기화 할 때 사용함.
 }
 

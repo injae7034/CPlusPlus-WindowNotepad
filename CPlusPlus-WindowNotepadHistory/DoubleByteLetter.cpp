@@ -3,6 +3,7 @@
 //디폴트생성자
 DoubleByteLetter::DoubleByteLetter()
 {
+	this->isSelceted = false;
 	//문자 배열 초기화는 문자 배열 각요소에 널문자(\0)를 대입함으로써 한다. 문자 배열은 문자열이랑 다르다.
 	this->script[0] = '\0';
 	this->script[1] = '\0';

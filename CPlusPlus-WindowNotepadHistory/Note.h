@@ -22,6 +22,8 @@ public:
 	virtual Long Add(Glyph* glyph);
 	virtual Long Add(Long index, Glyph* glyph);
 	virtual Long Remove(Long index);
+	virtual void CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
+		Long* endingRowPos, Long* endingLetterPos);
 };
 
 #endif // !_NOTE_H

@@ -24,6 +24,10 @@ public:
 	//두개가 달라서 여기서 GetScript를 정의할 수 없기때문에 나중에 main함수에서 Glyph*자료형일때는
 	//GetScript를 사용할 수 없다
 	virtual string GetPartOfContent(Long current) { return "\0"; }
+	//Glyph*에서 사용하려면 전부 Glyph 헤더 파일에 있어야한다.
+	virtual void Select(bool isSelected) {}
+	virtual void CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
+		Long* endingRowPos, Long* endingLetterPos) {}
 	virtual Long First() { return 0; }
 	virtual Long Last() { return 0; }
 	virtual Long Previous() { return 0; }
@@ -31,26 +35,13 @@ public:
 	virtual Long Move(Long index) { return 0; }
 	virtual Long NextWord() { return 0; }
 	virtual Long PreviousWord() { return 0; }
-	//인라인함수
+	//인라인함수(여기에 자식들의 인라인함수도 선언을 해야 Glyph*에서 사용할 수 있음)
+	//(왜냐하면 전부 Glyph*로 생성해서 이용하기 때문에!)
 	//여기서 실제로는 안쓰이고 자식에게 넘겨주는 역할을 하기때문에 virtual을 붙여줘야함
-	virtual Long GetCapacity() const;
-	virtual Long GetLength() const;
-	virtual Long GetCurrent() const;
+	virtual bool IsSelected() const { return false; }
+	virtual Long GetCapacity() const { return -1; }
+	virtual Long GetLength() const { return -1; }
+	virtual Long GetCurrent() const { return -1; }
 };
-
-//인라인함수정의
-//GetScript는 반환값이 char이나 char*로 다르기때문에 여기서 인라인함수정의를 하지X
-inline Long Glyph::GetCapacity() const
-{
-	return -1;//Glyph에서는 처리할게 없음 Composite가서 처리하면 됨.
-}
-inline Long Glyph::GetLength() const
-{
-	return -1;//Glyph에서는 처리할게 없음 Composite가서 처리하면 됨.
-}
-inline Long Glyph::GetCurrent() const
-{
-	return -1;
-}
 
 #endif // !_GLYPH_H

@@ -48,18 +48,6 @@ void FontChangeCommand::Execute()
         this->notepadForm->textExtent = new TextExtent(this->notepadForm);
         //2.6 캐럿의 크기와 위치가 변경되었음을 알린다.
         this->notepadForm->Notify();
-
-        //4.4 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
-        UINT state = this->notepadForm->GetMenu()->
-            GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-        //4.5 자동 줄 바꿈 메뉴가 체크되어 있으면
-        if (state == MF_CHECKED)
-        {
-            //4.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-            //OnSize에서 부분자동개행을 하도록 한다. 
-            this->notepadForm->SendMessage(WM_SIZE);
-        }
-
         //2.7 변경사항을 갱신한다.
         this->notepadForm->Invalidate(TRUE);
     }

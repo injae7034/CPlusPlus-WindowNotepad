@@ -100,11 +100,36 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//12. 현재 줄의 위치를 다시 저장한다.
 	this->current = this->note->GetAt(rowIndex);
 	//13. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
-	this->current->First();
+	Long letterIndex = this->current->First();
 	//14. scrollController를 생성한다.
 	this->scrollController = new ScrollController(this);
 	//15. pageMoveController를 생성한다.
 	this->pageMoveController = new PageMoveController(this);
+	//테스트
+	rowIndex = this->note->Next();
+	this->current = this->note->GetAt(rowIndex);
+	Glyph* letter = 0;
+	letterIndex = this->current->First();
+	while (letterIndex < this->current->GetLength())
+	{
+		letter = this->current->GetAt(letterIndex);
+		letter->Select(true);
+		this->current->Next();
+		letterIndex++;
+	}
+	rowIndex = this->note->Next();
+	this->current = this->note->GetAt(rowIndex);
+	letterIndex = this->current->First();
+	while (letterIndex < this->current->GetLength())
+	{
+		letter = this->current->GetAt(letterIndex);
+		letter->Select(true);
+		this->current->Next();
+		letterIndex++;
+	}
+	rowIndex = this->note->First();
+	this->current = this->note->GetAt(rowIndex);
+	letterIndex = this->current->First();
 
 	return 0;
 }
@@ -219,7 +244,76 @@ void NotepadForm::OnPaint()
 	Long currentXPos;
 	Long currentYPos;
 	CString content;
+	//테스트
+	Long j = 0;
+	Glyph* row = 0;
+	Glyph* letter = 0;
+	CString rowContent;
+	
 	//11. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
+	while (i < 1)
+	{
+		//11.1 현재 줄의 글자들을 구한다.
+		content = CString(this->note->GetAt(i)->GetContent().c_str());
+		//11.2 스크롤의 위치를 구한다.
+		currentXPos = this->GetScrollPos(SB_HORZ);
+		currentYPos = this->GetScrollPos(SB_VERT);
+		//11.3 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
+		//11.3 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
+		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
+		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, content);
+#if 0
+		//테스트
+		//줄을 구한다.
+		row = this->note->GetAt(i);
+		//현재 줄의 글자를 구한다.
+		j = 0;
+		rowContent = "";
+		while (j < row->GetLength())
+		{
+			letter = row->GetAt(j);
+			content = CString(letter->GetContent().c_str());
+			//11.2 스크롤의 위치를 구한다.
+			rowContent += content;
+			j++;
+		}
+		currentXPos = this->GetScrollPos(SB_HORZ);
+		currentYPos = this->GetScrollPos(SB_VERT);
+		//11.3 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
+		//11.3 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
+		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
+		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, rowContent);
+#endif
+		i++;
+	}
+	//테스트
+	Long startingRowPos = 0;
+	Long startingLetterPos = 0;
+	Long endingRowPos = 0;
+	Long endingLetterPos = 0;
+	this->note->CalculateSelectedRange(&startingRowPos, &startingLetterPos,
+		&endingRowPos, &endingLetterPos);
+	dc.SetBkColor(GetSysColor(COLOR_HIGHLIGHT));//red, green, blue 세개 색깔 
+	i = startingRowPos;
+	while (i <= endingRowPos)
+	{
+		//11.1 현재 줄의 글자들을 구한다.
+		content = CString(this->note->GetAt(i)->GetContent().c_str());
+		//11.2 스크롤의 위치를 구한다.
+		currentXPos = this->GetScrollPos(SB_HORZ);
+		currentYPos = this->GetScrollPos(SB_VERT);
+		//11.3 텍스트 시작 위치설정 처음줄은 (0,0)에서 시작하고 두번째줄은 (0, 글자평균높이)에서 시작함.
+		//11.3 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
+		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
+		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, content);
+		i++;
+	}
+	//11. 줄단위의 반복구조를 통해서 줄을 나눠서 줄개수만큼 출력하도록 함.
+	//this->note->Move(i);
+	//this->current = this->note->GetAt(i);
+	//this->current->First();
+	dc.SetBkColor(RGB(255, 255, 255));
+	//dc.SetBkMode(TRANSPARENT);
 	while (i < this->note->GetLength())
 	{
 		//11.1 현재 줄의 글자들을 구한다.
@@ -231,8 +325,6 @@ void NotepadForm::OnPaint()
 		//11.3 텍스트 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
 		//그럼 원래 화면은 처음 시작점에 고정되어 있는데 -해줌으로써 화면이 움직이는 것처럼 보임.
 		dc.TextOut(0 - currentXPos, i * text.tmHeight - currentYPos, content);
-		//dc.TextOut(0, i * text.tmHeight, content);
-		//this->Notify(); 여기서 Notify 해주면 안됨! 캐럿이 계속 남게되고 안사라짐.
 		i++;
 	}
 	dc.SelectObject(oldFont);
