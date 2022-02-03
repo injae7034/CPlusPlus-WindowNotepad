@@ -67,7 +67,6 @@ NotepadForm::NotepadForm()
 //메모장 윈도우가 생성될 때
 int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	//this->ModifyStyle(0, WS_OVERLAPPEDWINDOW, SWP_DRAWFRAME);
 	//1. glyphCreator를 만든다.
 	GlyphCreator glyphCreator;
 	//2. 노트를 만든다.
@@ -167,6 +166,16 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			this->current = this->note->GetAt(rowIndex);
 			//4.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
 			this->current->First();
+			//4.6 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
+			UINT state = this->GetMenu()->
+				GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
+			//4.7 자동 줄 바꿈 메뉴가 체크되어 있으면
+			if (state == MF_CHECKED)
+			{
+				//4.7.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+				//OnSize에서 부분자동개행을 하도록 한다. 
+				this->SendMessage(WM_SIZE);
+			}
 		}
 		//5. 캐럿의 위치와 크기가 변경되었음을 알린다.
 		this->Notify();
@@ -238,7 +247,7 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 	//1. glyphCreator를 생성한다.
 	GlyphCreator glyphCreator;
 	WORD word = LOWORD(wParam);
-	//2. 키보드로부터 입력받을 정보를 바탕으로 한글을 저장한다.
+	//2. 키보드로부터 입력받을 정보를 바탕으로 새로운 한글을 저장한다.
 	char koreanLetter[3];
 	koreanLetter[0] = HIBYTE(word);
 	koreanLetter[1] = LOBYTE(word);
@@ -250,14 +259,15 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 	{
 		//4.1. 현재 줄의 캐럿의 가로 위치 바로 앞에 있는 기존 한글을 지운다.
 		//그러기 위해서는 캐럿의 현재 가로 위치에 1감소한 값을 넣어주면 된다.
+		//기존 한글을 지워야 새로 입력 받은 한글을 대체할 수 있다.
 		this->current->Remove(index - 1);
 		//4.2 갱신된 current의 위치를 index에 저장한다.
 		index = this->current->GetCurrent();
-
 	}
 	//5. 현재위치의 한글을 지웠기 때문에 한글이 조립중이 아님으로 상태를 변경한다.
 	this->IsComposing = false;
-	//6. 한글이 입력되었으면(한글 조립중에 글자를 다 지워버리면 '\0'문자로 OnComposition에 입력된다.)
+	//6. 새로운 한글이 입력되었으면(한글 조립중에 글자를 다 지워버리면 '\0'문자로
+	//OnComposition에 입력된다 백스페이스키가 입력되면 기존 한글이 지워지고 '\0'가 들어 오게 된다.)
 	if (koreanLetter[0] != '\0')
 	{
 		//6.1 doubleByteLetter를 생성한다.
@@ -277,16 +287,31 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 		//6.4 한글을 현재 위치에 추가했기때문에 한글이 조립중인 상태로 변경한다.
 		this->IsComposing = true;
 	}
-	//7. 캐럿의 위치와 크기가 변경되었음을 알린다.
+	//7. 한글 조립중에 백스페이스키룰 눌러서 조립 중인 한글을 지워버리면
+	else
+	{
+		//BackSpace와 Delete키와 별도로 한글조립중에 지우는 경우도 OnSize로 보내줘야 한다.
+		//7.1 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
+		UINT state = this->GetMenu()->
+			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
+		//7.2 자동 줄 바꿈 메뉴가 체크되어 있으면
+		if (state == MF_CHECKED)
+		{
+			//7.2.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//OnSize에서 부분자동개행을 하도록 한다. 
+			this->SendMessage(WM_SIZE);
+		}
+	}
+	//8. 캐럿의 위치와 크기가 변경되었음을 알린다.
 	this->Notify();
-	//8. 메모장 제목에 *를 추가한다.
+	//9. 메모장 제목에 *를 추가한다.
 	string name = this->fileName;
 	name.insert(0, "*");
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//9. 메모장에 변경사항이 있음을 저장한다.
+	//10. 메모장에 변경사항이 있음을 저장한다.
 	this->IsDirty = true;
-	//10. 갱신한다.
+	//11. 갱신한다.
 	Invalidate(TRUE);
 
 	return ::DefWindowProc(this->m_hWnd, WM_IME_COMPOSITION, wParam, lParam);
@@ -510,26 +535,10 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 				rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
 					&changedRowPos);
 				//2.2.2.7 현재 줄의 위치와 글자의 위치를 조정한다.
-				Long index = this->note->First();
-				while (index < changedRowPos)
-				{
-					this->note->Next();
-					index++;
-					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
-					//그럼 결국에 무한반복이 된다.!!
-					//index = this->note->Next();
-				}
+				this->note->Move(changedRowPos);
 				this->current = this->note->
 					GetAt(this->note->GetCurrent());
-				index = this->current->First();
-				while (index < changedLetterPos)
-				{
-					this->current->Next();
-					index++;
-					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
-					//그럼 결국에 무한반복이 된다.!!
-					//index = this->current->Next();
-				}
+				this->current->Move(changedLetterPos);
 				//2.2.2.8 캐럿의 위치가 변경되었음을 알린다.
 				this->Notify();
 				//2.2.2.9 변경사항을 갱신한다.
@@ -540,78 +549,28 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 			//2.2.3 메모장의 현재 화면 크기가 바뀌지 않았으면
 			else
 			{
-
-				//2.2.2.3 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
+				//2.2.3.1 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
 				Long changedRowPos = this->note->GetCurrent();
 				Long changedLetterPos = this->current->GetCurrent();
 				Long originRowPos = 0;
 				Long originLetterPos = 0;
-				Long currentRowIndex = 0;
-				Long currentLetterIndex = 0;
-				Long realRowIndex = 0;
 				rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
 					&originRowPos);
-				//2.2.2.4 자동개행을 취소한다.
-				rowAutoChange.UndoRow(&currentRowIndex, &currentLetterIndex, &realRowIndex);
-				//2.2.2.5 화면크기 변경에 따라 다시 자동개행을 해준다.
-				rowAutoChange.DoRow(realRowIndex);
-				//2.2.2.6 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+				//2.2.3.2 자동개행을 취소한다.
+				rowAutoChange.UndoRow();
+				//2.2.3.3 화면크기 변경에 따라 다시 자동개행을 해준다.
+				rowAutoChange.DoRow();
+				//2.2.3.4 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
 				rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
 					&changedRowPos);
-				//2.2.2.7 현재 줄의 위치와 글자의 위치를 조정한다.
-				Long index = this->note->First();
-				while (index < changedRowPos)
-				{
-					this->note->Next();
-					index++;
-					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
-					//그럼 결국에 무한반복이 된다.!!
-					//index = this->note->Next();
-				}
+				//2.2.3.5 현재 줄의 위치와 글자의 위치를 조정한다.
+				this->note->Move(changedRowPos);
 				this->current = this->note->
 					GetAt(this->note->GetCurrent());
-				index = this->current->First();
-				while (index < changedLetterPos)
-				{
-					this->current->Next();
-					index++;
-					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
-					//그럼 결국에 무한반복이 된다.!!
-					//index = this->current->Next();
-				}
-#if 0
-				////2.2.3.1 해당하는 줄만 자동개행을 취소한다.
-				Long currentRowIndex = 0;
-				Long currentLetterIndex = 0;
-				Long realRowIndex = 0;
-				rowAutoChange.UndoRow(&currentRowIndex, &currentLetterIndex, &realRowIndex);
-				//2.2.3.2 해당하는 줄을 다시 자동개행해준다.
-				rowAutoChange.DoRow(realRowIndex);
-				//2.2.3.3 현재 줄의 위치와 글자의 위치를 조정한다.
-				Long index = this->note->First();
-				while (index < currentRowIndex)
-				{
-					this->note->Next();
-					index++;
-					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
-					//그럼 결국에 무한반복이 된다.!!
-					//index = this->note->Next();
-				}
-				this->current = this->note->
-					GetAt(this->note->GetCurrent());
-				index = this->current->First();
-				while (index < currentLetterIndex)
-				{
-					this->current->Next();
-					index++;
-					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
-					//그럼 결국에 무한반복이 된다.!!
-					//index = this->current->Next();
-				}
-#endif
-				//2.2.2.8 캐럿의 위치가 변경되었음을 알린다.
+				this->current->Move(changedLetterPos);
+				//2.2.3.6 캐럿의 위치가 변경되었음을 알린다.
 				this->Notify();
-				//2.2.2.9 변경사항을 갱신한다.
+				//2.2.3.7 변경사항을 갱신한다.
 				this->Invalidate(TRUE);
 			}
 		}
@@ -744,25 +703,29 @@ LRESULT CALLBACK SaveMessageBoxProc(int nCode, WPARAM wParam, LPARAM lParam) {
 
 	CString msg;// = TEXT("");
 
-	if (nCode == HCBT_ACTIVATE) {
+	if (nCode == HCBT_ACTIVATE)
+	{
 		hChildWnd = (HWND)wParam;
-		if (GetDlgItem(hChildWnd, IDYES) != NULL) {
+		if (GetDlgItem(hChildWnd, IDYES) != NULL)
+		{
 			msg = "저장(&S)";
 			SetWindowText(GetDlgItem(hChildWnd, IDYES), msg);
 		}
 
-		if (GetDlgItem(hChildWnd, IDNO) != NULL) {
+		if (GetDlgItem(hChildWnd, IDNO) != NULL)
+		{
 			msg = "저장 안 함(&N)";
 			SetWindowText(GetDlgItem(hChildWnd, IDNO), msg);
 		}
 		UnhookWindowsHookEx(hSaveMessageBoxHook);
-}
-
+	}
 	return 0;
 }
 
-int SaveMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT nType) {
-	hSaveMessageBoxHook = SetWindowsHookEx(WH_CBT, &SaveMessageBoxProc, 0, GetCurrentThreadId());
+int SaveMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT nType)
+{
+	hSaveMessageBoxHook = SetWindowsHookEx(WH_CBT, &SaveMessageBoxProc, 0,
+		GetCurrentThreadId());
 
 	return MessageBox(hWnd, lpText, lpCaption, nType);
 }

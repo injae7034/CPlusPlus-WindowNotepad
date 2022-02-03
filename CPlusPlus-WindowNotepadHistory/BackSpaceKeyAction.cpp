@@ -1,5 +1,6 @@
 #include "BackSpaceKeyAction.h"
 #include "Glyph.h"
+#include "RowAutoChange.h"
 
 //디폴트생성자
 BackSpaceKeyAction::BackSpaceKeyAction(NotepadForm* notepadForm)
@@ -67,6 +68,16 @@ void BackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		this->notepadForm->SetWindowText(CString(name.c_str()));
 		//4.3 메모장에 변경사항이 있음을 저장한다.
 		this->notepadForm->IsDirty = true;
+		//4.4 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
+		UINT state = this->notepadForm->GetMenu()->
+			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
+		//4.5 자동 줄 바꿈 메뉴가 체크되어 있으면
+		if (state == MF_CHECKED)
+		{
+			//4.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//OnSize에서 부분자동개행을 하도록 한다. 
+			this->notepadForm->SendMessage(WM_SIZE);
+		}
 	}
 }
 

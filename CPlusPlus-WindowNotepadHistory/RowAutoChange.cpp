@@ -103,11 +103,12 @@ void RowAutoChange::UndoAllRows()
 }
 
 //한 줄만 자동개행시키다
-void RowAutoChange::DoRow(Long realRowIndex)
+void RowAutoChange::DoRow()
 {
 	//1. 현재 줄의 위치와 현재 글자 위치 그리고 진짜 줄의 위치를 입력받는다.
 	//2. 진짜 줄을 구한다.
-	Glyph* realRow = this->notepadForm->note->GetAt(realRowIndex);
+	Long i = this->notepadForm->note->GetCurrent();
+	Glyph* realRow = this->notepadForm->note->GetAt(i);
 	//3. 현재 화면의 크기를 구한다.
 	CRect rect;
 	this->notepadForm->GetClientRect(&rect);
@@ -115,8 +116,7 @@ void RowAutoChange::DoRow(Long realRowIndex)
 	Long pageWidth = rect.Width();
 	//진짜 줄 한 줄이 현재 화면의 가로 길이에 맞게 자동개행된 후에 몇 줄이 될지 정한다.
 	//5. i가 count보다 작거나 같은 동안 반복한다.
-	Long i = realRowIndex;
-	Long count = realRowIndex + 1;
+	Long count = i + 1;
 	Long letterIndex = 0;
 	Long rowTextWidth = 0;
 	Glyph* row = 0;
@@ -166,31 +166,26 @@ void RowAutoChange::DoRow(Long realRowIndex)
 }
 
 //한 줄만 자동개행 취소하다
-void RowAutoChange::UndoRow(Long * currentRowIndex, Long * currentLetterIndex,
-	Long * realRowIndex)
+void RowAutoChange::UndoRow()
 {
-	//1. 현재 줄을 구한다.(현재 줄의 위치를 출력한다.)
-	*currentRowIndex = this->notepadForm->note->GetCurrent();
-	Glyph* row = this->notepadForm->note->GetAt(*currentRowIndex);
-	//2. 현재 줄의 글자위치를 구한다.(현재 줄의 글자위치를 출력한다.)
-	*currentLetterIndex = row->GetCurrent();
+	//1. 현재 줄을 구한다.
+	Long i = this->notepadForm->note->GetCurrent();
+	Glyph* row = this->notepadForm->note->GetAt(i);
 	//진짜 줄을 찾는다.
-	//3. 가짜줄인동안 반복한다.
-	Long i = *currentRowIndex;
+	//2. 가짜줄인동안 반복한다.
 	while (dynamic_cast<DummyRow*>(row))
 	{
-		//3.1 i를 감소시킨다.
+		//2.1 i를 감소시킨다.
 		i--;
-		//3.2 i번째 줄을 구한다.
+		//2.2 i번째 줄을 구한다.
 		row = this->notepadForm->note->GetAt(i);
 	}
-	//4. 진짜 줄을 저장한다.(진짜 줄의 위치를 출력한다.)
-	*realRowIndex = i;
+	//3. 진짜 줄을 저장한다.
 	Glyph* realRow = this->notepadForm->note->GetAt(i);
-	//5. 찾은 진짜 줄의 다음 줄을 구한다.
+	//4. 찾은 진짜 줄의 다음 줄을 구한다.
 	i++;
 	row = this->notepadForm->note->GetAt(i);
-	//다음 진짜 줄이 나오기전까지 반복한다.
+	//다음 진짜 줄이 나오기전까지 가짜줄들을 모두 Join시킨다.
 	//6. 가짜줄인동안 반복한다.
 	while (dynamic_cast<DummyRow*>(row))
 	{
@@ -201,8 +196,7 @@ void RowAutoChange::UndoRow(Long * currentRowIndex, Long * currentLetterIndex,
 		//6.3 row를 구한다.
 		row = this->notepadForm->note->GetAt(i);
 	}
-	//7. 현재 줄의 위치와 현재 글자위치와 진짜 줄의 위치를 출력한다.
-	//8. 끝내다
+	//7. 끝내다
 }
 
 //자동개행 후 줄과 캐럿의 위치를 통해 자동개행 전 원래 줄과 캐럿의 위치를 구한다

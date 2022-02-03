@@ -314,22 +314,18 @@ Long Composite::Next()
 	return this->current;
 }
 
-Long Composite::Move(Long index)
+Long Composite::Move(Long goalIndex)
 {
-	//1. index가 Note의 줄의 개수보다 작으면
-	if (index < this->length)
+	Long index = this->First();
+	while (index < goalIndex)
 	{
-		//1.1 Note의 현재 줄을 index로 이동시킨다.
-		this->current = index;
+		this->Next();
+		index++;
+		//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
+		//그럼 결국에 무한반복이 된다.!!
+		//index = this->note->Next();
 	}
-	//2. index가 Note의 줄의 개수보다 크거나 같으면
-	else
-	{
-		//2.1 Note의 현재 줄을 마지막줄로 이동시킨다.
-		this->current = this->length - 1;
-	}
-	//3. 현재 줄의 위치를 출력한다.
-	return this->current;
+	return index;
 }
 
 
