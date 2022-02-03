@@ -214,15 +214,15 @@ Glyph* Composite::Split(Long index, bool isDummyRow)
 //Join
 void Composite::Join(Glyph* row)
 {
-	//1. 현재 DummyRow의 이전 줄(Row)의 위치를 입력받는다.
-	Glyph* letter = 0;//DummyRow의 글자를 담을 공간
+	//1. 현재(this)줄의 이전줄의 위치를 매개변수로 입력받는다.
+	Glyph* letter = 0;//글자를 담을 공간
 	Long caretIndex = 0;//현재 줄에서 캐럿위치 초기화
-	//2. DummyRow의 글자개수보다 작은동안 반복한다.
+	//2. 현재줄의 글자개수보다 작은동안 반복한다.
 	while (caretIndex < this->length)
 	{
-		//2.1 DummyRow의 글자를 저장한다.
+		//2.1 현재줄의 글자를 저장한다.
 		letter = this->glyphs.GetAt(caretIndex);
-		//2.2 DummyRow의 이전 줄(Row)에 글자를 추가한다.
+		//2.2 현재줄의 이전줄에 글자를 추가한다.
 		row->Add(letter->Clone());
 		//2.3 letter가 0이 아니면
 		if (letter != 0)

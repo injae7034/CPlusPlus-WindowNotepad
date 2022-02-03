@@ -38,6 +38,8 @@ public:
 	//bool IsOnScroll;//캐럿이랑 별개로 스크롤바를 통해 스크롤만 이동하는지 판별하기 위한 flag
 	string fileName;//현재 열려있는 메모장의 파일명
 	string filePath;//현재 열려있는 메모장의 파일경로
+	//인라인함수 정의
+	Long GetPreviousPageWidth() const;
 protected://#
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
@@ -59,9 +61,16 @@ private:
 	//menu가 계속 notepadForm에 setMenu된채로 있게됨 단독적으로 CMenu가 있는 경우
 	//OnCreate 스택이 종료되면 CMenu가 사라지기때문에 뻑이남.
 	CMenu menu;
+	Long previousPageWidth;
 	//CScrollBar horizontalScrollBar;//scrollController가 가지고 있으면 됨
 	//CScrollBar verticalScrollBar;//scrollController가 가지고 있으면 됨
 };
+
+//인라인함수정의
+inline Long NotepadForm::GetPreviousPageWidth() const
+{
+	return this->previousPageWidth;
+}
 
 //함수선언(함수포인터느낌)
 LRESULT CALLBACK SaveMessageBoxProc(int nCode, WPARAM wParam, LPARAM lParam);

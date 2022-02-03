@@ -11,8 +11,11 @@ public:
 	NotepadForm* notepadForm;
 public:
 	RowAutoChange(NotepadForm* notepadForm = 0);//디폴트생성자
-	void Do();//자동개행을 하다
-	void Undo();//자동개행을 취소하다
+	void DoAllRows();//메모장의 전체 줄을 자동개행시키다
+	void UndoAllRows();//메모장의 전체 줄을 자동개행 취소하다
+	void DoRow(Long realRowIndex);//한줄만 자동개행시키다
+	void UndoRow(Long* currentRowIndex, Long* currentLetterIndex, 
+		Long* realRowIndex);//한줄만 자동개행 취소하다
 	//자동개행 후 캐럿의 위치(x, y)를 통해 자동개행 전 원래 캐럿의 위치(x, y)를 구한다
 	void GetOriginPos(Long changedLetterPos, Long changedRowPos,
 		Long* originLetterPos, Long* originRowPos);

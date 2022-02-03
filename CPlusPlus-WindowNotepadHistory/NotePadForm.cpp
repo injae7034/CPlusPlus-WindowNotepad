@@ -53,6 +53,7 @@ NotepadForm::NotepadForm()
 	//this->IsOnScroll = false;//처음생성될때는 스크롤을 이용한 이동이 없기 때문에 false로 초기화함.
 	this->fileName = "제목 없음";
 	this->filePath = "";
+	this->previousPageWidth = 0;
 	//CFont에서 사용하고자 하는 글자크기와 글자체로 초기화시킴.
 	//기본생성자로 생성된 this->font에 매개변수 5개생성자로 치환(=)시킴
 	LOGFONT logFont;
@@ -78,28 +79,32 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	rowIndex = this->note->Add(row);
 	//5. 현재 줄의 위치를 저장한다.
 	this->current = this->note->GetAt(rowIndex);
-	//6. CMenu를 notepadForm에 연결한다.
+	//6. 현재 화면의 가로 길이를 저장한다.
+	CRect rect;
+	this->GetClientRect(&rect);
+	this->previousPageWidth = rect.Width();
+	//7. CMenu를 notepadForm에 연결한다.
 	this->menu.LoadMenu(IDR_MENU1);
 	SetMenu(&this->menu);
-	//7. textExtent를 힙에 할당한다.
+	//8. textExtent를 힙에 할당한다.
 	this->textExtent = new TextExtent(this);
-	//8. 선택한 메모장의 노트(내용)를 불러온다.
+	//9. 선택한 메모장의 노트(내용)를 불러온다.
 	File file;
 	string path = "test.txt";
 	file.Load(this, path);
-	//9. 처음 만들어지는 메모장 이름을 정한다.
+	//10. 처음 만들어지는 메모장 이름을 정한다.
 	string name = this->fileName;
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//10. 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
+	//11. 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
 	rowIndex = this->note->First();
-	//11. 현재 줄의 위치를 다시 저장한다.
+	//12. 현재 줄의 위치를 다시 저장한다.
 	this->current = this->note->GetAt(rowIndex);
-	//12. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
+	//13. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
 	this->current->First();
-	//13. scrollController를 생성한다.
+	//14. scrollController를 생성한다.
 	this->scrollController = new ScrollController(this);
-	//14. pageMoveController를 생성한다.
+	//15. pageMoveController를 생성한다.
 	this->pageMoveController = new PageMoveController(this);
 
 	return 0;
@@ -108,70 +113,75 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 //키보드에 글자를 입력할 때
 void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	//1. glyphCreator를 생성한다.
-	GlyphCreator glyphCreator;
-	//2. glyph를 생성한다.
-	Glyph* glyph = glyphCreator.Create((char*)&nChar);
-	Long letterIndex;
-	Long rowIndex;
-	//3. 입력받은 문자가 개행문자가 아니면
-	if (nChar != '\n' && nChar != '\r')
+	//백스페이스가 아니면(백스페이키는 OnKeyDown을 먼저 실행하고 OnChar로 들어온다)
+	//백스페이스인경우 OnChar에서 아무 처리도 안해주고 바로 나가면 된다!
+	if (nChar != VK_BACK)
 	{
-		//3.1 현재 줄의 캐럿의 가로 위치를 구한다.
-		letterIndex = this->current->GetCurrent();
-		//3.2 FileSaveCommand가 현재 줄의 length와 같으면
-		if (letterIndex == this->current->GetLength())
+		//1. glyphCreator를 생성한다.
+		GlyphCreator glyphCreator;
+		//2. glyph를 생성한다.
+		Glyph* glyph = glyphCreator.Create((char*)&nChar);
+		Long letterIndex;
+		Long rowIndex;
+		//3. 입력받은 문자가 개행문자가 아니면
+		if (nChar != '\n' && nChar != '\r')
 		{
-			//3.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
-			letterIndex = this->current->Add(glyph);
+			//3.1 현재 줄의 캐럿의 가로 위치를 구한다.
+			letterIndex = this->current->GetCurrent();
+			//3.2 FileSaveCommand가 현재 줄의 length와 같으면
+			if (letterIndex == this->current->GetLength())
+			{
+				//3.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
+				letterIndex = this->current->Add(glyph);
+			}
+			//3.3 index가 현재 줄의 length와 다르면
+			else
+			{
+				//3.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
+				letterIndex = this->current->Add(letterIndex, glyph);
+			}
+
 		}
-		//3.3 index가 현재 줄의 length와 다르면
-		else
+		//4. 입력받은 문자가 개행문자이면
+		else if (nChar == '\n' || nChar == '\r')
 		{
-			//3.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
-			letterIndex = this->current->Add(letterIndex, glyph);
+			//4.1 현재 줄의 위치를 구한다.
+			rowIndex = this->note->GetCurrent();
+			//4.2 현재 줄의 캐럿의 위치를 구한다.
+			letterIndex = this->current->GetCurrent();
+			//4.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
+			glyph = this->current->Split(letterIndex);
+			//4.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
+			if (rowIndex == this->note->GetLength() - 1)
+			{
+				//4.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
+				rowIndex = this->note->Add(glyph);
+			}
+			//4.5 그게 아니면
+			else
+			{
+				//4.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워넣는다.
+				rowIndex = this->note->Add(rowIndex + 1, glyph);
+			}
+			//4.4 현재 줄의 위치를 새로 저장한다.
+			this->current = this->note->GetAt(rowIndex);
+			//4.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
+			this->current->First();
 		}
-		
+		//5. 캐럿의 위치와 크기가 변경되었음을 알린다.
+		this->Notify();
+		//6. isComposing을 false로 바꾼다.
+		this->IsComposing = false;
+		//7. 메모장 제목에 *를 추가한다.
+		string name = this->fileName;
+		name.insert(0, "*");
+		name += " - 메모장";
+		SetWindowText(CString(name.c_str()));
+		//8. 메모장에 변경사항이 있음을 저장한다.
+		this->IsDirty = true;
+		//9. 갱신한다.
+		Invalidate(TRUE);
 	}
-	//4. 입력받은 문자가 개행문자이면
-	else if (nChar == '\n' || nChar == '\r')
-	{
-		//4.1 현재 줄의 위치를 구한다.
-		rowIndex = this->note->GetCurrent();
-		//4.2 현재 줄의 캐럿의 위치를 구한다.
-		letterIndex = this->current->GetCurrent();
-		//4.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
-		glyph = this->current->Split(letterIndex);
-		//4.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
-		if (rowIndex == this->note->GetLength() - 1)
-		{
-			//4.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
-			rowIndex = this->note->Add(glyph);
-		}
-		//4.5 그게 아니면
-		else
-		{
-			//4.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워넣는다.
-			rowIndex = this->note->Add(rowIndex + 1, glyph);
-		}
-		//4.4 현재 줄의 위치를 새로 저장한다.
-		this->current = this->note->GetAt(rowIndex);
-		//4.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
-		this->current->First();
-	}
-	//5. 캐럿의 위치와 크기가 변경되었음을 알린다.
-	this->Notify();
-	//6. isComposing을 false로 바꾼다.
-	this->IsComposing = false;
-	//7. 메모장 제목에 *를 추가한다.
-	string name = this->fileName;
-	name.insert(0, "*");
-	name += " - 메모장";
-	SetWindowText(CString(name.c_str()));
-	//8. 메모장에 변경사항이 있음을 저장한다.
-	this->IsDirty = true;
-	//9. 갱신한다.
-	Invalidate(TRUE);
 }
 
 //메모장에 텍스트를 출력할 떄
@@ -472,59 +482,141 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 	//cx가 0이면 아래에서 cx크기로 반복을 돌리는데 무한반복이 발생해서 최소화버튼을 누르면 뻑이남!) 
 	if (nType != SIZE_MINIMIZED)
 	{
-		//2.1 RowAutoChange를 생성한다.(힙에 할당하면 나중에 따로 할당해제를 해줘야함
-		//그러나 주소없이 스택에 할당하면 이 함수 스택이 종료되면 자동으로 같이 사라짐.)
-		//여기서는 스택에서만 RowAutoChange의 연산을 쓰기 위한것이기 때문에 스택에 할당하는게 효율적임!
-		RowAutoChange rowAutoChange(this);
-		//2.2. 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
+		//2.1 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
 		UINT state = this->GetMenu()->
 			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-		//2.3 자동 줄 바꿈 메뉴가 체크되어 있으면
+		//2.2 자동 줄 바꿈 메뉴가 체크되어 있으면
 		if (state == MF_CHECKED)
 		{
-			//2.3.1 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
-			Long changedRowPos = this->note->GetCurrent();
-			Long changedLetterPos = this->current->GetCurrent();
-			Long originRowPos = 0;
-			Long originLetterPos = 0;
-			rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
-				&originRowPos);
-			//2.3.2 자동개행을 취소한다.
-			rowAutoChange.Undo();
-			//2.3.3 화면크기 변경에 따라 다시 자동개행을 해준다.
-			rowAutoChange.Do();
-			//2.3.4 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
-			rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
-				&changedRowPos);
-			//2.3.5 현재 줄의 위치와 캐럿의 위치를 조정한다.
-			Long index = this->note->First();
-
-			while (index < changedRowPos)
+			//2.2.1 RowAutoChange를 생성한다.(힙에 할당하면 나중에 따로 할당해제를 해줘야함
+			//그러나 주소없이 스택에 할당하면 이 함수 스택이 종료되면 자동으로 같이 사라짐.)
+			//여기서는 스택에서만 RowAutoChange의 연산을 쓰기 위한것이기 때문에 스택에 할당하는게 효율적임!
+			RowAutoChange rowAutoChange(this);
+			//2.2.2 메모장의 현재 화면 크기가 바뀌었으면
+			if (this->previousPageWidth != cx)
 			{
-				this->note->Next();
-				index++;
-				//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
-				//그럼 결국에 무한반복이 된다.!!
-				//index = this->note->Next();
+				//2.2.2.3 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
+				Long changedRowPos = this->note->GetCurrent();
+				Long changedLetterPos = this->current->GetCurrent();
+				Long originRowPos = 0;
+				Long originLetterPos = 0;
+				rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+					&originRowPos);
+				//2.2.2.4 자동개행을 취소한다.
+				rowAutoChange.UndoAllRows();
+				//2.2.2.5 화면크기 변경에 따라 다시 자동개행을 해준다.
+				rowAutoChange.DoAllRows();
+				//2.2.2.6 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+				rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
+					&changedRowPos);
+				//2.2.2.7 현재 줄의 위치와 글자의 위치를 조정한다.
+				Long index = this->note->First();
+				while (index < changedRowPos)
+				{
+					this->note->Next();
+					index++;
+					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
+					//그럼 결국에 무한반복이 된다.!!
+					//index = this->note->Next();
+				}
+				this->current = this->note->
+					GetAt(this->note->GetCurrent());
+				index = this->current->First();
+				while (index < changedLetterPos)
+				{
+					this->current->Next();
+					index++;
+					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
+					//그럼 결국에 무한반복이 된다.!!
+					//index = this->current->Next();
+				}
+				//2.2.2.8 캐럿의 위치가 변경되었음을 알린다.
+				this->Notify();
+				//2.2.2.9 변경사항을 갱신한다.
+				this->Invalidate(TRUE);
+				//2.2.2.10 메모장의 현재 화면의 가로 길이가 바뀌었기 때문에 이를 갱신해준다.
+				this->previousPageWidth = cx;
 			}
-
-			this->current = this->note->
-				GetAt(this->note->GetCurrent());
-			index = this->current->First();
-			while (index < changedLetterPos)
+			//2.2.3 메모장의 현재 화면 크기가 바뀌지 않았으면
+			else
 			{
-				this->current->Next();
-				index++;
-				//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
-				//그럼 결국에 무한반복이 된다.!!
-				//index = this->current->Next();
+
+				//2.2.2.3 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
+				Long changedRowPos = this->note->GetCurrent();
+				Long changedLetterPos = this->current->GetCurrent();
+				Long originRowPos = 0;
+				Long originLetterPos = 0;
+				Long currentRowIndex = 0;
+				Long currentLetterIndex = 0;
+				Long realRowIndex = 0;
+				rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+					&originRowPos);
+				//2.2.2.4 자동개행을 취소한다.
+				rowAutoChange.UndoRow(&currentRowIndex, &currentLetterIndex, &realRowIndex);
+				//2.2.2.5 화면크기 변경에 따라 다시 자동개행을 해준다.
+				rowAutoChange.DoRow(realRowIndex);
+				//2.2.2.6 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+				rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
+					&changedRowPos);
+				//2.2.2.7 현재 줄의 위치와 글자의 위치를 조정한다.
+				Long index = this->note->First();
+				while (index < changedRowPos)
+				{
+					this->note->Next();
+					index++;
+					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
+					//그럼 결국에 무한반복이 된다.!!
+					//index = this->note->Next();
+				}
+				this->current = this->note->
+					GetAt(this->note->GetCurrent());
+				index = this->current->First();
+				while (index < changedLetterPos)
+				{
+					this->current->Next();
+					index++;
+					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
+					//그럼 결국에 무한반복이 된다.!!
+					//index = this->current->Next();
+				}
+#if 0
+				////2.2.3.1 해당하는 줄만 자동개행을 취소한다.
+				Long currentRowIndex = 0;
+				Long currentLetterIndex = 0;
+				Long realRowIndex = 0;
+				rowAutoChange.UndoRow(&currentRowIndex, &currentLetterIndex, &realRowIndex);
+				//2.2.3.2 해당하는 줄을 다시 자동개행해준다.
+				rowAutoChange.DoRow(realRowIndex);
+				//2.2.3.3 현재 줄의 위치와 글자의 위치를 조정한다.
+				Long index = this->note->First();
+				while (index < currentRowIndex)
+				{
+					this->note->Next();
+					index++;
+					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
+					//그럼 결국에 무한반복이 된다.!!
+					//index = this->note->Next();
+				}
+				this->current = this->note->
+					GetAt(this->note->GetCurrent());
+				index = this->current->First();
+				while (index < currentLetterIndex)
+				{
+					this->current->Next();
+					index++;
+					//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
+					//그럼 결국에 무한반복이 된다.!!
+					//index = this->current->Next();
+				}
+#endif
+				//2.2.2.8 캐럿의 위치가 변경되었음을 알린다.
+				this->Notify();
+				//2.2.2.9 변경사항을 갱신한다.
+				this->Invalidate(TRUE);
 			}
-			//2.3.6 캐럿의 위치가 변경되었음을 알린다.
-			this->Notify();
-			//2.3.7 변경사항을 갱신한다.
-			this->Invalidate(TRUE);
 		}
 	}
+	
 }
 
 //메모장에서 닫기버튼을 클릭했을 떄

@@ -31,7 +31,7 @@ void RowAutoChangeCommand::Execute()
 		this->notepadForm->GetMenu()->
 			CheckMenuItem(IDM_ROW_AUTOCHANGE, MF_CHECKED | MF_BYCOMMAND);
 		//3.2 자동개행을 실행한다.
-		rowAutoChange.Do();
+		rowAutoChange.DoAllRows();
 	}
 	//3. 자동 줄 바꿈 메뉴가 체크되어 있으면
 	else
@@ -40,7 +40,7 @@ void RowAutoChangeCommand::Execute()
 		this->notepadForm->GetMenu()->
 			CheckMenuItem(IDM_ROW_AUTOCHANGE, MF_UNCHECKED | MF_BYCOMMAND);
 		//3.2 자동개행을 취소한다.
-		rowAutoChange.Undo();
+		rowAutoChange.UndoAllRows();
 	}
 	//4. 캐럿을 제일 처음으로 보낸다.
 	this->notepadForm->note->First();
