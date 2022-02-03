@@ -17,10 +17,12 @@ public:
 	//하지만 가상함수는 내용이 있기 때문에 상속받은 클래스들에 의해 재정의되어도 되고 안되어도됨.
 	//상속받은 함수가 가상함수를 재정의하면 재정의한 함수를 사용하게 되고,
 	//상속받은 함수가 가상함수를 재정의하지않으면 추상클래스(부모클래스)의 가상함수를 그대로 사용하게 됨.
-	virtual Long Add(Glyph* glyph);//가상함수
-	virtual Long Add(Long index, Glyph* glyph);//(Insert)가상함수
-	virtual Long Remove(Long index);//가상함수
+	virtual Long Add(Glyph* glyph);//가상함수(마지막 다음에 추가)
+	virtual Long Add(Long index, Glyph* glyph);//(Insert)가상함수(해당 위치에 끼워서 추가)
+	virtual Long Remove(Long index);//가상함수(해당위치에 있는 항목 제거)
+	//위치를 입력받아 줄을 자르는데 이 때, 개행문자라서 자르는지, 아니면 자동개행이라서 자르는지 구분함. 
 	virtual Glyph* Split(Long index, bool isDummyRow = false);
+	//나뉘어있던 줄을 다시 합친다.
 	virtual void Join(Glyph* row);
 	//상속받는 클래스가 부모클래스의 함수를 재정의하기 위해서는 함수 앞에 virtual을 붙여서 가상함수를 만들어야함!
 	Glyph* GetAt(Long index); 
@@ -39,12 +41,12 @@ public:
 	Long GetCapacity() const;
 	Long GetLength() const;
 	Long GetCurrent() const;
-protected://상속받은 subclass들이 superclass의 데이터멤버에 접근하기 위해서 protected로 해줘야함.
+protected://상속받은 subclass(자식)들이 superclass(부모)의 데이터멤버에 접근하기 위해서 protected로 해줘야함.
 	Array<Glyph*> glyphs;
 	Long capacity;
 	Long length;
-	Long current;//다음 글자가 쓰여질 칸의 위치: index + 1(캐럿의 가로 위치)(Row기준)
-	//Note 기준으로 current는 index이고 캐럿의 세로 위치인데 Note에서 재정의해주면 됨.
+	Long current;//다음 글자가 쓰여질 칸의 위치: index + 1(글자위치)(Row기준)
+	//Note 기준으로 current는 index이고 현재 줄의 위치인데 Note에서 재정의해주면 됨.
 };
 
 //인라인함수정의

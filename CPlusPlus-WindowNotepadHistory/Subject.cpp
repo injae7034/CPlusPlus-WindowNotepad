@@ -38,26 +38,29 @@ Observer* Subject::GetAt(Long index)
 }
 
 //옵저버등록
-void Subject::Attach(Observer* observer)
+Long Subject::Attach(Observer* observer)
 {
+	Long index;
 	//1. observer링크를 입력받는다.
 	//2. 사용량이 할당량보다 작으면
 	if (this->length < this->capacity)
 	{
-		this->observers.Store(this->length, observer);
+		index = this->observers.Store(this->length, observer);
 	}
 	//3. 그렇지 않으면
 	else
 	{
-		this->observers.AppendFromRear(observer);
+		index = this->observers.AppendFromRear(observer);
 		//3.1 할당량을 증가시킨다.
 		this->capacity++;
 	}
 	//4. 사용량을 증가시킨다.
 	this->length++;
+	//5. 위치를 반환한다.
+	return index;
 }
 
-Long Subject::Insert(Long index, Observer* observer)
+Long Subject::Attach(Long index, Observer* observer)
 {
 	//1. 끼워 넣을 위치와 observer링크를 입력받는다.
 	//2. observer링크를 index번째에 끼워 넣는다.

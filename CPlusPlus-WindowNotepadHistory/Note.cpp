@@ -50,8 +50,7 @@ string Note::GetContent()
 	return content;
 }
 
-//캐럿의 현재 위치 세로로 이동
-//캐럿의 현재 세로 위치를 맨 밑으로 이동시키기
+//캐럿의 현재 줄의 위치를 마지막으로 이동시키기
 Long Note::Last()
 {
 	//1. 캐럿의 현재 세로 위치를 노트의 맨 밑으로 이동시킨다.
@@ -60,7 +59,7 @@ Long Note::Last()
 	return this->current;
 }
 
-//캐럿의 현재 세로 위치를 한 줄 다음으로 이동시키기
+//캐럿의 현재 줄의 위치를 한 줄 다음(아래)으로 이동시키기
 Long Note::Next()
 {
 	//이동시킬 때는 항상 먼저 이동을 시키고, 그 다음에 overflow이면 최대값으로 변경해주자.
@@ -313,9 +312,9 @@ Long Note::PreviousWord()
 #endif
 
 	string letter;//글자를 담을 공간
-	//1. 현재 캐럿의 가로위치를 구한다.
+	//1. 현재 캐럿의 위치를 구한다.
 	Long index = this->GetAt(this->current)->GetCurrent();
-	//2. 현재 캐럿의 가로위치가 0보다 크면
+	//2. 현재 캐럿의 위치가 0보다 크면
 	if (index > 0)
 	{
 		//2.1 현재 줄의 WordPrevious를 호출한다.
@@ -335,15 +334,15 @@ Long Note::PreviousWord()
 			//2.2.3 현재 줄의 첫번째 글자가 스페이스 또는 탭문자이면
 			else
 			{
-				//2.2.3.1 캐럿의 현재 세로 위치를 1만큼 감소시킨다.(이전 줄로 이동시킨다.)
+				//2.2.3.1 현재 줄의 위치를 1만큼 감소시킨다.(이전 줄로 이동시킨다.)
 				this->current--;
-				//2.2.3.2 캐럿의 현재 세로 위치가 underflow이면
+				//2.2.3.2 현재 줄의 위치가 underflow이면
 				if (this->current < 0)
 				{
-					//2.2.3.2.1 캐럿의 현재 세로 위치를 최소값으로 변경한다.
+					//2.2.3.2.1 현재 줄의 위치를 최소값으로 변경한다.
 					this->current = 0;
 				}
-				//2.2.3.3 캐럿의 현재 세로 위치가 underflow가 아니면(this->current >=0)
+				//2.2.3.3 현재 줄의 위치가 underflow가 아니면(this->current >=0)
 				else
 				{
 					//2.2.3.3.1 현재 캐럿의 가로 위치를 마지막으로 이동시킨다.

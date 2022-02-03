@@ -132,15 +132,16 @@ Long Composite::Add(Long index, Glyph* glyph)
 Long Composite::Remove(Long index)
 {
 	//1. 지울 글자의 위치를 입력받는다.
-	//2. 글자를 지우고 나면 지울 위치가 다음 글자를 추가할 위치(캐럿의 현재 가로 위치)가 되기 때문에 current에 저장한다.
+	//2. 글자를 지우고 나면 입력받은 위치가 다음 글자를 추가할 위치가 되기 때문에 current에 저장한다.
 	this->current = index;
-	//3. 해당배열요소가 주소를 저장하고 있기 때문에 해당배열요소의 힙에 할당된 내용(글자)을 먼저 지워야함.
+	//3. 해당배열요소가 주소를 저장하고 있기 때문에 해당배열요소의 힙에 할당된 내용
+	//(Row기준으로 글자)을 먼저 지워야함.
 	Glyph* glyph = this->glyphs[index];
 	if (glyph != 0)
 	{
 		delete glyph;
 	}
-	//4. 해당위치의 배열요소의 힙에 할당된 내용(글자)을 지웠으니 이제 그 주소를 지운다.
+	//4. 해당위치의 배열요소의 힙에 할당된 내용(글자)을 지운 후에 이제 그 주소를 저장한 배열요소를 지운다.
 	index = this->glyphs.Delete(index);
 	//5. 할당량을 감소시킨다.
 	this->capacity--;
@@ -158,13 +159,13 @@ Glyph* Composite::Split(Long index, bool isDummyRow)
 	//2. 자동개행으로 줄이 분리된게 아니면
 	if (isDummyRow == false)
 	{
-		//2.1 새로운 Row를 생성한다.
+		//2.1 새로운 Row(진짜 줄)를 생성한다.
 		row = new Row();
 	}
 	//3. 자동개행으로 줄이 불리되었으면
 	else
 	{
-		//3.1 DummyRow를 생성한다.
+		//3.1 DummyRow(가짜 줄)를 생성한다.
 		row = new DummyRow();
 	}
 	//4. 현재 줄에서 분리할 글자들을 새로 만든 줄에 복사한다.(깊은 복사)
@@ -245,26 +246,25 @@ Glyph* Composite::GetAt(Long index)
 	return this->glyphs.GetAt(index);
 }
 
-//캐럿의 현재 위치 가로로 이동
-//캐럿의 현재 가로(세로) 위치 맨 앞으로 이동시키기
+//캐럿의 현재 위치(현재 줄의 위치)를 처음으로 이동시킨다.
 Long Composite::First()
 {
-	//1. 캐럿의 현재 가로(세로) 위치를 줄의 맨 앞으로 이동시킨다.
+	//1. 캐럿의 현재 위치(현재 줄의 위치)를 줄의 맨 앞으로 이동시킨다.
 	this->current = 0;
-	//2. 캐럿의 현재 가로(세로) 위치를 출력한다.
+	//2. 캐럿의 현재 위치(현재 줄의 위치)를 출력한다.
 	return this->current;
 }
 
-//캐럿의 현재 가로 위치 맨 마지막으로 이동시키기
+//캐럿의 현재 위치(현재 줄의 위치)를 맨 마지막으로 이동시키기
 Long Composite::Last()
 {
-	//1. 캐럿의 현재 가로 위치를 줄의 맨 마지막으로 이동시킨다.
+	//1. 캐럿의 현재 위치(현재 줄의 위치)를 맨 마지막으로 이동시킨다.
 	this->current = this->length;
-	//2. 캐럿의 현재 가로 위치를 출력한다.
+	//2. 캐럿의 현재 위치(현재 줄의 위치)를 출력한다.
 	return this->current;
 }
 
-//캐럿의 현재 가로(세로) 위치 한 칸(줄) 이전으로 이동시키기
+//캐럿의 현재 위치(현재 줄의 위치)를 한 칸(줄) 이전으로 이동시키기
 Long Composite::Previous()
 {
 	//전자의 경우 캐럿의 이동에 초점이 안맞춰져있음 이동을 안하는경우가 생길수 있음.
@@ -277,19 +277,19 @@ Long Composite::Previous()
 	}
 #endif
 	//이동시킬 때는 항상 먼저 이동을 시키고, 그 다음에 underflow이면 최소값으로 변경해주자.
-	//1. 캐럿의 현재 가로(세로) 위치를 한 칸(줄) 이전으로 이동시킨다.
+	//1. 캐럿의 현재 위치(현재 줄의 위치)를 한 칸(줄) 이전으로 이동시킨다.
 	this->current--;
-	//2. 캐럿의 현재 가로(세로) 위치가 underflow이면
+	//2. 캐럿의 현재 위치(현재 줄의 위치)가 위치가 underflow이면
 	if (this->current == -1)
 	{
-		//2.1 캐럿의 현재 가로(세로) 위치의 최소값으로 변경한다.
+		//2.1 캐럿의 현재 위치(현재 줄의 위치)를 위치의 최소값으로 변경한다.
 		this->current = 0;
 	}
-	//3. 캐럿의 현재 가로(세로) 위치를 출력한다.
+	//3. 캐럿의 현재 위치(현재 줄의 위치)를 출력한다.
 	return this->current;
 }
 
-//캐럿의 현재 가로 위치 한 칸 다음으로 이동시키기
+//캐럿의 현재 위치(현재 줄의 위치)를 한 칸(줄) 다음으로 이동시키기
 Long Composite::Next()
 {
 	//전자의 경우 캐럿의 이동에 초점이 안맞춰져있음 이동을 안하는경우가 생길수 있음.
@@ -302,15 +302,15 @@ Long Composite::Next()
 	}
 #endif
 	//이동시킬 때는 항상 먼저 이동을 시키고, 그 다음에 overflow이면 최대값으로 변경해주자.
-	//1. 캐럿의 현재 가로 위치를 한 칸 다음으로 이동시킨다.
+	//1. 캐럿의 현재 위치(현재 줄의 위치)를 한 칸(줄) 다음으로 이동시킨다.
 	this->current++;
-	//2. 캐럿의 현재 가로 위치가 overflow이면
+	//2. 캐럿의 현재 위치(현재 줄의 위치)가 overflow이면
 	if (this->current >= this->length)
 	{
 		//2.1 캐럿의 현재 가로 위치를 최대값으로 변경한다.
 		this->current = this->length;
 	}
-	//3. 캐럿의 현재 가로 위치를 출력한다.
+	//3. 캐럿의 현재 위치(현재 줄의 위치)를 출력한다.
 	return this->current;
 }
 
@@ -342,10 +342,8 @@ Long Composite::NextWord()
 	//(캐럿이 현재줄의 개수가 같은 경우(캐럿이 마지막 글자 뒤에 위치한 경우)는 줄에서 줄로 이동하게 되는데 
 	//이는 Note->NextWord()에서 처리해줌!, 여기서는 한줄 내에서만 단어단위 이동하는거만 처리해줌!)
 	string letter;//한글자를 담을 공간
-	//마지막 글자 위치를 넘어가서 다음수를 읽으면 읽을 글자가 없기 때문에 뻑이남!
+	//마지막 글자 위치를 넘어가서 읽으면 읽을 글자가 없기 때문에 뻑이남!
 	Long lastPositionOfLetter = this->length - 1;//마지막 글자 위치
-	//이동하기전에 이동했는지 이동하지 않았는지 체크여부를 위해 현재 위치를 저장함.(이제 필요없음)
-	//Long current = this->current;
 	letter = this->GetAt(this->current)->GetContent();
 	while (this->current < lastPositionOfLetter && letter != " " && letter != "\t")
 	{
@@ -355,61 +353,50 @@ Long Composite::NextWord()
 		//this->length에 위치한 글자는 없기때문에 없는 글자를 읽으면 뻑이남!
 		//따라서 조건식을 this->length-1보다 작은동안 반복해야 마지막글자를 이미 읽었을 경우에
 		//이 반복문을 빠져나가게 되서 없는 글자를 읽는 에러를 수행하지 않는다.
-		//this->Next(); Row의 연산내에서 Row의 연산을 쓰면안됨
 		this->current++;
+		//1.2 캐럿 이전의 글자를 읽는다.
 		letter = this->GetAt(this->current)->GetContent();
 	}
-	//캐럿의 현재 가로 위치가 현재줄의 마지막 글자 위치와 같고, 현재 읽은 글자가 스페이스 문자(공백)와
+	//2. 캐럿의 현재 가로 위치가 현재줄의 마지막 글자 위치와 같고, 현재 읽은 글자가 스페이스 문자(공백)와
 	//탭문자가 아니면
 	if (this->current == lastPositionOfLetter && letter != " " && letter != "\t")
 	{
-		//캐럿을 현재줄의 마지막글자보다 뒤에 위치시킨다.
-		//this->Last();
+		//2.1 캐럿을 현재줄의 마지막글자보다 뒤에 위치시킨다.
 		this->current = this->length;
 	}
-	//2. 이전의 글자가 무엇이었는지 구하기 위해 캐럿의 현재 가로 위치를 1만큼 감소시킨다. 
-	//현재 가장 마지막에 읽은 글자가 탭이나 스페이스인데 그 전에 글자가 무엇인지가 중요!
-	//그게 한글인지 영문, 숫자, 특수문자인지에 따라 단어단위 오른쪽 이동방식이 다르기때문에
-	//this->current--;
-	//3. 스페이스나 탭이 나오기 이전의 글자가 무엇이었는지 구한다.
-	//letter = this->GetAt(this->current)->GetContent();
-	//4. 이전 글자가 한글인 경우
-
-	//5. 캐럿의 현재 가로 위치가  현재 줄의 마지막글자 위치보다 작고 
+	//3. 캐럿의 현재 가로 위치가  현재 줄의 마지막글자 위치보다 작고 
 	//현재 글자가 탭문자인 동안 반복한다.
 	while (this->current < lastPositionOfLetter && letter == "\t")
 	{
-		//5.1 캐럿의 현재 가로 위치를 1만큼 증가시킨다.
-		//this->Next();
+		//3.1 캐럿의 현재 가로 위치를 1만큼 증가시킨다.
 		this->current++;
+		//3.2 캐럿의 현재 위치 앞의 글자를 읽는다.
 		letter = this->GetAt(this->current)->GetContent();
 	}
-	//캐럿의 현재 가로 위치가 현재 줄의 마지막 글자 위치와 같고, 
+	//4. 캐럿의 현재 가로 위치가 현재 줄의 마지막 글자 위치와 같고, 
 	//현재 글자가 탭문자이면
 	if (this->current == lastPositionOfLetter && letter == "\t")
 	{
-		//캐럿의 현재 가로 위치를 현재 줄의 마지막 글자보다 뒤에 위치시킨다.
-		//this->Last();
+		//4.1 캐럿의 현재 가로 위치를 현재 줄의 마지막 글자보다 뒤에 위치시킨다.
 		this->current = this->length;
 	}
-	//6. 캐럿의 현재 가로 위치가  현재 줄의 마지막글자 위치보다 작고
+	//5. 캐럿의 현재 가로 위치가  현재 줄의 마지막글자 위치보다 작고
 	//현재 글자가 공백(스페이스바)문자인동안 반복한다.
 	while (this->current < lastPositionOfLetter && letter == " ")
 	{
-		//6.1 캐럿의 현재 가로 위치를 1만큼 증가시킨다.
-		//this->Next();
+		//5.1 캐럿의 현재 가로 위치를 1만큼 증가시킨다.
 		this->current++;
+		//5.2 캐럿의 현재 위치 앞의 글자를 읽는다.
 		letter = this->GetAt(this->current)->GetContent();
 	}
-	//캐럿의 현재 가로 위치가 현재 줄의 마지막 글자 위치와 같고, 
+	//6. 캐럿의 현재 가로 위치가 현재 줄의 마지막 글자 위치와 같고, 
 	//현재 글자가 스페이스문자(공백)이면
 	if (this->current == lastPositionOfLetter && letter == " ")
 	{
-		//캐럿의 현재 가로 위치를 현재 줄의 마지막 글자보다 뒤에 위치시킨다.
-		//this->Last();
+		//6.1 캐럿의 현재 가로 위치를 현재 줄의 마지막 글자보다 뒤에 위치시킨다.
 		this->current = this->length;
 	}
-	//8. 현재 캐럿의 가로 위치를 출력한다.
+	//7. 현재 캐럿의 위치를 출력한다.
 	return this->current;
 }
 
@@ -587,7 +574,7 @@ Long Composite::PreviousWord()
 	//1.3.7 현재 캐럿의 가로 위치가 0보다 크면
 #endif
 
-	//1. 현재 캐럿의 가로 위치 이전에 해당하는 글자를 읽는다.
+	//1. 현재 캐럿의 위치 이전에 해당하는 글자를 읽는다.
 	string letter = this->GetAt(this->current - 1)->GetContent();
 	//2. 현재 캐럿의 가로 위치가 1보다 크고 읽은 글자가 스페이스(공백)문자인동안 반복한다.
 	while (this->current > 1 && letter == " ")
