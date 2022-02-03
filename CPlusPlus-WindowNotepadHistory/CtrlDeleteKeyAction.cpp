@@ -1,15 +1,15 @@
-#include "DeleteKeyAction.h"
+#include "CtrlDeleteKeyAction.h"
 #include "Glyph.h"
 
 //디폴트생성자
-DeleteKeyAction::DeleteKeyAction(NotepadForm* notepadForm)
+CtrlDeleteKeyAction::CtrlDeleteKeyAction(NotepadForm* notepadForm)
 	:KeyAction(notepadForm)
 {
 
 }
 
 //Execute
-void DeleteKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void CtrlDeleteKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//1. 현재 줄의 위치를 구한다.
 	Long currentRowPos = this->notepadForm->note->GetCurrent();
@@ -53,34 +53,42 @@ void DeleteKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		this->notepadForm->IsDirty = true;
 	}
 	// 현재 글자 위치가 마지막이 아닐 때(현재 줄이 마지막이든 아니든 상관없음)
-	//현재 글자의 다음 글자를 지운다.
+	//현재 글자의 다음 글자부터 줄의 마지막 글자까지 다 지운다.
 	//6. 현재 글자 위치가 마지막이 아니면
 	else if (currentLetterPos < lastLetterPos)
 	{
-		//6.1 현재 글자의 다음 글자를 지운다.
-		this->notepadForm->current->Remove(currentLetterPos);
-		//6.2 메모장 제목에 *를 추가한다.
+		//6.1 오른쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
+		Long letterPosAfterMoving = this->notepadForm->current->NextWord();
+		//6.2 오른쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 현재글자위치보다 큰동안 반복한다.
+		while (letterPosAfterMoving > currentLetterPos)
+		{
+			//6.2.1 글자를 지운다.
+			this->notepadForm->current->Remove(letterPosAfterMoving - 1);
+			letterPosAfterMoving--;
+		}
+		//6.3 메모장 제목에 *를 추가한다.
 		string name = this->notepadForm->fileName;
 		name.insert(0, "*");
 		name += " - 메모장";
 		this->notepadForm->SetWindowText(CString(name.c_str()));
-		//6.3 메모장에 변경사항이 있음을 저장한다.
+		//6.4 메모장에 변경사항이 있음을 저장한다.
 		this->notepadForm->IsDirty = true;
-		//6.4 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
+		//6.5 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
 		UINT state = this->notepadForm->GetMenu()->
 			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-		//6.5 자동 줄 바꿈 메뉴가 체크되어 있으면
+		//6.6 자동 줄 바꿈 메뉴가 체크되어 있으면
 		if (state == MF_CHECKED)
 		{
-			//6.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//6.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
 		}
 	}
 }
 
+
 //소멸자
-DeleteKeyAction::~DeleteKeyAction()
+CtrlDeleteKeyAction::~CtrlDeleteKeyAction()
 {
 
 }

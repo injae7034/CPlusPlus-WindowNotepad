@@ -30,28 +30,27 @@ SelectingVisitor& SelectingVisitor::operator=(const SelectingVisitor& source)
 //Note
 void SelectingVisitor::VisitNote(Glyph* note)
 {
-	//1. 선택이 안된 범위를 구한다.
+	//1. 선택된 범위를 구한다.
 	Long startingRowPos = 0;
 	Long startingLetterPos = 0;
 	Long endingRowPos = 0;
 	Long endingLetterPos = 0;
 	note->CalculateSelectedRange(&startingRowPos,
 		&startingLetterPos, &endingRowPos, &endingLetterPos);
-	//2. 메모장에서 선택된 부분을 출력한다.
-	//2.1 선택된 부분의 줄부터 시작해서 선택이 안된 줄 전까지 출력한다.
+	//2. 메모장에서 선택된 texts를 출력한다.
+	//2.1 선택이 시작되는 줄부터 시작해서 선택이 끝나는 줄까지 반복한다.
 	Glyph* row = 0;
-	//Long startingIndex = startingLetterPos;
 	Long rowIndex = startingRowPos;
 	while (rowIndex <= endingRowPos)
 	{
 		//2.1.1 현재 줄을 구한다.
 		row = note->GetAt(rowIndex);
-		//2.2 출력될 부분의 위치를 업데이트해준다.
+		//2.1.2 출력될 부분의 위치를 업데이트해준다.
 		this->glyphXPos = 0;
 		this->glyphYPos = rowIndex;
-		//2.3 줄단위로 선택없이 출력한다.
+		//2.1.3 줄에서 선택이 된 texts를 출력한다.
 		row->Accept(this);
-		//2.4 줄의 위치를 증가시킨다.
+		//2.1.4 줄의 위치를 증가시킨다.
 		rowIndex++;
 	}
 }
@@ -59,8 +58,8 @@ void SelectingVisitor::VisitNote(Glyph* note)
 //Row
 void SelectingVisitor::VisitRow(Glyph* row)
 {
-	//1. 메모장에서 선택된 부분을 출력한다.
-	//1.1 줄의 글자개수보다 작은동안 반복한다.
+	//1. 줄에서 선택된 부분을 출력한다.
+	//1.1 줄의 첫글자부터 시작해서 줄의 글자개수보다 작은동안 반복한다.
 	Glyph* letter = 0;//글자 주소
 	string content;//글자 내용을 담을 공간
 	Long letterWidth = 0;//글자너비
@@ -84,8 +83,8 @@ void SelectingVisitor::VisitRow(Glyph* row)
 //DummyRow
 void SelectingVisitor::VisitDummyRow(Glyph* dummyRow)
 {
-	//1. 메모장에서 선택된 부분을 출력한다.
-	//1.1 줄의 글자개수보다 작은동안 반복한다.
+	//1. 줄에서 선택된 부분을 출력한다.
+	//1.1 줄의 첫글자부터 시작해서 줄의 글자개수보다 작은동안 반복한다.
 	Glyph* letter = 0;//글자 주소
 	string content;//글자 내용을 담을 공간
 	Long letterWidth = 0;//글자너비

@@ -1,15 +1,15 @@
-#include "DeleteKeyAction.h"
+#include "ShiftCtrlDeleteKeyAction.h"
 #include "Glyph.h"
 
 //디폴트생성자
-DeleteKeyAction::DeleteKeyAction(NotepadForm* notepadForm)
+ShiftCtrlDeleteKeyAction::ShiftCtrlDeleteKeyAction(NotepadForm* notepadForm)
 	:KeyAction(notepadForm)
 {
 
 }
 
 //Execute
-void DeleteKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void ShiftCtrlDeleteKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//1. 현재 줄의 위치를 구한다.
 	Long currentRowPos = this->notepadForm->note->GetCurrent();
@@ -53,12 +53,17 @@ void DeleteKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		this->notepadForm->IsDirty = true;
 	}
 	// 현재 글자 위치가 마지막이 아닐 때(현재 줄이 마지막이든 아니든 상관없음)
-	//현재 글자의 다음 글자를 지운다.
+	//현재 글자의 다음 글자부터 줄의 마지막 글자까지 다 지운다.
 	//6. 현재 글자 위치가 마지막이 아니면
 	else if (currentLetterPos < lastLetterPos)
 	{
-		//6.1 현재 글자의 다음 글자를 지운다.
-		this->notepadForm->current->Remove(currentLetterPos);
+		//6.1 마지막 글자위치가 현재글자위치보다 큰동안 반복한다.
+		while (lastLetterPos > currentLetterPos)
+		{
+			//6.1.1 글자를 지운다.
+			this->notepadForm->current->Remove(lastLetterPos - 1);
+			lastLetterPos--;
+		}
 		//6.2 메모장 제목에 *를 추가한다.
 		string name = this->notepadForm->fileName;
 		name.insert(0, "*");
@@ -79,8 +84,9 @@ void DeleteKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 }
 
+
 //소멸자
-DeleteKeyAction::~DeleteKeyAction()
+ShiftCtrlDeleteKeyAction::~ShiftCtrlDeleteKeyAction()
 {
 
 }

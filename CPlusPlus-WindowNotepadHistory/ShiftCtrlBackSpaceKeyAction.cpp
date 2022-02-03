@@ -1,15 +1,15 @@
-#include "BackSpaceKeyAction.h"
+#include "ShiftCtrlBackSpaceKeyAction.h"
 #include "Glyph.h"
 
 //디폴트생성자
-BackSpaceKeyAction::BackSpaceKeyAction(NotepadForm* notepadForm)
+ShiftCtrlBackSpaceKeyAction::ShiftCtrlBackSpaceKeyAction(NotepadForm* notepadForm)
 	:KeyAction(notepadForm)
 {
 
 }
 
 //Execute
-void BackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void ShiftCtrlBackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//1. 현재 줄의 위치를 구한다.
 	Long currentRowPos = this->notepadForm->note->GetCurrent();
@@ -54,12 +54,18 @@ void BackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//3.8 메모장에 변경사항이 있음을 저장한다.
 		this->notepadForm->IsDirty = true;
 	}
-	// 현재 글자 위치가 처음이 아닐 때(현재 줄이 처음이든 아니든 상관없음) 현재 글자를 지운다.
+	// 현재 글자 위치가 처음이 아닐 때(현재 줄이 처음이든 아니든 상관없음)
+	// 현재 글자부터 줄의 처음까지 모든 글자들을 다 지운다.
 	//4. 현재 글자 위치가 처음이 아니면
 	else if (currentLetterPos > 0)
 	{
-		//4.1 현재 글자를 지운다.
-		this->notepadForm->current->Remove(currentLetterPos - 1);
+		//4.1 현재 글자위치가 0보다 큰동안 반복한다.
+		while (currentLetterPos > 0)
+		{
+			//4.1.1 글자를 지운다.
+			this->notepadForm->current->Remove(currentLetterPos - 1);
+			currentLetterPos--;
+		}
 		//4.2 메모장 제목에 *를 추가한다.
 		string name = this->notepadForm->fileName;
 		name.insert(0, "*");
@@ -82,7 +88,7 @@ void BackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 
 //소멸자
-BackSpaceKeyAction::~BackSpaceKeyAction()
+ShiftCtrlBackSpaceKeyAction::~ShiftCtrlBackSpaceKeyAction()
 {
 
 }

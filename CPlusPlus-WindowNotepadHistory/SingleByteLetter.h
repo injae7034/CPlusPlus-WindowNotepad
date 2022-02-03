@@ -8,7 +8,7 @@ class SingleByteLetter :public Letter
 {
 public:
 	SingleByteLetter();//디폴트생성자
-	SingleByteLetter(char script);//매개변수1개생성자
+	SingleByteLetter(char script, bool isSelected);//매개변수2개생성자
 	SingleByteLetter(const SingleByteLetter& source);//복사생성자
 	SingleByteLetter& operator=(const SingleByteLetter& source);//치환연산자
 	virtual ~SingleByteLetter();//소멸자

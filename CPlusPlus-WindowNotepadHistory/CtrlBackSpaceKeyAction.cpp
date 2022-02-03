@@ -1,15 +1,15 @@
-#include "BackSpaceKeyAction.h"
+#include "CtrlBackSpaceKeyAction.h"
 #include "Glyph.h"
 
 //디폴트생성자
-BackSpaceKeyAction::BackSpaceKeyAction(NotepadForm* notepadForm)
+CtrlBackSpaceKeyAction::CtrlBackSpaceKeyAction(NotepadForm* notepadForm)
 	:KeyAction(notepadForm)
 {
 
 }
 
 //Execute
-void BackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void CtrlBackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//1. 현재 줄의 위치를 구한다.
 	Long currentRowPos = this->notepadForm->note->GetCurrent();
@@ -54,26 +54,34 @@ void BackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//3.8 메모장에 변경사항이 있음을 저장한다.
 		this->notepadForm->IsDirty = true;
 	}
-	// 현재 글자 위치가 처음이 아닐 때(현재 줄이 처음이든 아니든 상관없음) 현재 글자를 지운다.
+	// 현재 글자 위치가 처음이 아닐 때(현재 줄이 처음이든 아니든 상관없음)
+	// 현재 글자부터 왼쪽 방향으로 단어 단위로 글자들을 지운다.
 	//4. 현재 글자 위치가 처음이 아니면
 	else if (currentLetterPos > 0)
 	{
-		//4.1 현재 글자를 지운다.
-		this->notepadForm->current->Remove(currentLetterPos - 1);
-		//4.2 메모장 제목에 *를 추가한다.
+		//4.1 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
+		Long letterPosAfterMoving = this->notepadForm->current->PreviousWord();
+		//4.2 현재 글자위치가 0보다 큰동안 반복한다.
+		while (currentLetterPos > letterPosAfterMoving)
+		{
+			//4.2.1 글자를 지운다.
+			this->notepadForm->current->Remove(currentLetterPos - 1);
+			currentLetterPos--;
+		}
+		//4.3 메모장 제목에 *를 추가한다.
 		string name = this->notepadForm->fileName;
 		name.insert(0, "*");
 		name += " - 메모장";
 		this->notepadForm->SetWindowText(CString(name.c_str()));
-		//4.3 메모장에 변경사항이 있음을 저장한다.
+		//4.4 메모장에 변경사항이 있음을 저장한다.
 		this->notepadForm->IsDirty = true;
-		//4.4 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
+		//4.5 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
 		UINT state = this->notepadForm->GetMenu()->
 			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-		//4.5 자동 줄 바꿈 메뉴가 체크되어 있으면
+		//4.6 자동 줄 바꿈 메뉴가 체크되어 있으면
 		if (state == MF_CHECKED)
 		{
-			//4.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//4.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
 		}
@@ -82,7 +90,7 @@ void BackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 
 //소멸자
-BackSpaceKeyAction::~BackSpaceKeyAction()
+CtrlBackSpaceKeyAction::~CtrlBackSpaceKeyAction()
 {
 
 }

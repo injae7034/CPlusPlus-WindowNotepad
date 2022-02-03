@@ -1,15 +1,15 @@
 #include "Letter.h"
 
 //디폴트생성자
-Letter::Letter()
+Letter::Letter(bool isSelected)
 {
-	this->isSelceted = false;
+	this->isSelected = isSelected;
 }
 
 //선택범위 정하기
 void Letter::Select(bool isSelected)
 {
-	this->isSelceted = isSelected;
+	this->isSelected = isSelected;
 }
 
 //소멸자

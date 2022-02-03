@@ -8,7 +8,7 @@ SelectText::SelectText(NotepadForm* notepadForm)
 	this->notepadForm = notepadForm;
 }
 
-//오른쪽으로 선택하다
+//다음으로 선택하다
 void SelectText::DoNext(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
 	Long currentLetterIndex)
 {
@@ -61,7 +61,7 @@ void SelectText::DoNext(Long previousRowIndex, Long previousLetterIndex, Long cu
 	}
 }
 
-//왼쪽으로 선택하다
+//이전으로 선택하다
 void SelectText::DoPrevious(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
 	Long currentLetterIndex)
 {
