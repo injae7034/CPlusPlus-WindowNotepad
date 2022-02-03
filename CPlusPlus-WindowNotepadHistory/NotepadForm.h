@@ -8,8 +8,8 @@
 #include<string>
 using namespace std;
 
-//class CaretController;
-
+class CaretController;
+class PageMoveController;
 class ScrollController;
 class TextExtent;
 class Glyph;
@@ -27,10 +27,15 @@ public:
 	Font font;
 	TextExtent* textExtent;
 	ScrollController* scrollController;
+	PageMoveController* pageMoveController;
+	CaretController* caretController;
+	//PageMoveController와 CaretController는 서로 연관화할 필요없음
+	//PageMoveController* pageMoveController; 
 	//CaretController* caretController;
 	//flag는 public으로
 	bool IsComposing;//한글이 조립중인지 아닌지 판별하기 위한 flag
 	bool IsDirty;//새파일인지 아닌지 판별하기 위한 flag
+	//bool IsOnScroll;//캐럿이랑 별개로 스크롤바를 통해 스크롤만 이동하는지 판별하기 위한 flag
 	string fileName;//현재 열려있는 메모장의 파일명
 	string filePath;//현재 열려있는 메모장의 파일경로
 protected://#

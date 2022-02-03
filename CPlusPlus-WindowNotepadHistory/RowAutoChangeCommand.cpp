@@ -113,12 +113,12 @@ void RowAutoChangeCommand::Execute()
 	this->notepadForm->note->First();
 	this->notepadForm->current = this->notepadForm->note->
 		GetAt(this->notepadForm->note->GetCurrent());
-	//this->notepadForm->current->First();
+	this->notepadForm->current->First();
 	//5. 수직스크롤을 제일 처음으로 보낸다.
-	this->notepadForm->scrollController->scroll[1]->First();
+	//this->notepadForm->scrollController->scroll[1]->First();
 	//6. 수직스크롤바의 Thumb를 수직스크롤의 현재위치로 이동시킨다.
-	this->notepadForm->SetScrollPos(SB_VERT,
-		this->notepadForm->scrollController->scroll[1]->GetCurrentPos());
+	//this->notepadForm->SetScrollPos(SB_VERT,
+	//	this->notepadForm->scrollController->scroll[1]->GetCurrentPos());
 	//7. 스크롤의 위치가 변경되었음을 알린다.
 	this->notepadForm->Notify();
 	//8. 변경사항을 갱신한다.

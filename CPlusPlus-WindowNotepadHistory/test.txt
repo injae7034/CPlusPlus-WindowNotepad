@@ -1,5 +1,4 @@
-// 크기 구하기
-CRect rect;GetClientRect( &rect );
+// 크기 구하기CRect rect;GetClientRect( &rect );
 // 화면 그리기 CDC dcTemp;dcTemp.CreateCompatibleDC( &dc ); HBITMAP hbmp = ::CreateCompatibleBitmap( dc, 10000, rect.Height() - 20 );
 // 가로 10000 크기로 생성 HBITMAP hbmpOld = (HBITMAP)dcTemp.SelectObject( hbmp ); 
 // 100마다 텍스트 출력

@@ -5,6 +5,7 @@
 #include "VerticalScroll.h"
 #include "TextExtent.h"
 #include "Glyph.h"
+#include "PageMoveController.h"
 
 //디폴트생성자
 ScrollController::ScrollController(NotepadForm* notepadForm)

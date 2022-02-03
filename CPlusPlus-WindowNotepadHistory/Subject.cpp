@@ -1,5 +1,6 @@
 #include "Subject.h"
 #include "Observer.h"
+#include "CaretController.h"
 
 //디폴트생성자
 Subject::Subject(Long capacity)
@@ -56,22 +57,38 @@ void Subject::Attach(Observer* observer)
 	this->length++;
 }
 
+Long Subject::Insert(Long index, Observer* observer)
+{
+	//1. 끼워 넣을 위치와 observer링크를 입력받는다.
+	//2. observer링크를 index번째에 끼워 넣는다.
+	index = this->observers.Insert(index, observer);
+	//3. 할당량을 증가시킨다.
+	this->capacity++;
+	//4. 사용량을 증가시킨다.
+	this->length++;
+	//5. 현재 글자의 위치를 출력한다.
+	return index;
+}
+
 //옵저버해지
 void Subject::Detach(Observer* observer)
 {
 	//1. 입력받은 옵저버의 주소로 옵저버링크배열의 위치를 구한다.
 	Long index = this->observers.LinearSearchUnique(observer, CompareObserver);
 	//2. 옵저버의 주소를 이용해 힙에 할당된 옵저버의 내용을 할당해제한다.
-	if (observer != 0)
+	if (index != -1)
 	{
-		delete observer;
+		if (observer != 0)
+		{
+			delete observer;
+		}
+		//3. 옵저버링크배열의 배열요소(주소)를 지운다.
+		this->observers.Delete(index);
+		//4. 할당량을 감소시킨다.
+		this->capacity--;
+		//5. 사용량을 감소시킨다.
+		this->length--;
 	}
-	//3. 옵저버링크배열의 배열요소(주소)를 지운다.
-	this->observers.Delete(index);
-	//4. 할당량을 감소시킨다.
-	this->capacity--;
-	//5. 사용량을 감소시킨다.
-	this->length--;
 }
 
 //옵저버알림
@@ -86,38 +103,51 @@ void Subject::Notify()
 		i++;
 	}
 }
-#if 0
+
 //Search
-Observer* Subject::Search(size_t key)
+Long Subject::Search(Observer* key)
 {
-	//1. observer주소배열에서 원하는 자료유형의 크기를 찾을 때까지 반복한다.
-	Long i = 0;
+	//1. 입력받은 옵저버의 주소로 옵저버링크배열의 위치를 구한다.
+	Long index = this->observers.LinearSearchUnique(key, CompareObserver);
+	//2. 위치를 출력한다.
+	return index;
+#if 0
+	//1. 찾고자 하는 옵저버를 매개변수로 입력받는다.
+	Long index = 0;
 	Observer* observer = 0;
-	observer = this->observers.GetAt(i);
-	//2. i가 length보다 작은 동안 그리고 옵저버가 캐럿매니저가 아닌동안 반복한다.
-	while (i < this->length && sizeof(*observer) != key)
+	//2. index가 length보다 작은 동안 그리고 찾고자 하는 옵저버가 아닌동안 반복한다.
+	while (index < this->length && dynamic_cast<Observer*>(observer) != key)
 	{
 		//2.1 옵저버 리스트에서 옵저버를 구한다.
-		observer = this->observers.GetAt(i);
-		//2.2 i를 감소시킨다.
-		i++;
+		observer = this->observers.GetAt(index);
+		//2.2 index를 증가시킨다.
+		index++;
 	}
-	//3.
-	if (sizeof(*observer) != key)
+	//3. 찾고자 하는 옵저버를 찾았으면
+	if (dynamic_cast<Observer*>(observer) == key)
 	{
-		//3.1 
-		observer = 0;
-
+		//3.1 index를 감소시켜준다.
+		index--;
 	}
-	//if(sizeof)
-	return observer;
-}
+	//4. 찾고자 하는 옵저버를 못찾았으면
+	else
+	{
+		index = -1;
+	}
+	//5. 찾은 위치를 반환한다.
+	return index;
 #endif
+}
+
+//메모리맵을 그려서 정확하게 비교하자
+//Obwerver*와 Observer**는 엄연히 다르다!! 그 차이를 알기 위해서 메모리맵을 그려서 비교해보자!
 //함수포인터 정의
 int CompareObserver(void* one, void* other)
 {
+	Observer** one_ = (Observer**)one;
+	Observer* other_ = (Observer*)other;
 	int ret;
-	if (one == other)
+	if (*one_ == other_)
 	{
 		ret = 0;
 	}

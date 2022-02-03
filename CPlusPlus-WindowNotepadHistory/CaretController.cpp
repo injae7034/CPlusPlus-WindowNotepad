@@ -25,7 +25,6 @@ void CaretController::Update()
     //textExtent를 힙에 할달해야 하는 시기는 처음 notepadForm이 생성될 때 기본 디폴트 글꼴 정보를
     //이용해서 생성하면 되고 글꼴 정보가 바뀌는 경우 기존 TextExtent를 할당해제하고 새로 TextExtent를
     //힙에 할당하면 되므로, FontChangeCommand에서 새로 할당해제해주면 된다.
-    //7. textExtent를 힙에 할당한다.
     //this->notepadForm->textExtent = new TextExtent(this->notepadForm);
     //1. 현재줄의 텍스트의 폭을 구한다.
     Long rowTextWidth = this->notepadForm->textExtent->GetTextWidth(this->notepadForm->
@@ -45,6 +44,8 @@ void CaretController::Update()
     //4. 캐럿을 생성한다.
     this->caret->Create(letterWidth, this->notepadForm->textExtent->GetHeight());
     //5. 캐럿을 이동시킨다.
+    //캐럿의 시작위치는 고정되어고 화면만 이동하므로 이동한만큼 빼줘야함!
+    //그럼 원래 캐럿은 처음 시작점에 고정되어 있는데 -해줌으로써 캐럿이 움직이는 것처럼 보임.
     this->caret->Move(rowTextWidth - letterWidth - currentXPos,
         this->notepadForm->note->GetCurrent() *
         this->notepadForm->textExtent->GetHeight() - currentYPos);

@@ -13,8 +13,9 @@ public:
 	void Attach(Observer* observer);//옵저버등록
 	void Detach(Observer* observer);//옵저버해지
 	void Notify();//옵저버에게 변경되었다고 알림
+	Long Insert(Long index, Observer* observer);//옵저버를 index에 끼워넣기
 	Observer* GetAt(Long index);
-	//Observer* Search(size_t key);//key값이 들어가면 그에 맞는 Observer*를 반환해줌.
+	Long Search(Observer* key);//찾고자하는 옵저버의 주소를 넣으면 그 배열위치를 반환해줌.
 	//인라인함수 선언
 	Long GetCapacity() const;
 	Long GetLength() const;
