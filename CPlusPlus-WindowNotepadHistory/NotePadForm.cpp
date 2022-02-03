@@ -107,24 +107,24 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	GlyphCreator glyphCreator;
 	//2. glyph를 생성한다.
 	Glyph* glyph = glyphCreator.Create((char*)&nChar);
-	Long caretIndex;
+	Long letterIndex;
 	Long rowIndex;
 	//3. 입력받은 문자가 개행문자가 아니면
 	if (nChar != '\n' && nChar != '\r')
 	{
 		//3.1 현재 줄의 캐럿의 가로 위치를 구한다.
-		caretIndex = this->current->GetCurrent();
+		letterIndex = this->current->GetCurrent();
 		//3.2 FileSaveCommand가 현재 줄의 length와 같으면
-		if (caretIndex == this->current->GetLength())
+		if (letterIndex == this->current->GetLength())
 		{
 			//3.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
-			caretIndex = this->current->Add(glyph);
+			letterIndex = this->current->Add(glyph);
 		}
 		//3.3 index가 현재 줄의 length와 다르면
 		else
 		{
 			//3.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
-			caretIndex = this->current->Add(caretIndex, glyph);
+			letterIndex = this->current->Add(letterIndex, glyph);
 		}
 		
 	}
@@ -134,9 +134,9 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//4.1 현재 줄의 위치를 구한다.
 		rowIndex = this->note->GetCurrent();
 		//4.2 현재 줄의 캐럿의 위치를 구한다.
-		caretIndex = this->current->GetCurrent();
+		letterIndex = this->current->GetCurrent();
 		//4.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
-		glyph = this->current->Split(caretIndex);
+		glyph = this->current->Split(letterIndex);
 		//4.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
 		if (rowIndex == this->note->GetLength() - 1)
 		{
@@ -718,13 +718,14 @@ void NotepadForm::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 //메모장에서 화면의 크기가 변경될 때
 void NotepadForm::OnSize(UINT nType, int cx, int cy)
 {
+
 	//1. 현재 메모장의 창의 상태(최소화, 최대화, 이전 크기로 복원)와 가로 길이와 세로 길이를 입력받는다.
 	CFrameWnd::OnSize(nType, cx, cy);
 	//2. 현재 메모장의 상태가 최소화가 아니면(최소화이면 cx와 cy 값이 둘다 0이 되고, 
 	//cx가 0이면 아래에서 cx크기로 반복을 돌리는데 무한반복이 발생해서 최소화버튼을 누르면 뻑이남!) 
 	if (nType != SIZE_MINIMIZED)
 	{
-		Long caretIndex = 0;
+		Long letterIndex = 0;
 		Long rowTextWidth = 0;
 		Glyph* glyph = 0;
 		Long rowIndex = 0;
@@ -736,6 +737,13 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 		//2.2 자동 줄 바꿈 메뉴가 체크되어 있으면
 		if (state == MF_CHECKED)
 		{
+
+			//Long currentRowIndex = this->note->GetCurrent();
+			//Long currentletterIndex = this->current->GetCurrent();
+			this->note->First();
+			this->note->First();
+			this->current = this->note->
+				GetAt(this->note->GetCurrent());
 			//현재화면의 크기에 변경이 있으면 자동개행을 취소하고 일단 다시 원상태로 돌린다.
 			//DummyRow의 내용을 다시 Row에 옮기고 DummyRow를 전부 할당해제한다.
 			//2.2.1 Note의 총 줄의 개수보다 작은동안 반복한다.
@@ -760,6 +768,7 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 					rowIndex++;
 				}
 			}
+
 			//화면의 크기 변경에 따라 다시 자동개행을 해준다.
 			//2.2.2 rowIndex를 원위치시킨다.
 			rowIndex = 0;
@@ -768,51 +777,62 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 			{
 				//2.2.3.1 Note의 rowIndex번째 줄을 구한다.
 				row = this->note->GetAt(rowIndex);
-				//2.2.3.2 caretIndex를 원위치시킨다.
-				caretIndex = 0;
-				//2.2.3.3 caretIndex를 증가시킨다.
-				caretIndex++;
-				//2.2.3.4 rowIndex번째 줄에서 caretIndex까지 텍스트의 가로길이를 측정한다.
+				//2.2.3.2 letterIndex를 원위치시킨다.
+				letterIndex = 0;
+				//2.2.3.3 letterIndex를 증가시킨다.
+				letterIndex++;
+				//2.2.3.4 rowIndex번째 줄에서 letterIndex까지 텍스트의 가로길이를 측정한다.
 				rowTextWidth = this->textExtent->GetTextWidth
-				(row->GetPartOfContent(caretIndex).c_str());
-				//2.2.3.5 caretIndex가 rowIndex번째 줄의 총글자 개수보다 작은동안 
+				(row->GetPartOfContent(letterIndex).c_str());
+				//2.2.3.5 letterIndex가 rowIndex번째 줄의 총글자 개수보다 작은동안 
 				//그리고 rowIndex번째 줄의 가로길이가 현재화면의 가로길이(cx)보다 작은동안 반복한다.
-				while (caretIndex < row->GetLength() && rowTextWidth <= cx)
+				while (letterIndex < row->GetLength() && rowTextWidth <= cx)
 				{
-					//2.2.3.5.1 caretIndex를 증가시킨다.
-					caretIndex++;
-					//2.2.3.5.2 증가된 caretIndex까지의 가로 길이를 측정한다.
+					//2.2.3.5.1 letterIndex를 증가시킨다.
+					letterIndex++;
+					//2.2.3.5.2 증가된 letterIndex까지의 가로 길이를 측정한다.
 					rowTextWidth = this->textExtent->GetTextWidth
-					(row->GetPartOfContent(caretIndex));
+					(row->GetPartOfContent(letterIndex));
 				}
 				//2.2.3.6 rowIndex번째 줄의 가로 길이가 현재 화면의 가로 길이(cx)보다 크면
 				if (rowTextWidth > cx)
 				{
-					//2.2.3.6.1 caretIndex까지의 길이가 현재화면의 가로 길이(cx)보다 크기 때문에 
+					//2.2.3.6.1 letterIndex까지의 길이가 현재화면의 가로 길이(cx)보다 크기 때문에 
 					//이 선택문에 들어왔다. 그래서 캐럿이 이전으로 한 칸 이동을 해서 길이를 재면
-					//현재화면의 가로 길이(cx)보다 작다. 캐럿(caretIndex)은 다음 글자를 적을 위치를
+					//현재화면의 가로 길이(cx)보다 작다. 캐럿(letterIndex)은 다음 글자를 적을 위치를
 					//반영하기 때문에 항상 현재 글자보다 한칸 앞서 있다
-					//그래서 caretIndex-1에서 split을 해야 화면을 넘는 글자를 다음 줄로 보낼 수 있다.
-					caretIndex--;
+					//그래서 letterIndex-1에서 split을 해야 화면을 넘는 글자를 다음 줄로 보낼 수 있다.
+					letterIndex--;
 					//2.2.3.6.2 rowIndex번째 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의
-					//글자부터 rowIndex번째 줄에서 caretIndex 다음 위치에 있는 글자들을 나눈다.
+					//글자부터 rowIndex번째 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.
 					//(DummyRow생성)
-					glyph = row->Split(caretIndex, true);
+					glyph = row->Split(letterIndex, true);
 					//2.2.3.6.3 새로운 줄을 rowIndex번째 줄의 다음 위치에 끼워넣는다.
 					rowIndex = this->note->Add(rowIndex + 1, glyph);
+					//currentRowIndex++;
 				}
-				//2.2.3.7 caretIndex가 rowIndex번째 줄의 총글자 개수보다 크거나 같으면
-				else if (caretIndex >= row->GetLength())
+				//2.2.3.7 letterIndex가 rowIndex번째 줄의 총글자 개수보다 크거나 같으면
+				else if (letterIndex >= row->GetLength())
 				{
 					//2.2.3.7.1 다음 줄로 이동한다.
 					rowIndex++;
 				}
 			}
+
+			//this->note->Move(currentRowIndex);
+			this->note->First();
+			this->note->First();
+			this->current = this->note->
+				GetAt(this->note->GetCurrent());
 		}
-		
 	}
+	this->note->First();
+	this->note->First();
+	this->current = this->note->
+		GetAt(this->note->GetCurrent());
 	this->Notify();
 	this->Invalidate();
+
 }
 
 //메모장에서 닫기버튼을 클릭했을 떄

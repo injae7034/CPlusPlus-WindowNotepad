@@ -16,7 +16,7 @@ RowAutoChangeCommand::RowAutoChangeCommand(NotepadForm* notepadForm)
 //Execute
 void RowAutoChangeCommand::Execute()
 {
-	Long caretIndex = 0;
+	Long letterIndex = 0;
 	Long rowTextWidth = 0;
 	Glyph* glyph = 0;
 	Long rowIndex = 0;
@@ -36,44 +36,44 @@ void RowAutoChangeCommand::Execute()
 		{
 			//2.2.1 메모장에서 rowIndex번째 줄을 구한다.
 			row = this->notepadForm->note->GetAt(rowIndex);
-			//2.2.2 caretIndex를 원위치시킨다.
-			caretIndex = 0;
-			//2.2.3 caretIndex를 증가시킨다.
-			caretIndex++;
-			//2.2.4 rowIndex번째 줄에서 caretIndex까지 텍스트의 가로길이를 측정한다.
+			//2.2.2 letterIndex를 원위치시킨다.
+			letterIndex = 0;
+			//2.2.3 letterIndex를 증가시킨다.
+			letterIndex++;
+			//2.2.4 rowIndex번째 줄에서 letterIndex까지 텍스트의 가로길이를 측정한다.
 			rowTextWidth = this->notepadForm->textExtent->GetTextWidth
-				(row->GetPartOfContent(caretIndex).c_str());
-			//2.2.5 caretIndex가 rowIndex번째 줄의 총글자 개수보다 작은동안 
+				(row->GetPartOfContent(letterIndex).c_str());
+			//2.2.5 letterIndex가 rowIndex번째 줄의 총글자 개수보다 작은동안 
 			//그리고 rowIndex번째 줄의 가로길이가 현재화면의 가로길이보다 작은동안 반복한다.
-			while (caretIndex < row->GetLength() &&
+			while (letterIndex < row->GetLength() &&
 				rowTextWidth <= this->notepadForm->scrollController->
 				scroll[0]->GetPageSize())
 			{
-				//2.2.5.1 caretIndex를 증가시킨다.
-				caretIndex++;
-				//2.2.5.2 증가된 caretIndex까지의 가로 길이를 측정한다.
+				//2.2.5.1 letterIndex를 증가시킨다.
+				letterIndex++;
+				//2.2.5.2 증가된 letterIndex까지의 가로 길이를 측정한다.
 				rowTextWidth = this->notepadForm->textExtent->GetTextWidth
-				(row->GetPartOfContent(caretIndex));
+				(row->GetPartOfContent(letterIndex));
 			}
 			//2.2.6 rowIndex번째 줄의 가로 길이가 현재 화면의 가로 길이보다 크면
 			if (rowTextWidth > this->notepadForm->scrollController->
 				scroll[0]->GetPageSize())
 			{
-				//2.2.6.1 caretIndex까지의 길이가 현재화면의 가로 길이(cx)보다 크기 때문에 
+				//2.2.6.1 letterIndex까지의 길이가 현재화면의 가로 길이(cx)보다 크기 때문에 
 				//이 선택문에 들어왔다. 그래서 캐럿이 이전으로 한 칸 이동을 해서 길이를 재면
-				//현재화면의 가로 길이(cx)보다 작다. 캐럿(caretIndex)은 다음 글자를 적을 위치를
+				//현재화면의 가로 길이(cx)보다 작다. 캐럿(letterIndex)은 다음 글자를 적을 위치를
 				//반영하기 때문에 항상 현재 글자보다 한칸 앞서 있다
-				//그래서 caretIndex-1에서 split을 해야 화면을 넘는 글자를 다음 줄로 보낼 수 있다.
-				caretIndex--;
+				//그래서 letterIndex-1에서 split을 해야 화면을 넘는 글자를 다음 줄로 보낼 수 있다.
+				letterIndex--;
 				//2.2.6.2 rowIndex번째 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의
-				//글자부터 rowIndex번째 줄에서 caretIndex 다음 위치에 있는 글자들을 나눈다.
+				//글자부터 rowIndex번째 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.
 				//(DummyRow생성)
-				glyph = row->Split(caretIndex, true);
+				glyph = row->Split(letterIndex, true);
 				//2.2.6.3 새로운 줄을 rowIndex번째 줄의 다음 위치에 끼워넣는다.
 				rowIndex = this->notepadForm->note->Add(rowIndex + 1, glyph);
 			}
-			//2.2.7 caretIndex가 rowIndex번째 줄의 총글자 개수보다 크거나 같으면
-			else if (caretIndex >= row->GetLength())
+			//2.2.7 letterIndex가 rowIndex번째 줄의 총글자 개수보다 크거나 같으면
+			else if (letterIndex >= row->GetLength())
 			{
 				//2.2.7.1 다음 줄로 이동한다.
 				rowIndex++;
@@ -113,7 +113,7 @@ void RowAutoChangeCommand::Execute()
 	this->notepadForm->note->First();
 	this->notepadForm->current = this->notepadForm->note->
 		GetAt(this->notepadForm->note->GetCurrent());
-	this->notepadForm->current->First();
+	//this->notepadForm->current->First();
 	//5. 수직스크롤을 제일 처음으로 보낸다.
 	this->notepadForm->scrollController->scroll[1]->First();
 	//6. 수직스크롤바의 Thumb를 수직스크롤의 현재위치로 이동시킨다.
