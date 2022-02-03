@@ -1,8 +1,6 @@
 #include "CtrlRightArrowKeyAction.h"
 #include "Glyph.h"
-#include "ScrollController.h"
-#include "Scroll.h"
-#include "TextExtent.h"
+
 #include "SelectText.h"
 
 //디폴트생성자
@@ -27,36 +25,9 @@ void CtrlRightArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
 	//6. 줄에서 캐럿을 단어단위로 이동한다.
 	this->notepadForm->current->Move(currentLetterIndex);
-	//5. 화면에서 선택여부를 확인하기 위해 SelectText를 생성한다.
+	//7. 텍스트를 선택해제한다.
 	SelectText selectText(this->notepadForm);
-	//6. Shift키가 눌러졌는지 안눌러졌는지 상태를 체크해서 저장한다.
-	Long ctrlPressedCheck = GetKeyState(VK_SHIFT);
-	//7. Shift키가 눌러져있으면
-	if (ctrlPressedCheck & 0x8000)
-	{
-		//7.1 텍스트를 선택한다.
-		selectText.Do(previousRowIndex, previousLetterIndex, currentRowIndex,
-			currentLetterIndex);
-	}
-	//8. Shift키가 안눌러져있으면
-	else
-	{
-		//8.1 텍스트를 선택해제한다.
-		selectText.Undo();
-	}
-#if 0
-	if (currentLetterIndex > 0)
-	{
-		//6.1 Shift키가 눌러졌는지 안눌러졌는지 상태를 체크해서 저장한다.
-		Long ctrlPressedCheck = GetKeyState(VK_SHIFT);
-		
-		//6.2 Shift키가 눌러져있으면
-		if (ctrlPressedCheck & 0x8000)
-		{
-			
-		}
-	}
-#endif
+	selectText.Undo();
 }
 
 //소멸자

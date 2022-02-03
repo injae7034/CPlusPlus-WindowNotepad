@@ -1,16 +1,17 @@
-#include "LeftArrowKeyAction.h"
+#include "ShiftLeftArrowKeyAction.h"
 #include "Glyph.h"
+#include "SelectText.h"
 #include "SelectText.h"
 
 //디폴트생성자
-LeftArrowKeyAction::LeftArrowKeyAction(NotepadForm* notepadForm)
+ShiftLeftArrowKeyAction::ShiftLeftArrowKeyAction(NotepadForm* notepadForm)
 	:KeyAction(notepadForm)
 {
 
 }
 
 //전략패턴
-void LeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void ShiftLeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//1. 이전으로 이동하기 전에 글자의 위치를 저장한다.
 	Long previousLetterIndex = this->notepadForm->current->GetCurrent();
@@ -33,13 +34,14 @@ void LeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			currentLetterIndex = this->notepadForm->current->Last();
 		}
 	}
-	//5. 텍스트를 선택해제한다.
+	//5. 텍스트를 선택한다.
 	SelectText selectText(this->notepadForm);
-	selectText.Undo();
+	selectText.DoPrevious(previousRowIndex, previousLetterIndex, currentRowIndex,
+		currentLetterIndex);
 }
 
 //소멸자
-LeftArrowKeyAction::~LeftArrowKeyAction()
+ShiftLeftArrowKeyAction::~ShiftLeftArrowKeyAction()
 {
 
 }

@@ -8,8 +8,8 @@ SelectText::SelectText(NotepadForm* notepadForm)
 	this->notepadForm = notepadForm;
 }
 
-//선택하다
-void SelectText::Do(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
+//오른쪽으로 선택하다
+void SelectText::DoNext(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
 	Long currentLetterIndex)
 {
 	Glyph* row = 0;
@@ -61,6 +61,59 @@ void SelectText::Do(Long previousRowIndex, Long previousLetterIndex, Long curren
 	}
 }
 
+//왼쪽으로 선택하다
+void SelectText::DoPrevious(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
+	Long currentLetterIndex)
+{
+	Glyph* row = 0;
+	Glyph* letter = 0;
+	Long letterCount = 0;
+	Long letterIndex = 0;
+	//1. 이동하기 전의 줄의 위치가 이동한 후의 줄의 위치보다 작거나 같은 동안 반복한다.
+	while (currentRowIndex <= previousRowIndex)
+	{
+		//1.1 줄을 구한다.
+		row = this->notepadForm->note->GetAt(currentRowIndex);
+		//1.2 이동하기 전 줄의 위치값이 이동한 후 줄의 위치값과 같지 않으면
+		if (currentRowIndex != previousRowIndex)
+		{
+			//1.2.1 줄의 글자 개수를 대입한다.
+			letterCount = row->GetLength();
+		}
+		//1.3  이동하기 전 줄의 위치값이 이동한 후 줄의 위치값과 같으면
+		else
+		{
+			//1.3.1 이동한 후 글자 위치를 대입한다.
+			letterCount = previousLetterIndex;
+		}
+		//1.4 글자 위치를 원위치시킨다.
+		letterIndex = currentLetterIndex;
+		//1.5 글자 위치가 letterCount보다 작은동안 반복한다.
+		while (letterIndex < letterCount)
+		{
+			//1.5.1 글자를 구한다.
+			letter = row->GetAt(letterIndex);
+			//1.5.2 글자가 선택이 안되어있으면
+			if (letter->IsSelected() == false)
+			{
+				///1.5.2.1 글자를 선택이 된 상태로 바꿔준다.
+				letter->Select(true);
+			}
+			//1.5.3 글자가 선택이 되어 있으면
+			else
+			{
+				//1.5.3.1 글자를 선택이 안된 상태로 바꿔준다.
+				letter->Select(false);
+			}
+			//1.5.4 글자 위치를 증가시킨다.
+			letterIndex++;
+		}
+		//1.6 줄의 위치를 증가시킨다.
+		currentRowIndex++;
+		currentLetterIndex = 0;
+	}
+}
+
 //선택을 해제하다
 void SelectText::Undo()
 {
@@ -102,7 +155,7 @@ void SelectText::Undo()
 			//2.4.3 글자가 선택이 안되어있으면
 			else
 			{
-				isSelected == false;
+				isSelected = false;
 			}
 			//2.4.4 글자 위치를 증가시킨다.
 			letterIndex++;

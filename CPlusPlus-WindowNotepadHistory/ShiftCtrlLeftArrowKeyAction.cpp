@@ -1,16 +1,16 @@
-#include "CtrlLeftArrowKeyAction.h"
+#include "ShiftCtrlLeftArrowKeyAction.h"
 #include "Glyph.h"
 #include "SelectText.h"
 
 //디폴트생성자
-CtrlLeftArrowKeyAction::CtrlLeftArrowKeyAction(NotepadForm* notepadForm)
+ShiftCtrlLeftArrowKeyAction::ShiftCtrlLeftArrowKeyAction(NotepadForm* notepadForm)
 	:KeyAction(notepadForm)
 {
 
 }
 
-//Execute
-void CtrlLeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+//전략패턴
+void ShiftCtrlLeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//1. 이동하기 전에 줄의 위치를 구한다.
 	Long previousRowIndex = this->notepadForm->note->GetCurrent();
@@ -24,13 +24,14 @@ void CtrlLeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
 	//6. 줄에서 캐럿을 단어단위로 이동한다.
 	this->notepadForm->current->Move(currentLetterIndex);
-	//7. 글자 선택을 해제한다.
+	//7. 텍스트를 선택한다.
 	SelectText selectText(this->notepadForm);
-	selectText.Undo();
+	selectText.DoPrevious(previousRowIndex, previousLetterIndex, currentRowIndex,
+		currentLetterIndex);
 }
 
 //소멸자
-CtrlLeftArrowKeyAction::~CtrlLeftArrowKeyAction()
+ShiftCtrlLeftArrowKeyAction::~ShiftCtrlLeftArrowKeyAction()
 {
 
 }

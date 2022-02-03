@@ -1,4 +1,4 @@
-#include "PageUpKeyAction.h"
+#include "ShiftPageUpKeyAction.h"
 #include "Glyph.h"
 #include "ScrollController.h"
 #include "Scroll.h"
@@ -6,14 +6,14 @@
 #include "SelectText.h"
 
 //디폴트생성자
-PageUpKeyAction::PageUpKeyAction(NotepadForm* notepadForm)
+ShiftPageUpKeyAction::ShiftPageUpKeyAction(NotepadForm* notepadForm)
 	:KeyAction(notepadForm)
 {
 
 }
 
-//Execute
-void PageUpKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+//전략패턴
+void ShiftPageUpKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//1. 캐럿을 이동시키기 전에 먼저 현재 캐럿이 있는 곳으로 스크롤을 이동시킨다.
 	this->notepadForm->Notify();
@@ -35,23 +35,24 @@ void PageUpKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		Long MovingRowCount = distance / this->notepadForm->textExtent->GetHeight();
 		//4.4 이동하기 전에 현재 줄의 위치를 구한다.
 		Long previousRowIndex = this->notepadForm->note->GetCurrent();
-		//4.5 이동하기 전의 캐럿의 가로 위치를 구한다.
-		Long previousCaretIndex = this->notepadForm->current->GetCurrent();
+		//4.5 이동하기 전 글자 위치를 구한다.
+		Long previousLetterIndex = this->notepadForm->current->GetCurrent();
 		//4.6 캐럿의 세로 위치를 이동시킨다.
 		Long currentRowIndex = previousRowIndex - MovingRowCount;
 		currentRowIndex = this->notepadForm->note->Move(currentRowIndex);
-		//4.7 이동한 후의 현재줄을 변경한다.
+		//4.7 이동한 후의 현재줄을 변경하고 현재 글자 위치를 구한다.
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
-		//4.8 이동하기 전 캐럿의 가로 위치가 0이 아니고 이동한 후 현재줄의 글자개수가 0이 아니면
+		Long currentLetterIndex = this->notepadForm->current->GetCurrent();
+		//4.8 이동하기 전 글자 위치가 0이 아니고 이동한 후 현재줄의 글자개수가 0이 아니면
 		//(이동하기 전 캐럿의 가로 위치가 0이면 이동한 후의 현재 캐럿의 가로 위치도 무조건 0이고,
 		//이동한 후 현재줄의 글자개수가 0이어도 현재 캐럿의 가로 위치는 무조건 0임,
 		//따라서 그 이외의 경우의 수를 if안에서 처리하고 else에서 위의 2경우를 first로 처리함!)
-		if (previousCaretIndex != 0 && this->notepadForm->current->GetLength() != 0)
+		if (previousLetterIndex != 0 && this->notepadForm->current->GetLength() != 0)
 		{
 			//4.8.1 이동하기 전 줄의 텍스트 폭을 구한다.
 			Long previousRowTextWidth = this->notepadForm->textExtent->
 				GetTextWidth(this->notepadForm->note->GetAt(previousRowIndex)
-					->GetPartOfContent(previousCaretIndex));
+					->GetPartOfContent(previousLetterIndex));
 			//4.8.2 캐럿의 현재 가로 위치를 처음으로 이동시킨다.(현재 캐럿의 가로 위치가 어딘지 모르기때문에)
 			//i가 0이 되면 GetPartOfContent에서 읽는 텍스트가 없기 때문에 i의 최소값은 1이 되어야함.
 			//GetPartOfContent는 캐럿의 위치까지 있는 글자들을 읽는것임!
@@ -59,21 +60,23 @@ void PageUpKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			//현재줄의 글자수는 최소 1개이상은 있는 경우에 대해서 처리함.
 			this->notepadForm->current->First();//캐럿의 가로 위치를 맨 처음(0)으로 보냄(원위치)
 			//4.8.3 첫번째 글자를 읽기 위해 캐럿을 한칸이동시킨다.
-			Long i = this->notepadForm->current->Next();
+			currentLetterIndex = this->notepadForm->current->Next();
 			//4.8.4 현재 줄의 텍스트의 폭을 구한다.
 			Long currentRowTextWidth = this->notepadForm->textExtent->
-				GetTextWidth(this->notepadForm->current->GetPartOfContent(i).c_str());
+				GetTextWidth(this->notepadForm->current->
+					GetPartOfContent(currentLetterIndex).c_str());
 			//4.8.5 i(캐럿의 현재 가로위치)가 length(현재줄의 글자개수)보다 작고
 			//현재 줄의 텍스트 크기가 이동하기 전 줄의 텍스트 크기보다 작은동안 반복한다.
-			while (i < this->notepadForm->current->GetLength()
+			while (currentLetterIndex < this->notepadForm->current->GetLength()
 				&& currentRowTextWidth < previousRowTextWidth)
 			{
 				//4.8.5.1 i(캐럿의 현재 가로위치)를 증가시킨다
 				//(캐럿의 가로 위치를 다음 칸으로 이동시킨다.).
-				i = this->notepadForm->current->Next();
+				currentLetterIndex = this->notepadForm->current->Next();
 				//4.8.5.2 현재 줄의 캐럿의 가로 위치까지의 택스트 폭을 구한다.
 				currentRowTextWidth = this->notepadForm->textExtent->
-					GetTextWidth(this->notepadForm->current->GetPartOfContent(i).c_str());
+					GetTextWidth(this->notepadForm->current->
+						GetPartOfContent(currentLetterIndex).c_str());
 			}
 			//4.8.6 현재 줄의 텍스트 폭에서 이전 줄의 텍스트 폭을 뺀다.
 			Long difference = currentRowTextWidth - previousRowTextWidth;
@@ -91,13 +94,14 @@ void PageUpKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			{
 				//4.8.7.1 캐럿의 현재 가로위치 이전의 글자 폭을 구한다.
 				Long letterWidth = this->notepadForm->textExtent->
-					GetTextWidth(this->notepadForm->current->GetAt(i - 1)->GetContent());
+					GetTextWidth(this->notepadForm->current->
+						GetAt(currentLetterIndex - 1)->GetContent());
 				Long halfLetterSize = letterWidth / 2;
 				//4.8.7.2 차이가 읽은 글자크기의 절반보다 같거나 크면
 				if (difference >= halfLetterSize)
 				{
 					//4.8.7.2.1 캐럿의 현재 가로 위치를 이전으로 이동한다.
-					this->notepadForm->current->Previous();
+					currentLetterIndex = this->notepadForm->current->Previous();
 				}
 			}
 		}
@@ -105,16 +109,17 @@ void PageUpKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		else
 		{
 			//4.9.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
-			this->notepadForm->current->First();
+			currentLetterIndex = this->notepadForm->current->First();
 		}
+		//4.10 글자를 선택한다.
+		SelectText selectText(this->notepadForm);
+		selectText.DoPrevious(previousRowIndex, previousLetterIndex, currentRowIndex,
+			currentLetterIndex);
 	}
-	//5. 글자 선택을 해제한다.
-	SelectText selectText(this->notepadForm);
-	selectText.Undo();
 }
 
 //소멸자
-PageUpKeyAction::~PageUpKeyAction()
+ShiftPageUpKeyAction::~ShiftPageUpKeyAction()
 {
 
 }

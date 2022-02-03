@@ -1,8 +1,6 @@
 #include "CtrlEndKeyAction.h"
 #include "Glyph.h"
-#include "ScrollController.h"
-#include "Scroll.h"
-#include "TextExtent.h"
+#include "SelectText.h"
 
 //디폴트생성자
 CtrlEndKeyAction::CtrlEndKeyAction(NotepadForm* notepadForm)
@@ -20,6 +18,9 @@ void CtrlEndKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	this->notepadForm->current = this->notepadForm->note->GetAt(lastRowIndex);
 	//3. 현재 줄의 맨 마지막으로 캐럿의 위치를 이동시킨다.
 	this->notepadForm->current->Last();
+	//4. 글자 선택을 해제한다.
+	SelectText selectText(this->notepadForm);
+	selectText.Undo();
 }
 
 //소멸자

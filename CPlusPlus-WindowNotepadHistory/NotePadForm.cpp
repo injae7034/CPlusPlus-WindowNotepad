@@ -116,80 +116,86 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//백스페이스인경우 OnChar에서 아무 처리도 안해주고 바로 나가면 된다!
 	if (nChar != VK_BACK)
 	{
-		//1. glyphCreator를 생성한다.
-		GlyphCreator glyphCreator;
-		//2. glyph를 생성한다.
-		Glyph* glyph = glyphCreator.Create((char*)&nChar);
-		Long letterIndex;
-		Long rowIndex;
-		//3. 입력받은 문자가 개행문자가 아니면
-		if (nChar != '\n' && nChar != '\r')
+		//1. Ctrl키가 눌러졌는지 안눌러졌는지 상태를 체크해서 저장한다.
+		Long ctrlPressedCheck = GetKeyState(VK_CONTROL);
+		//2. Ctrl키가 안눌러져 있으면
+		if (ctrlPressedCheck >= 0)
 		{
-			//3.1 현재 줄의 캐럿의 가로 위치를 구한다.
-			letterIndex = this->current->GetCurrent();
-			//3.2 FileSaveCommand가 현재 줄의 length와 같으면
-			if (letterIndex == this->current->GetLength())
+			//2.1 glyphCreator를 생성한다.
+			GlyphCreator glyphCreator;
+			//2.2 glyph를 생성한다.
+			Glyph* glyph = glyphCreator.Create((char*)&nChar);
+			Long letterIndex;
+			Long rowIndex;
+			//2.3 입력받은 문자가 개행문자가 아니면
+			if (nChar != '\n' && nChar != '\r')
 			{
-				//3.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
-				letterIndex = this->current->Add(glyph);
-			}
-			//3.3 index가 현재 줄의 length와 다르면
-			else
-			{
-				//3.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
-				letterIndex = this->current->Add(letterIndex, glyph);
-			}
+				//2.3.1 현재 줄의 캐럿의 가로 위치를 구한다.
+				letterIndex = this->current->GetCurrent();
+				//2.3.2 FileSaveCommand가 현재 줄의 length와 같으면
+				if (letterIndex == this->current->GetLength())
+				{
+					//2.3.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
+					letterIndex = this->current->Add(glyph);
+				}
+				//2.3.3 index가 현재 줄의 length와 다르면
+				else
+				{
+					//2.3.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
+					letterIndex = this->current->Add(letterIndex, glyph);
+				}
 
+			}
+			//2.4 입력받은 문자가 개행문자이면
+			else if (nChar == '\n' || nChar == '\r')
+			{
+				//2.4.1 현재 줄의 위치를 구한다.
+				rowIndex = this->note->GetCurrent();
+				//2.4.2 현재 줄의 캐럿의 위치를 구한다.
+				letterIndex = this->current->GetCurrent();
+				//2.4.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
+				glyph = this->current->Split(letterIndex);
+				//2.4.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
+				if (rowIndex == this->note->GetLength() - 1)
+				{
+					//2.4.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
+					rowIndex = this->note->Add(glyph);
+				}
+				//2.4.5 그게 아니면
+				else
+				{
+					//2.4.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워넣는다.
+					rowIndex = this->note->Add(rowIndex + 1, glyph);
+				}
+				//2.4.4 현재 줄의 위치를 새로 저장한다.
+				this->current = this->note->GetAt(rowIndex);
+				//2.4.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
+				this->current->First();
+				//2.4.6 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
+				UINT state = this->GetMenu()->
+					GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
+				//2.4.7 자동 줄 바꿈 메뉴가 체크되어 있으면
+				if (state == MF_CHECKED)
+				{
+					//2.4.7.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+					//OnSize에서 부분자동개행을 하도록 한다. 
+					this->SendMessage(WM_SIZE);
+				}
+			}
+			//2.5 캐럿의 위치와 크기가 변경되었음을 알린다.
+			this->Notify();
+			//2.6 isComposing을 false로 바꾼다.
+			this->IsComposing = false;
+			//2.7 메모장 제목에 *를 추가한다.
+			string name = this->fileName;
+			name.insert(0, "*");
+			name += " - 메모장";
+			SetWindowText(CString(name.c_str()));
+			//2.8 메모장에 변경사항이 있음을 저장한다.
+			this->IsDirty = true;
+			//2.9 갱신한다.
+			Invalidate(TRUE);
 		}
-		//4. 입력받은 문자가 개행문자이면
-		else if (nChar == '\n' || nChar == '\r')
-		{
-			//4.1 현재 줄의 위치를 구한다.
-			rowIndex = this->note->GetCurrent();
-			//4.2 현재 줄의 캐럿의 위치를 구한다.
-			letterIndex = this->current->GetCurrent();
-			//4.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
-			glyph = this->current->Split(letterIndex);
-			//4.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
-			if (rowIndex == this->note->GetLength() - 1)
-			{
-				//4.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
-				rowIndex = this->note->Add(glyph);
-			}
-			//4.5 그게 아니면
-			else
-			{
-				//4.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워넣는다.
-				rowIndex = this->note->Add(rowIndex + 1, glyph);
-			}
-			//4.4 현재 줄의 위치를 새로 저장한다.
-			this->current = this->note->GetAt(rowIndex);
-			//4.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
-			this->current->First();
-			//4.6 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
-			UINT state = this->GetMenu()->
-				GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-			//4.7 자동 줄 바꿈 메뉴가 체크되어 있으면
-			if (state == MF_CHECKED)
-			{
-				//4.7.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-				//OnSize에서 부분자동개행을 하도록 한다. 
-				this->SendMessage(WM_SIZE);
-			}
-		}
-		//5. 캐럿의 위치와 크기가 변경되었음을 알린다.
-		this->Notify();
-		//6. isComposing을 false로 바꾼다.
-		this->IsComposing = false;
-		//7. 메모장 제목에 *를 추가한다.
-		string name = this->fileName;
-		name.insert(0, "*");
-		name += " - 메모장";
-		SetWindowText(CString(name.c_str()));
-		//8. 메모장에 변경사항이 있음을 저장한다.
-		this->IsDirty = true;
-		//9. 갱신한다.
-		Invalidate(TRUE);
 	}
 }
 
@@ -199,7 +205,6 @@ void NotepadForm::OnPaint()
 	//1. CPaintDC를 생성한다.
 	CPaintDC dc(this);
 	//2. 텍스트의 배경을 투명하게함.
-	//3. 텍스트의 색깔을 정함.
 	dc.SetTextColor(this->font.GetColor());
 	//4. 왼쪽을 기준선으로 정함.
 	dc.SetTextAlign(TA_LEFT);
@@ -255,12 +260,19 @@ void NotepadForm::OnPaint()
 			//첫글자의 시작점은 0이고 다음 글자의 시작점은 첫글자의 너비이다!!!
 			currentWidth += letterWidth;
 			letterWidth = this->textExtent->GetTextWidth((string)content);
+			//만약에 글자가 탭문자이면 내용을 띄어쓰기 8개로 바꿔준다.
+			if (content == "\t")
+			{
+				content = "        ";
+			}
 			//11.5.3. 현재 글자가 선택이 안되어있으면
 			if (letter->IsSelected() == false)
 			{
 				//11.5.3.1 글자를 화면에 출력한다.
 				dc.SetBkColor(RGB(255, 255, 255));
-				dc.SetTextColor(RGB(0, 0, 0));
+				//텍스트의 색깔을 정함. 이렇게해야 나중에 글꼴상자에서 색깔을 바꾸면 반영할 수 있음.
+				dc.SetTextColor(this->font.GetColor());
+				//dc.SetTextColor(RGB(0, 0, 0));//이렇게하면 나중에 글꼴에서 글자색을 바꿀수없음
 				dc.TextOut(currentWidth -currentXPos, rowIndex * text.tmHeight
 					- currentYPos, content);
 			}
@@ -269,7 +281,7 @@ void NotepadForm::OnPaint()
 			{
 				//11.5.4.1
 				dc.SetBkColor(GetSysColor(COLOR_HIGHLIGHT));//red, green, blue 세개 색깔 
-				dc.SetTextColor(RGB(255, 255, 255));
+				dc.SetTextColor(RGB(255, 255, 255));//이렇게하면 나중에 글꼴에서 글자색을 바꿀수 없음
 				dc.TextOut(currentWidth -currentXPos, rowIndex * text.tmHeight
 					- currentYPos, content);
 			}

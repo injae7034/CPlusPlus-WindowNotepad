@@ -1,17 +1,17 @@
-#include "UpArrowKeyAction.h"
+#include "ShiftUpArrowKeyAction.h"
 #include "Glyph.h"
-#include "TextExtent.h"
 #include "SelectText.h"
+#include "TextExtent.h"
 
 //디폴트생성자
-UpArrowKeyAction::UpArrowKeyAction(NotepadForm* notepadForm)
+ShiftUpArrowKeyAction::ShiftUpArrowKeyAction(NotepadForm* notepadForm)
 	:KeyAction(notepadForm)
 {
 
 }
 
-//Execute
-void UpArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+//전략패턴
+void ShiftUpArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//1. 이전으로 이동하기 전에 줄의 위치를 저장한다.
 	Long previousRowIndex = this->notepadForm->note->GetCurrent();
@@ -34,7 +34,7 @@ void UpArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			//4.2.1 이전으로 이동하기 전 이전 캐럿의 위치까지 줄의 텍스트 폭을 구한다.
 			Long previousRowTextWidth = this->notepadForm->textExtent->
 				GetTextWidth(this->notepadForm->note->GetAt(previousRowIndex)
-				->GetPartOfContent(previousLetterIndex));
+					->GetPartOfContent(previousLetterIndex));
 			//4.2.2 캐럿의 현재 위치를 처음으로 이동시킨다.(현재 캐럿의 위치가 어딘지 모르기때문에)
 			//i가 0이 되면 GetPartOfContent에서 읽는 텍스트가 없기 때문에 i의 최소값은 1이 되어야함.
 			//GetPartOfContent는 캐럿의 위치까지 있는 글자들을 읽는것임!
@@ -42,20 +42,22 @@ void UpArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			//현재줄의 글자수는 최소 1개이상은 있는 경우에 대해서 처리함.
 			this->notepadForm->current->First();//캐럿의 가로 위치를 맨 처음(0)으로 보냄(원위치)
 			//4.2.3 첫번째 글자를 읽기 위해 캐럿을 한칸이동시킨다.
-			Long i = this->notepadForm->current->Next();
+			currentLetterIndex = this->notepadForm->current->Next();
 			//4.2.4 현재 줄에서 캐럿의 위치(i)까지 텍스트의 폭을 구한다.
 			Long currentRowTextWidth = this->notepadForm->textExtent->
-				GetTextWidth(this->notepadForm->current->GetPartOfContent(i).c_str());
+				GetTextWidth(this->notepadForm->current->GetPartOfContent
+				(currentLetterIndex).c_str());
 			//4.2.5 캐럿의 현재 위치(i)가 현재 줄의 글자개수(length)보다 작고
 			//캐럿의 현재 위치까지 텍스트 크기가 이동하기 전 줄의 텍스트 크기보다 작은동안 반복한다.
-			while (i < this->notepadForm->current->GetLength()
+			while (currentLetterIndex < this->notepadForm->current->GetLength()
 				&& currentRowTextWidth < previousRowTextWidth)
 			{
 				//4.2.5.1 캐럿의 현재 위치를 다음 칸으로 이동시킨다.
-				i = this->notepadForm->current->Next();
+				currentLetterIndex = this->notepadForm->current->Next();
 				//4.2.5.2 캐럿의 위치까지 텍스트 폭을 구한다.
 				currentRowTextWidth = this->notepadForm->textExtent->
-				GetTextWidth(this->notepadForm->current->GetPartOfContent(i).c_str());
+					GetTextWidth(this->notepadForm->current->GetPartOfContent
+					(currentLetterIndex).c_str());
 			}
 			//4.2.6 현재 캐럿의 위치까지 텍스트 폭에서 이전 줄의 텍스트 폭을 뺀다.
 			Long difference = currentRowTextWidth - previousRowTextWidth;
@@ -73,7 +75,8 @@ void UpArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			{
 				//4.2.7.1 캐럿의 현재 위치 이전까지의 글자 폭을 구한다.
 				Long letterWidth = this->notepadForm->textExtent->
-					GetTextWidth(this->notepadForm->current->GetAt(i - 1)->GetContent());
+					GetTextWidth(this->notepadForm->current->
+						GetAt(currentLetterIndex - 1)->GetContent());
 				Long halfLetterSize = letterWidth / 2;
 				//4.2.7.2 차이가 읽은 글자크기의 절반보다 같거나 크면
 				if (difference >= halfLetterSize)
@@ -90,13 +93,14 @@ void UpArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			currentLetterIndex = this->notepadForm->current->First();
 		}
 	}
-	//5. 글자 선택을 해제한다.
+	//5. 글자를 선택한다.
 	SelectText selectText(this->notepadForm);
-	selectText.Undo();
+	selectText.DoPrevious(previousRowIndex, previousLetterIndex, currentRowIndex,
+		currentLetterIndex);
 }
 
 //소멸자
-UpArrowKeyAction::~UpArrowKeyAction()
+ShiftUpArrowKeyAction::~ShiftUpArrowKeyAction()
 {
 
 }

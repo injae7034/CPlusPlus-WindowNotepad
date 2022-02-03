@@ -11,7 +11,9 @@ public:
 	NotepadForm* notepadForm;
 public:
 	SelectText(NotepadForm* notepadForm = 0);//디폴트생성자
-	void Do(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
+	void DoNext(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
+		Long currentLetterIndex);
+	void DoPrevious(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
 		Long currentLetterIndex);
 	void Undo();
 	~SelectText();//소멸자

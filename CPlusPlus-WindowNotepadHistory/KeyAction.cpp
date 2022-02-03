@@ -6,7 +6,7 @@ KeyAction::KeyAction(NotepadForm* notepadForm)
 	this->notepadForm = notepadForm;
 }
 
-//Command패턴
+//전략패턴
 void KeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 

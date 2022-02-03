@@ -50,12 +50,13 @@ TextExtent::TextExtent(NotepadForm* notepadForm)
     letter = " ";
     letterSize = dc.GetTextExtent(letter);
     this->widths[0] = letterSize.cx;
+    //11. Tab키의 길이를 저장해준다.
     letter = "        ";
     letterSize = dc.GetTextExtent(letter);
     this->widths[9] = letterSize.cx;
-    //11. 평균 폰트 높이를 저장한다.
+    //12. 평균 폰트 높이를 저장한다.
     this->height = textmetric.tmHeight;
-    //12. 끝내다.
+    //13. 끝내다.
     dc.SelectObject(oldFont);
     DeleteObject(font);
 }
