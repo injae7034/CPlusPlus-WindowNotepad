@@ -12,8 +12,6 @@
 #include "KeyAction.h"
 #include "PageUpKeyAction.h"
 #include "PageDownKeyAction.h"
-#include "BackSpaceKeyAction.h"
-#include "DeleteKeyAction.h"
 
 //디폴트생성자
 KeyActionCreator::KeyActionCreator(NotepadForm* notepadForm)
@@ -88,17 +86,7 @@ KeyAction* KeyActionCreator::Create(UINT nChar)
 	{
 		keyAction = new PageDownKeyAction(this->notepadForm);
 	}
-	//14. BackSpace키를 눌렀으면
-	else if (nChar == VK_BACK)
-	{
-		keyAction = new BackSpaceKeyAction(this->notepadForm);
-	}
-	//15. Delete키를 눌렀으면
-	else if (nChar == VK_DELETE)
-	{
-		keyAction = new DeleteKeyAction(this->notepadForm);
-	}
-	//16. keyAction을 출력한다.
+	//14. keyAction을 출력한다.
 	return keyAction;
 }
 

@@ -108,75 +108,70 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 //키보드에 글자를 입력할 때
 void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	//백스페이스가 아니면(백스페이키는 OnKeyDown을 먼저 실행하고 OnChar로 들어온다)
-	//백스페이스인경우 OnChar에서 아무 처리도 안해주고 바로 나가면 된다!
-	if (nChar != VK_BACK)
+	//1. glyphCreator를 생성한다.
+	GlyphCreator glyphCreator;
+	//2. glyph를 생성한다.
+	Glyph* glyph = glyphCreator.Create((char*)&nChar);
+	Long letterIndex;
+	Long rowIndex;
+	//3. 입력받은 문자가 개행문자가 아니면
+	if (nChar != '\n' && nChar != '\r')
 	{
-		//1. glyphCreator를 생성한다.
-		GlyphCreator glyphCreator;
-		//2. glyph를 생성한다.
-		Glyph* glyph = glyphCreator.Create((char*)&nChar);
-		Long letterIndex;
-		Long rowIndex;
-		//3. 입력받은 문자가 개행문자가 아니면
-		if (nChar != '\n' && nChar != '\r')
+		//3.1 현재 줄의 캐럿의 가로 위치를 구한다.
+		letterIndex = this->current->GetCurrent();
+		//3.2 FileSaveCommand가 현재 줄의 length와 같으면
+		if (letterIndex == this->current->GetLength())
 		{
-			//3.1 현재 줄의 캐럿의 가로 위치를 구한다.
-			letterIndex = this->current->GetCurrent();
-			//3.2 FileSaveCommand가 현재 줄의 length와 같으면
-			if (letterIndex == this->current->GetLength())
-			{
-				//3.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
-				letterIndex = this->current->Add(glyph);
-			}
-			//3.3 index가 현재 줄의 length와 다르면
-			else
-			{
-				//3.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
-				letterIndex = this->current->Add(letterIndex, glyph);
-			}
-
+			//3.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
+			letterIndex = this->current->Add(glyph);
 		}
-		//4. 입력받은 문자가 개행문자이면
-		else if (nChar == '\n' || nChar == '\r')
+		//3.3 index가 현재 줄의 length와 다르면
+		else
 		{
-			//4.1 현재 줄의 위치를 구한다.
-			rowIndex = this->note->GetCurrent();
-			//4.2 현재 줄의 캐럿의 위치를 구한다.
-			letterIndex = this->current->GetCurrent();
-			//4.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
-			glyph = this->current->Split(letterIndex);
-			//4.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
-			if (rowIndex == this->note->GetLength() - 1)
-			{
-				//4.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
-				rowIndex = this->note->Add(glyph);
-			}
-			//4.5 그게 아니면
-			else
-			{
-				//4.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워넣는다.
-				rowIndex = this->note->Add(rowIndex + 1, glyph);
-			}
-			//4.4 현재 줄의 위치를 새로 저장한다.
-			this->current = this->note->GetAt(rowIndex);
-			//4.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
-			this->current->First();
+			//3.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
+			letterIndex = this->current->Add(letterIndex, glyph);
 		}
-		//5. 캐럿의 위치와 크기가 변경되었음을 알린다.
-		this->Notify();
-		//6. isComposing을 false로 바꾼다.
-		this->IsComposing = false;
-		//7. 메모장 제목에 *를 추가한다.
-		string name = this->fileName;
-		name.insert(0, "*");
-		name += " - 메모장";
-		SetWindowText(CString(name.c_str()));
-		//8. 메모장에 변경사항이 있음을 저장한다.
-		this->IsDirty = true;
-		//9. 갱신한다.
-		Invalidate(TRUE);
+		
 	}
+	//4. 입력받은 문자가 개행문자이면
+	else if (nChar == '\n' || nChar == '\r')
+	{
+		//4.1 현재 줄의 위치를 구한다.
+		rowIndex = this->note->GetCurrent();
+		//4.2 현재 줄의 캐럿의 위치를 구한다.
+		letterIndex = this->current->GetCurrent();
+		//4.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
+		glyph = this->current->Split(letterIndex);
+		//4.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
+		if (rowIndex == this->note->GetLength() - 1)
+		{
+			//4.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
+			rowIndex = this->note->Add(glyph);
+		}
+		//4.5 그게 아니면
+		else
+		{
+			//4.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워넣는다.
+			rowIndex = this->note->Add(rowIndex + 1, glyph);
+		}
+		//4.4 현재 줄의 위치를 새로 저장한다.
+		this->current = this->note->GetAt(rowIndex);
+		//4.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
+		this->current->First();
+	}
+	//5. 캐럿의 위치와 크기가 변경되었음을 알린다.
+	this->Notify();
+	//6. isComposing을 false로 바꾼다.
+	this->IsComposing = false;
+	//7. 메모장 제목에 *를 추가한다.
+	string name = this->fileName;
+	name.insert(0, "*");
+	name += " - 메모장";
+	SetWindowText(CString(name.c_str()));
+	//8. 메모장에 변경사항이 있음을 저장한다.
+	this->IsDirty = true;
+	//9. 갱신한다.
+	Invalidate(TRUE);
 }
 
 //메모장에 텍스트를 출력할 떄

@@ -83,17 +83,17 @@ void RowAutoChange::Undo()
 	{
 		//1.1 메모장에서 rowIndex번째 줄을 구한다.
 		row = this->notepadForm->note->GetAt(rowIndex);
-		//1.2 가짜줄(DummyRow)이면
+		//1.2 DummyRow이면
 		if (dynamic_cast<DummyRow*>(row))
 		{
-			//1.2.1 가짜줄(DummyRow) 이전의 진짜줄(Row)을 구한다.
+			//1.2.1 DummyRow 이전 줄(Row)을 구한다.
 			previousRow = this->notepadForm->note->GetAt(rowIndex - 1);
-			//1.2.2 가짜줄(DummyRow)을 이전의 진짜줄(Row)에 합친다.
+			//1.2.2 DummyRow를 이전 줄(Row)에 합친다.
 			row->Join(previousRow);
-			//1.2.3 Note에서 가짜줄(DummyRow)의 주소를 지운다.
+			//1.2.3 Note에서 DummyRow의 주소를 지운다.
 			this->notepadForm->note->Remove(rowIndex);
 		}
-		//1.3 가짜줄(DummyRow)이 아니면(진짜줄(Row)이면)
+		//1.3 DummyRow가 아니면
 		else
 		{
 			//1.3.1 다음 줄로 이동한다.
