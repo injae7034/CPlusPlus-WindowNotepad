@@ -9,8 +9,8 @@ SelectText::SelectText(NotepadForm* notepadForm)
 }
 
 //다음으로 선택하다
-void SelectText::DoNext(Long previousRowIndex, Long previousLetterIndex,
-	Long currentRowIndex, Long currentLetterIndex)
+void SelectText::DoNext(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
+	Long currentLetterIndex)
 {
 	Glyph* row = 0;
 	Glyph* letter = 0;
@@ -62,8 +62,8 @@ void SelectText::DoNext(Long previousRowIndex, Long previousLetterIndex,
 }
 
 //이전으로 선택하다
-void SelectText::DoPrevious(Long previousRowIndex, Long previousLetterIndex,
-	Long currentRowIndex, Long currentLetterIndex)
+void SelectText::DoPrevious(Long previousRowIndex, Long previousLetterIndex, Long currentRowIndex,
+	Long currentLetterIndex)
 {
 	Glyph* row = 0;
 	Glyph* letter = 0;

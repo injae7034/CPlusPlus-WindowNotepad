@@ -1,5 +1,6 @@
 #include "DeleteKeyAction.h"
 #include "Glyph.h"
+#include "RowAutoChange.h"
 
 //디폴트생성자
 DeleteKeyAction::DeleteKeyAction(NotepadForm* notepadForm)
