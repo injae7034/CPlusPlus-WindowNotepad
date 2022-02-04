@@ -14,6 +14,7 @@ public:
 	virtual string GetContent();
 	virtual string GetPartOfContent(Long current);
 	virtual void Accept(GlyphVisitor* glyphVisitor);
+	virtual void AddWord(string word);
 };
 
 #endif // !_ROW_H

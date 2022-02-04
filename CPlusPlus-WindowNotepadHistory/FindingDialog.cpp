@@ -448,6 +448,18 @@ void FindingDialog::OnCancelButtonClicked()
 //5.닫기버튼을 클릭했을 때
 void FindingDialog::OnClose()
 {
+#if 0
+	// 찾기 프레임 윈도우를 띄우기 전에 찾기 프레암 윈도우가 있는지 확인하고 있으면 할당해제한다.
+	if (this->notepadForm->findReplaceDialog != 0)
+	{
+		//CFindReplaceDialog를 할당해제할때는 delete대신에 DestroyWindow를 이용하자!
+		this->notepadForm->findReplaceDialog->DestroyWindow();
+		//delete this->notepadForm->findingDialog;
+		//댕글링 포인터를 0으로 안바꿔주면 할당해제가 됬는데 다시 할당해제를 하러 들어와서 에러가난다.
+		//this->notepadForm->findReplaceDialog = 0;
+	}
+#endif
+	this->notepadForm->findReplaceDialog = 0;
 	//1. 찾기 다이얼로그를 닫는다.
 	CFindReplaceDialog::OnClose();
 }

@@ -38,8 +38,7 @@ public:
 	virtual Long NextWord() { return 0; }
 	virtual Long PreviousWord() { return 0; }
 	virtual void Accept(GlyphVisitor* glyphVisitor) {}
-	virtual void FindString(Long* rowIndex, Long* letterIndex, string key,
-		Long* keyWordLetterCount) {};
+	virtual void AddWord(string word) {}
 	//인라인함수(여기에 자식들의 인라인함수도 선언을 해야 Glyph*에서 사용할 수 있음)
 	//(왜냐하면 전부 Glyph*로 생성해서 이용하기 때문에!)
 	//여기서 실제로는 안쓰이고 자식에게 넘겨주는 역할을 하기때문에 virtual을 붙여줘야함
