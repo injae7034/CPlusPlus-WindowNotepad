@@ -37,7 +37,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
 	//resource.h에서 가장 처음에 추가된게 시작범위이고, 가장 마지막에 추가된게 끝나는 범위임
 	//윈도우의 메뉴 그림이랑은 아무 상관이 없음!!
-	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_NOTE_REMOVE, OnCommand)
+	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_NOTE_FIND, OnCommand)
 	ON_WM_MENUSELECT(IDR_MENU1 ,OnMenuSelect)
 	ON_WM_KEYDOWN()
 	ON_WM_VSCROLL()
@@ -429,13 +429,13 @@ void NotepadForm::OnCommand(UINT nId)
 void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//1. 메모장의 노트에서 줄의 개수를 구한다.
-	//Long rowCountOfNote = this->note->GetLength();
+	Long rowCountOfNote = this->note->GetLength();
 	//2. 메모장의 노트의 마지막 줄의 글자 개수를 구한다.
-	//Long letterCountOfFirstRow = this->note->GetAt(rowCountOfNote - 1)->GetLength();
+	Long letterCountOfFirstRow = this->note->GetAt(rowCountOfNote - 1)->GetLength();
 	//3. 메모장의 노트에 줄의 개수가 하나있는데 그 줄의 글자가 하나도 없는 경우가 아니라면
 	//글자가 하나도 없고 줄만 2개이상 있는 경우부터는 선택이 가능하기 떄문에 복사, 잘라내기, 삭제가 가능하다.
-	//if (rowCountOfNote != 1 || letterCountOfFirstRow != 0)
-	//{
+	if (rowCountOfNote != 1 || letterCountOfFirstRow != 0)
+	{
 		//3.1 KeyActionCreator를 생성한다.
 		KeyActionCreator keyActionCreator(this);
 		//3.2 ConcreteKeyAction을 생성한다.
@@ -468,7 +468,7 @@ void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			this->Notify();
 			this->Invalidate();	
 		}
-	//}
+	}
 }
 
 //메모장에서 세로 스크롤을 클릭할 때

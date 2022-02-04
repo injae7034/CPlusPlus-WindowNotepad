@@ -3,7 +3,7 @@
 #include "GlyphCreator.h"
 #include "Glyph.h"
 #include "File.h"
-#include "afxdlgs.h"//CFileDialog헤더파일
+#include "afxdlgs.h"//CCommonDialog헤더파일
 
 //디폴트생성자
 FileOpenCommand::FileOpenCommand(NotepadForm* notepadForm) 

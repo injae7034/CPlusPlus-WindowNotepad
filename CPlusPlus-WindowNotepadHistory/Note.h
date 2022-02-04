@@ -25,6 +25,8 @@ public:
 	virtual void CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 		Long* endingRowPos, Long* endingLetterPos);
 	virtual void Accept(GlyphVisitor* glyphVisitor);
+	virtual void FindString(Long* rowIndex, Long* letterIndex, string key,
+		Long* keyWordLetterCount);
 };
 
 #endif // !_NOTE_H

@@ -1,7 +1,7 @@
 #include "FontChangeCommand.h"
 #include "NotepadForm.h"
 #include "TextExtent.h"
-#include "afxdlgs.h"//CFileDialog헤더파일
+#include "afxdlgs.h"//CCommonDialog헤더파일
 
 //디폴트생성자
 FontChangeCommand::FontChangeCommand(NotepadForm* notepadForm)

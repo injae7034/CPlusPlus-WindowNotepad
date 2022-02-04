@@ -1,6 +1,8 @@
 #include "Note.h"
 #include "Letter.h"
 #include "GlyphVisitor.h"
+#include "SingleByteLetter.h"
+#include "DoubleByteLetter.h"
 
 //디폴트생성자
 Note::Note(Long capacity)
@@ -385,4 +387,95 @@ void Note::CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 void Note::Accept(GlyphVisitor* glyphVisitor)
 {
 	glyphVisitor->VisitNote(this);
+}
+
+//FindString
+void Note::FindString(Long* rowIndex, Long* letterIndex, string keyword,
+	Long* keyWordLetterCount)
+{
+	//1. 찾기 시작할 줄의 위치와 글자 위치, 찾을 문자열을 입력받는다.
+	//2. 메모장에서 note의 row개수보다 작은동안 그리고 문자열을 찾기 전까지 반복한다.
+	Long i = 0;
+	Long keywordLenth = keyword.length();//찾을 문자열의 길이
+	Long letterLength = 0;//한글이면 2, 영문이나 특수문자이면 1
+	Long matched = 0;//일치하는 글자개수
+	Glyph* row = 0;
+	Glyph* letter = 0;
+	string letterContent;//메모장의 글자의 content를 담을 임시 buffer
+	string partKeyword;//찾을 문자열의 한글자를 담을 임시 buffer
+	*keyWordLetterCount = 0;//한글, 영문 구분없이 찾을 문자열의 총 글자 개수
+	bool isFindingKeyword = false;//찾을 문자열을 찾았는지 여부
+	while (*rowIndex < this->length && isFindingKeyword == false)
+	{
+		//2.1 row를 구한다.
+		row = this->GetAt(*rowIndex);
+		//2.2 row의 letter개수보다 작은동안 그리고 문자열을 찾기 전까지 반복한다.
+		while (*letterIndex < row->GetLength() && isFindingKeyword == false)
+		{
+			//2.2.1 letter를 구한다.
+			letter = row->GetAt(*letterIndex);
+			//2.2.2 letter의 content를 구한다.
+			letterContent = letter->GetContent();
+			//2.2.3 letter가 singleByte이면
+			if (dynamic_cast<SingleByteLetter*>(letter))
+			{
+				//2.2.3.1 찾고자 하는 단어의 부분을 저장한다.
+				partKeyword = keyword[i];
+				//2.2.3.2 일치하는 글자 수를 정한다.(SingleByteLetter는 길이가 1이기 때문에)
+				letterLength = 1;
+			}
+			//2.2.4 letter가 doubleByte이면
+			else if (dynamic_cast<DoubleByteLetter*>(letter))
+			{
+				//2.2.4.1 찾고자 하는 단어의 부분을 저장한다.
+				partKeyword = keyword[i];
+				i++;
+				partKeyword += keyword[i];
+				//2.2.4.2 일치하는 글자 수를 정한다.(DoubleByteLetter는 길이가 2이기 때문에)
+				letterLength = 2;
+			}
+			//2.2.5 letterContent와 찾을 문자열(key)의 배열요소가 서로 같으면
+			if (letterContent == partKeyword)
+			{
+				//2.2.5.1 일치하는 단어 개수(matched)를 증가시킨다.
+				matched += letterLength;
+				//2.2.5.2 찾을 문자열의 다음 배열요소로 넘어간다.
+				i++;
+				//2.2.5.3 찾은 문자열의 글자 개수를 세준다.
+				(*keyWordLetterCount)++;
+			}
+			//2.2.6 letterContent와 찾을 문자열(key)의 배열요소가 서로 다르면
+			else
+			{
+				//2.2.6.1 찾을 문자열의 배열요소 위치를 초기화시킨다.
+				i = 0;
+				//2.2.6.2 찾은 문자열의 글자 개수를 초기화시킨다.
+				*keyWordLetterCount = 0;
+			}
+			//2.2.7 해당 문자열을 찾았으면
+			if (matched == keywordLenth)
+			{
+				//2.2.7.1 찾았다고 표시한다.
+				isFindingKeyword = true;
+			}
+			//2.2.8 다음 글자로 넘어간다.
+			(*letterIndex)++;
+		}
+		//2.3 다음 줄로 넘어간다.
+		(*rowIndex)++;
+	}
+	//3. 해당 문자열을 찾았으면
+	if (matched == keywordLenth)
+	{
+		//3.1 줄의 위치와 글자의 위치를 조정한다.
+		(*rowIndex)--;
+		(*letterIndex)--;
+	}
+	//4. 해당 문자열을 못찾았으면
+	else
+	{
+		*rowIndex = -1;
+		*letterIndex = -1;
+	}
+	//5. 끝내다.
 }

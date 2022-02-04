@@ -37,13 +37,15 @@
 #define IDM_NOTE_DELETE                 40034
 #define IDM_NOTE_SELECTALL              40035
 #define IDM_NOTE_REMOVE                 40036
+#define ID_40037                        40037
+#define IDM_NOTE_FIND                   40038
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        102
-#define _APS_NEXT_COMMAND_VALUE         40037
+#define _APS_NEXT_COMMAND_VALUE         40039
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

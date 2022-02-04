@@ -70,6 +70,7 @@ BEGIN
         MENUITEM "잘라내기",                        IDM_NOTE_CUT
         MENUITEM "모두 선택",                       IDM_NOTE_SELECTALL
         MENUITEM "삭제",                          IDM_NOTE_REMOVE
+        MENUITEM "찾기",                          IDM_NOTE_FIND
     END
 END
 
