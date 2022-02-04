@@ -701,41 +701,6 @@ void NotepadForm::OnClose()
 		{
 			delete this->selectingTexts;
 		}
-		
-		//NotepadForm는 Subject의 상속을 받았기 때문에 NotepadForm이 소멸될 때
-		//Subject의 소멸자가 호출되면 ScrollController를 알아서 할당해제시켜준다.
-		//ScrollController는 NotepadForm이 생성될 때 힙에 한번 할당되고 NotepadForm이 소멸될 때
-		//같이 소멸되기 때문에 따로 ScrollController를 할당해제시켜줄 필요가 없다.
-		//CaretController같은 경우는 OnSetFoucs될때마다 생성되고 OnKillFoculs될때마다 할당해제되는데
-		//이 때 NotepadForm은 소멸되지않기 때문에 반드시 OnKillFoucs에서 별도로 할당해제를 해줘야한다.
-		/*
-		//observer주소배열에서 ScrollController를 찾을 때까지 반복한다.
-		Long i = this->length - 1;
-		//1. 옵저버 리스트에서 옵저버를 구한다.
-		Observer* observer = this->observers.GetAt(i);
-		//2. i가 0보다 크거나 같은 동안 옵저버가 캐럿매니저가 아닌동안 반복한다.
-		while (i >= 0 && dynamic_cast<ScrollController*>(observer) != 0)
-		{
-			//2.1 옵저버 리스트에서 옵저버를 구한다.
-			observer = this->observers.GetAt(i);
-			//2.2 i를 감소시킨다.
-			i--;
-		}
-		//3. 옵저버가 CaretManager이면
-		if (dynamic_cast<ScrollController*>(observer))
-		{
-			//3.1 힙에 할당된 옵저버의 내용을 할당해제한다.
-			delete observer;//힙에서 내용 할당해제
-			i++;//반복문에서 i를 한번 더 -1해줬기 때문에 원상태로 돌리기 위해 +1을 해줌.
-			//3.2 옵저버리스트들 중 이전에 힙에서 할당해제된 내용의 주소를 가지고 있는
-			//멤버를 할당해제한다.
-			this->observers.Delete(i);//힙에서 내용을 가지고 있던 주소 할당해제
-			//3.3 배열요소(주소를 저장)를 한개 할당해제했으니 할당량을 감소시킨다.
-			this->capacity--;
-			//3.4 사용량을 감소시킨다.
-			this->length--;
-		}
-		*/
 		//3.3 메모장을 닫는다.
 		CFrameWnd::OnClose();
 	}

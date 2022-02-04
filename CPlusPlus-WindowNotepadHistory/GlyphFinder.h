@@ -15,8 +15,10 @@ public:
 	Glyph* note;
 public:
 	GlyphFinder(Glyph* note);//디폴트생성자
-	void FindDown(string keyword, Long* findingRowIndex, Long* findingLetterIndex,
-		Long* keywordLetterCount);//아래로 찾기
+	void FindDown(string keyword, Long* findingStartRowIndex, Long* findingStartLetterIndex,
+		Long* findingEndRowIndex, Long* findingEndLetterIndex);//아래로 찾기
+	void FindUp(string keyword, Long* findingStartRowIndex, Long* findingStartLetterIndex,
+		Long* findingEndRowIndex, Long* findingEndLetterIndex);//위로 찾기
 	~GlyphFinder();//소멸자
 };
 
