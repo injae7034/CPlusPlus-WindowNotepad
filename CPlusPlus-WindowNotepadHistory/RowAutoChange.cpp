@@ -204,6 +204,70 @@ void RowAutoChange::UndoRow()
 	//7. 끝내다
 }
 
+//부분 자동개행하다
+Long RowAutoChange::DoPartRows(Long startRowAutoChange, Long endRowAutoChange)
+{
+	Long letterIndex = 0;
+	Long rowTextWidth = 0;
+	Glyph* glyph = 0;
+	Glyph* row = 0;
+	//1. 현재 화면의 크기를 구한다.
+	CRect rect;
+	this->notepadForm->GetClientRect(&rect);
+	//2. 현재 화면의 가로 길이를 구한다.
+	Long pageWidth = rect.Width();
+	//3. 붙여넣은 줄 전까지 반복한다.
+	while (startRowAutoChange < endRowAutoChange)
+	{
+		//3.1 메모장에서 붙여넣은 줄을 구한다.
+		row = this->notepadForm->note->GetAt(startRowAutoChange);
+		//3.2 letterIndex를 원위치시킨다.
+		letterIndex = 0;
+		//3.3 rowTextWidth를 원위치시킨다.
+		rowTextWidth = 0;
+		//3.4 letterIndex가 붙여넣은 줄의 총글자 개수보다 작은동안 
+		//그리고 붙여넣은 줄의 가로길이가 현재화면의 가로길이보다 작은동안 반복한다.
+		while (letterIndex < row->GetLength() && rowTextWidth < pageWidth)
+		{
+			//3.4.1 증가된 letterIndex까지의 가로 길이를 측정한다.
+			rowTextWidth = this->notepadForm->textExtent->GetTextWidth
+			(row->GetPartOfContent(letterIndex + 1));
+			//3.4.2 letterIndex를 증가시킨다.
+			letterIndex++;
+		}
+		//3.5 붙여넣은 줄의 가로 길이가 현재 화면의 가로 길이보다 크거나 같으면
+		if (rowTextWidth >= pageWidth)
+		{
+			//3.5.1 letterIndex까지의 길이가 현재화면의 가로 길이(cx)보다 크기 때문에 
+			//이 선택문에 들어왔다. 그래서 캐럿이 이전으로 한 칸 이동을 해서 길이를 재면
+			//현재화면의 가로 길이(cx)보다 작다. 캐럿(letterIndex)은 다음 글자를 적을 위치를
+			//반영하기 때문에 항상 현재 글자보다 한칸 앞서 있다
+			//그래서 letterIndex-1에서 split을 해야 화면을 넘는 글자를 다음 줄로 보낼 수 있다.
+			letterIndex--;
+			//3.5.2 붙여넣은 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의 글자부터 
+			//붙여넣은 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.(DummyRow생성)
+			glyph = row->Split(letterIndex, true);
+			//3.5.3 split해서 생성된 새로운 줄(DummyRow)을 
+			//메모장의 노트에 splited된 줄 다음에 끼워넣는다. 
+			startRowAutoChange = this->notepadForm->note->Add(startRowAutoChange + 1, glyph);
+			//3.5.4 메모장의 노트에 줄이 추가되었기 때문에 줄의 개수가 증가했으므로 
+			//붙여넣기가 끝나는 줄의 위치도 한 줄 증가시켜준다.
+			endRowAutoChange++;
+		}
+		//3.6 letterIndex가 붙여넣기한 줄의 총글자 개수보다 크거나 같으면
+		//붙여넣기 한 줄의 전체글자까지의 길이가 현재화면보다 작으면
+		else if (letterIndex >= row->GetLength())
+		{
+			//3.6.1 다음 붙여넣기 한 줄로 이동한다.
+			//줄이 메모장의 노트에 추가되지 않았기 때문에 노트의 줄개수가 늘어나지 않는다.
+			//그래서 여기서는 붙여넣기가 끝나는 줄의 위치를 증가시켜줄 필요가 없다.
+			startRowAutoChange++;
+		}
+	}
+	//4. 끝나는 줄을 출력한다.
+	return endRowAutoChange;
+}
+
 //자동개행 후 줄과 캐럿의 위치를 통해 자동개행 전 원래 줄과 캐럿의 위치를 구한다
 void RowAutoChange::GetOriginPos(Long changedLetterPos, Long changedRowPos,
 	Long* originLetterPos, Long* originRowPos)
