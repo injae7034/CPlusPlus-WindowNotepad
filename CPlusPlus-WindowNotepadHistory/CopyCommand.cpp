@@ -36,6 +36,7 @@ void CopyCommand::Execute()
 	Long startLetterIndex = 0;//시작하는 글자 위치
 	Long endRowIndex = 0;//끝나는 줄의 위치
 	Long endLetterIndex = 0;//끝나는 글자 위치
+	Long copyLetterIndex = 0;//클립보드에 복사되는 글자들의 위치를 저장할 장소
 	Long i = 0;//반복제어변수
 	Glyph* startRow = 0;//시작하는 줄의 위치
 	Glyph* letter = 0;
@@ -69,13 +70,15 @@ void CopyCommand::Execute()
 		i = startLetterIndex;
 		while (i < endLetterIndex)
 		{
-			//7.1.4.1 시작하는 줄에서 줄에서 글자를 구한다.
+			//7.1.4.1 메모장의 시작하는 줄에서 줄에서 글자를 구한다.
 			letter = startRow->GetAt(i);
-			//7.1.4.2 글자가 선택이 되어있는데 클립보드에 생성된 새로운 노트에 옮길 때는 선택이 안된
-			//상태로 복사해야함. 그래야 나중에 붙여넣기할때 붙여넣는 내용들이 선택이 안된 상태로 붙여넣어짐!
-			letter->Select(false);
-			//7.1.4.3 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
-			copyRow->Add(letter->Clone());
+			//7.1.4.2 클립보드의 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
+			copyLetterIndex = copyRow->Add(letter->Clone());
+			//7.1.4.3 메모장의 글자들은 선택이 되어 있는 상태로 남아 있어야 하지만
+			//클립보드에 옮겨지는 글자들은 선택이 안된 상태로 바꿔줘여함(왜냐하면 메모장에서
+			//선택이 된 상태로 복사가 되었기 때문에 일단 클립보드에 선택이 된 상태로 복사하고
+			//나중에 따로 선택이 안된 상태로 바꿔줘야 붙여넣기를 할 때 선택이 안된 글자들이 붙여넣어짐)
+			copyRow->GetAt(copyLetterIndex)->Select(false);
 			//7.1.4.4 시작하는 글자의 다음 글자로 이동해서 글자를 복사한다.
 			i++;
 		}
@@ -118,11 +121,13 @@ void CopyCommand::Execute()
 		{
 			//8.4.1 시작하는 줄에서 글자를 구한다.
 			letter = startRow->GetAt(i);
-			//8.4.2 글자가 선택이 되어있는데 클립보드에 생성된 새로운 노트에 옮길 때는 선택이 안된
-			//상태로 복사해야함. 그래야 나중에 붙여넣기할때 붙여넣는 내용들이 선택이 안된 상태로 붙여넣어짐!
-			letter->Select(false);
-			//8.4.3 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
-			copyRow->Add(letter->Clone());
+			//8.4.2 클립보드의 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
+			copyLetterIndex = copyRow->Add(letter->Clone());
+			//8.4.3 메모장의 글자들은 선택이 되어 있는 상태로 남아 있어야 하지만
+			//클립보드에 옮겨지는 글자들은 선택이 안된 상태로 바꿔줘여함(왜냐하면 메모장에서
+			//선택이 된 상태로 복사가 되었기 때문에 일단 클립보드에 선택이 된 상태로 복사하고
+			//나중에 따로 선택이 안된 상태로 바꿔줘야 붙여넣기를 할 때 선택이 안된 글자들이 붙여넣어짐)
+			copyRow->GetAt(copyLetterIndex)->Select(false);
 			//8.4.4 시작하는 글자의 다음 글자로 이동해서 글자를 복사한다.
 			i++;
 		}
@@ -148,12 +153,13 @@ void CopyCommand::Execute()
 			{
 				//8.6.3.1 메모장의 진짜 줄에서 글자를 구한다.
 				letter = row->GetAt(letterIndex);
-				//8.6.3.2 글자가 선택이 되어있는데 클립보드에 생성된 새로운 노트에 옮길 때는
-				//선택이 안된 상태로 복사해야함. 그래야 나중에 붙여넣기할때 
-				//붙여넣는 내용들이 선택이 안된 상태로 붙여넣어짐!
-				letter->Select(false);
-				//8.6.3.3 새로 만든 노트의 새로 만든 진짜 줄에 글자를 추가한다.
-				realRow->Add(letter->Clone());
+				//8.6.3.2 클립보드의 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
+				copyLetterIndex = realRow->Add(letter->Clone());
+				//8.6.3.3 메모장의 글자들은 선택이 되어 있는 상태로 남아 있어야 하지만
+				//클립보드에 옮겨지는 글자들은 선택이 안된 상태로 바꿔줘여함(왜냐하면 메모장에서
+				//선택이 된 상태로 복사가 되었기 때문에 일단 클립보드에 선택이 된 상태로 복사하고
+				//나중에 따로 선택이 안된 상태로 바꿔줘야 붙여넣기를 할 때 선택이 안된 글자들이 붙여넣어짐)
+				realRow->GetAt(copyLetterIndex)->Select(false);
 				//8.6.3.4 다음 글자로 이동해서 글자를 복사한다..
 				letterIndex++;
 			}
@@ -178,11 +184,13 @@ void CopyCommand::Execute()
 		{
 			//8.10.1 메모장의 가짜줄에서 글자를 구한다.
 			letter = endRow->GetAt(letterIndex);
-			//8.10.2 글자가 선택이 되어있는데 클립보드에 생성된 새로운 노트에 옮길 때는 선택이 안된
-			//상태로 복사해야함. 그래야 나중에 붙여넣기할때 붙여넣는 내용들이 선택이 안된 상태로 붙여넣어짐!
-			letter->Select(false);
-			//8.10.3 새로운 노트의 진짜 줄에 글자를 순차적으로 추가한다.
-			realRow->Add(letter->Clone());
+			//8.10.2 클립보드의 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
+			copyLetterIndex = realRow->Add(letter->Clone());
+			//8.10.3 메모장의 글자들은 선택이 되어 있는 상태로 남아 있어야 하지만
+			//클립보드에 옮겨지는 글자들은 선택이 안된 상태로 바꿔줘여함(왜냐하면 메모장에서
+			//선택이 된 상태로 복사가 되었기 때문에 일단 클립보드에 선택이 된 상태로 복사하고
+			//나중에 따로 선택이 안된 상태로 바꿔줘야 붙여넣기를 할 때 선택이 안된 글자들이 붙여넣어짐)
+			realRow->GetAt(copyLetterIndex)->Select(false);
 			//8.10.4 다음 글자로 이동해서 글자를 복사한다.
 			letterIndex++;
 		}

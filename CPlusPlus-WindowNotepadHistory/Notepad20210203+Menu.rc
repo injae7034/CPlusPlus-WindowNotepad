@@ -68,10 +68,8 @@ BEGIN
         MENUITEM "복사하기",                        IDM_NOTE_COPY, GRAYED
         MENUITEM "붙여넣기",                        IDM_NOTE_PASTE
         MENUITEM "잘라내기",                        IDM_NOTE_CUT
-    END
-    POPUP "보기"
-    BEGIN
-        MENUITEM "클립보드",                        IDM_CLIPBOARD_VIEW
+        MENUITEM "모두 선택",                       IDM_NOTE_SELECTALL
+        MENUITEM "삭제",                          IDM_NOTE_REMOVE
     END
 END
 

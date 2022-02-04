@@ -226,11 +226,8 @@ void ShiftCtrlBackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlag
 		this->notepadForm->SetWindowText(CString(name.c_str()));
 		//4.4 메모장에 변경사항이 있음을 저장한다.
 		this->notepadForm->isDirty = true;
-		//4.5 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
-		UINT state = this->notepadForm->GetMenu()->
-			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-		//4.6 자동 줄 바꿈 메뉴가 체크되어 있으면
-		if (state == MF_CHECKED)
+		//4.5 자동 줄 바꿈이 진행중이면
+		if (this->notepadForm->isRowAutoChanging == true)
 		{
 			//4.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
@@ -238,6 +235,10 @@ void ShiftCtrlBackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlag
 		}
 		//4.7 메모장에서 선택된 texts를 다 지웠기 때문에 메모장에서 선택이 안된 상태로 바꾼다.
 		this->notepadForm->isSelecting = false;
+		//2.4 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+		this->notepadForm->selectedStartXPos = 0;
+		//2.5 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+		this->notepadForm->selectedStartYPos = 0;
 	}
 }
 

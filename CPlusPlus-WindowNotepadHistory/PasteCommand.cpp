@@ -3,6 +3,7 @@
 #include "Note.h"
 #include "DummyRow.h"
 #include "GlyphCreator.h"
+#include "TextExtent.h"
 
 //디폴트생성자
 PasteCommand::PasteCommand(NotepadForm* notepadForm)
@@ -152,13 +153,18 @@ void PasteCommand::Execute()
 		}
 		//2.3 메모장에서 선택된 texts를 다 지웠기 때문에 메모장에서 선택이 안된 상태로 바꾼다.
 		this->notepadForm->isSelecting = false;
+		//2.4 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+		this->notepadForm->selectedStartXPos = 0;
+		//2.5 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+		this->notepadForm->selectedStartYPos = 0;
 	}
 	//3. 선택한 texts를 다 지웠으면(없으면)
 	if (this->notepadForm->isSelecting == false)
 	{
-		//3.1 복사하기와 붙여넣기 메뉴를 비활성화 시킨다.
+		//3.1 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
 
 	//외부 클립보드에 문자열이 저장되어 있으면 외부클립보드에서 문자열을 받아와서 contents에 저장한다.
@@ -196,7 +202,7 @@ void PasteCommand::Execute()
 		Glyph* copyNote = new Note();
 		//4.3 줄을 생성한다. 
 		Glyph* copyRow = new Row();
-		//344 새로 생성한 줄을 새로 생성한 노트에 추가한다.
+		//4.4 새로 생성한 줄을 새로 생성한 노트에 추가한다.
 		Long rowIndex = copyNote->Add(copyRow);
 		//4.5 복사한 내용의 마지막까지 반복한다.(마지막에 널문자가 저장되어 있음)
 		GlyphCreator glyphCreator;
@@ -255,12 +261,12 @@ void PasteCommand::Execute()
 		//4.8 notepadForm의 clipboard에 새로 생성한 Note(복사한 내용)를 추가시켜준다.
 		Long noteIndex = this->notepadForm->clipboard->Add(copyNote);
 	}
-	//4. 선택된 texts들을 지웠으면 현재 줄과 글자위치가 변경되기 때문에 다시 구해준다.
-	currentRowPos = this->notepadForm->note->GetCurrent();
-	currentLetterPos = this->notepadForm->current->GetCurrent();
-	//5. 메모장의 클립보드에서 현재 노트(복사한 내용)를 호출한다.
+	//4. 메모장의 클립보드에서 현재 노트(복사한 내용)를 호출한다.
 	Glyph* copyNote = this->notepadForm->clipboard->
 		GetAt(this->notepadForm->clipboard->GetCurrent());
+	//5. 선택된 texts들을 지웠으면 현재 줄과 글자위치가 변경되기 때문에 다시 구해준다.
+	currentRowPos = this->notepadForm->note->GetCurrent();
+	currentLetterPos = this->notepadForm->current->GetCurrent();
 	//6. 메모장의 현재 줄을 구한다.
 	Glyph* currentRow = this->notepadForm->note->GetAt(currentRowPos);
 	//7. 메모장의 현재 글자위치가 줄의 글자개수보다 작으면
@@ -322,16 +328,80 @@ void PasteCommand::Execute()
 		//14.3 메모장에서 현재 글자위치를 다시 조정해준다.
 		this->notepadForm->current->Move(currentLetterPos);
 	}
-	//15. 메모장 제목에 *를 추가한다.
+	//15. 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
+	if (this->notepadForm->isRowAutoChanging == true)
+	{
+		Long letterIndex = 0;
+		Long rowTextWidth = 0;
+		Glyph* glyph = 0;
+		Long startPastedRowPos = currentRowPos;
+		Long endPastedRowPos = i;
+		Glyph* pastedRow = 0;
+		//15.1 현재 화면의 크기를 구한다.
+		CRect rect;
+		this->notepadForm->GetClientRect(&rect);
+		//15.2 현재 화면의 가로 길이를 구한다.
+		Long pageWidth = rect.Width();
+		//15.3 붙여넣은 줄 전까지 반복한다.
+		while (startPastedRowPos < endPastedRowPos)
+		{
+			//15.3.1 메모장에서 붙여넣은 줄을 구한다.
+			pastedRow = this->notepadForm->note->GetAt(startPastedRowPos);
+			//15.3.2 letterIndex를 원위치시킨다.
+			letterIndex = 0;
+			//15.3.3 rowTextWidth를 원위치시킨다.
+			rowTextWidth = 0;
+			//15.3.4 letterIndex가 붙여넣은 줄의 총글자 개수보다 작은동안 
+			//그리고 붙여넣은 줄의 가로길이가 현재화면의 가로길이보다 작은동안 반복한다.
+			while (letterIndex < pastedRow->GetLength() && rowTextWidth < pageWidth)
+			{
+				//15.3.4.1 증가된 letterIndex까지의 가로 길이를 측정한다.
+				rowTextWidth = this->notepadForm->textExtent->GetTextWidth
+				(pastedRow->GetPartOfContent(letterIndex + 1));
+				//15.3.4.2 letterIndex를 증가시킨다.
+				letterIndex++;
+			}
+			//15.3.5 붙여넣은 줄의 가로 길이가 현재 화면의 가로 길이보다 크거나 같으면
+			if (rowTextWidth >= pageWidth)
+			{
+				//15.3.5.1 letterIndex까지의 길이가 현재화면의 가로 길이(cx)보다 크기 때문에 
+				//이 선택문에 들어왔다. 그래서 캐럿이 이전으로 한 칸 이동을 해서 길이를 재면
+				//현재화면의 가로 길이(cx)보다 작다. 캐럿(letterIndex)은 다음 글자를 적을 위치를
+				//반영하기 때문에 항상 현재 글자보다 한칸 앞서 있다
+				//그래서 letterIndex-1에서 split을 해야 화면을 넘는 글자를 다음 줄로 보낼 수 있다.
+				letterIndex--;
+				//15.3.5.2 붙여넣은 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의 글자부터 
+				//붙여넣은 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.(DummyRow생성)
+				glyph = pastedRow->Split(letterIndex, true);
+				//15.3.5.3 split해서 생성된 새로운 줄(DummyRow)을 
+				//메모장의 노트에 splited된 줄 다음에 끼워넣는다. 
+				startPastedRowPos = this->notepadForm->note->Add(startPastedRowPos + 1, glyph);
+				//15.3.5.4 메모장의 노트에 줄이 추가되었기 때문에 줄의 개수가 증가했으므로 
+				//붙여넣기가 끝나는 줄의 위치도 한 줄 증가시켜준다.
+				endPastedRowPos++;
+			}
+			//15.3.6 letterIndex가 붙여넣기한 줄의 총글자 개수보다 크거나 같으면
+			//붙여넣기 한 줄의 전체글자까지의 길이가 현재화면보다 작으면
+			else if (letterIndex >= pastedRow->GetLength())
+			{
+				//15.3.6.1 다음 붙여넣기 한 줄로 이동한다.
+				//줄이 메모장의 노트에 추가되지 않았기 때문에 노트의 줄개수가 늘어나지 않는다.
+				//그래서 여기서는 붙여넣기가 끝나는 줄의 위치를 증가시켜줄 필요가 없다.
+				startPastedRowPos++;
+			}
+		}
+		//15.4 붙여넣기가 끝나는 줄로 이동시킨다.
+		//붙여넣기가 끝나는 줄은 OnSize에서 부분자동개행을 해서 처리되기 때문에 캐럿의 위치만 조정해주면 됨!
+		this->notepadForm->note->Move(endPastedRowPos);
+		this->notepadForm->current->Move(currentLetterPos);
+	}
+	//16. 메모장 제목에 *를 추가한다.
 	string name = this->notepadForm->fileName;
 	name.insert(0, "*");
 	name += " - 메모장";
 	this->notepadForm->SetWindowText(CString(name.c_str()));
-	//16. 메모장에 변경사항이 있음을 저장한다.
+	//17. 메모장에 변경사항이 있음을 저장한다.
 	this->notepadForm->isDirty = true;
-	//17. 변경사항을 갱신한다.
-	this->notepadForm->Notify();
-	this->notepadForm->Invalidate(TRUE);
 }
 
 //소멸자

@@ -7,6 +7,8 @@
 #include "CopyCommand.h"
 #include "PasteCommand.h"
 #include "CutCommand.h"
+#include "SelectAllCommand.h"
+#include "RemoveCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -50,6 +52,14 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == IDM_NOTE_CUT)
 	{
 		command = new CutCommand(this->notepadForm);
+	}
+	else if (nId == IDM_NOTE_SELECTALL)
+	{
+		command = new SelectAllCommand(this->notepadForm);
+	}
+	else if (nId == IDM_NOTE_REMOVE)
+	{
+		command = new RemoveCommand(this->notepadForm);
 	}
 
 	return command;

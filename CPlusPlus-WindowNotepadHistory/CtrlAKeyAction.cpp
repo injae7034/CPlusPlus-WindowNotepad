@@ -33,6 +33,10 @@ void CtrlAKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//10. 전체 글자를 선택한다.
 	this->notepadForm->selectingTexts->DoNext(previousRowIndex, previousLetterIndex,
 		currentRowIndex, currentLetterIndex);
+	//11. 메모장 texts 전체가 선택되었기 때문에 복사하기와 잘라내기, 삭제를 활성화 시켜준다.
+	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);	
 }
 
 //소멸자

@@ -31,13 +31,19 @@
 #define IDM_CLIPBOARD_VIEW              40027
 #define ID_40029                        40029
 #define IDM_NOTE_CUT                    40030
+#define ID_40031                        40031
+#define ID_40032                        40032
+#define IDM_NOTE_ALLSELECT              40033
+#define IDM_NOTE_DELETE                 40034
+#define IDM_NOTE_SELECTALL              40035
+#define IDM_NOTE_REMOVE                 40036
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        102
-#define _APS_NEXT_COMMAND_VALUE         40031
+#define _APS_NEXT_COMMAND_VALUE         40037
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

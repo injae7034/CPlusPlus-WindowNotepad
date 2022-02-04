@@ -37,7 +37,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
 	//resource.h에서 가장 처음에 추가된게 시작범위이고, 가장 마지막에 추가된게 끝나는 범위임
 	//윈도우의 메뉴 그림이랑은 아무 상관이 없음!!
-	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_NOTE_CUT, OnCommand)
+	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_NOTE_REMOVE, OnCommand)
 	ON_WM_MENUSELECT(IDR_MENU1 ,OnMenuSelect)
 	ON_WM_KEYDOWN()
 	ON_WM_VSCROLL()
@@ -58,6 +58,7 @@ NotepadForm::NotepadForm()
 	this->isComposing = false;//false로 초기화시킴
 	this->isDirty = false;//false로 초기화시킴
 	this->isSelecting = false;//false로 초기화시킴
+	this->isRowAutoChanging = false;//false로 초기화 시킴
 	//this->IsOnScroll = false;//처음생성될때는 스크롤을 이용한 이동이 없기 때문에 false로 초기화함.
 	this->fileName = "제목 없음";
 	this->filePath = "";
@@ -101,9 +102,10 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//9. CMenu의 메뉴들이 자동으로 Enable되는 것을 막기 위해 FALSE 처리를 해줘야함
 	//아니면 다른 곳에서 Unenable시켜도 계속해서 자동으로 Enable시켜버림!
 	this->m_bAutoMenuEnable = FALSE;
-	//10. 복사하기, 잘라내기 메뉴를 비활성화시킨다. 비활성화가 디폴트고 선택영역이 생기면 활성화시켜줌!
+	//10. 복사하기, 잘라내기, 삭제 메뉴를 비활성화시킨다. 비활성화가 디폴트고 선택영역이 생기면 활성화시켜줌!
 	this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	//11. 외부클립보드에 현재 문자열이 저장되어있으면
 	unsigned int priority_list = CF_TEXT;
 	if (GetPriorityClipboardFormat(&priority_list, 1) == CF_TEXT)
@@ -322,6 +324,10 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 				}
 				//2.1.7 메모장에서 선택된 texts를 다 지웠기 때문에 메모장에서 선택이 안된 상태로 바꾼다.
 				this->isSelecting = false;
+				//2.4 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+				this->selectedStartXPos = 0;
+				//2.5 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+				this->selectedStartYPos = 0;
 			}
 			//2.2 glyphCreator를 생성한다.
 			GlyphCreator glyphCreator;
@@ -373,13 +379,10 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 				this->current = this->note->GetAt(rowIndex);
 				//2.5.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
 				this->current->First();
-				//2.5.6 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
-				UINT state = this->GetMenu()->
-					GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-				//2.5.7 자동 줄 바꿈 메뉴가 체크되어 있으면
-				if (state == MF_CHECKED)
+				//2.5.6 자동 줄 바꿈이 진행중이면
+				if (this->isRowAutoChanging == true)
 				{
-					//2.5.7.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+					//2.5.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 					//OnSize에서 부분자동개행을 하도록 한다. 
 					this->SendMessage(WM_SIZE);
 				}
@@ -574,18 +577,19 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 				this->current->Move(selectedEndLetterPos);
 			}
 		}
-		//1.5 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
-		UINT state = this->GetMenu()->
-			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-		//1.6 자동 줄 바꿈 메뉴가 체크되어 있으면
-		if (state == MF_CHECKED)
+		//1.5 자동 줄 바꿈이 진행중이면
+		if (this->isRowAutoChanging == true)
 		{
-			//1.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//1.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->SendMessage(WM_SIZE);
 		}
 		//1.7 메모장에서 선택된 texts를 다 지웠기 때문에 메모장에서 선택이 안된 상태로 바꾼다.
 		this->isSelecting = false;
+		//2.4 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+		this->selectedStartXPos = 0;
+		//2.5 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+		this->selectedStartYPos = 0;
 	}
 	//2. glyphCreator를 생성한다.
 	GlyphCreator glyphCreator;
@@ -634,13 +638,10 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 	else
 	{
 		//BackSpace와 Delete키와 별도로 한글조립중에 지우는 경우도 OnSize로 보내줘야 한다.
-		//8.1 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
-		UINT state = this->GetMenu()->
-			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-		//8.2 자동 줄 바꿈 메뉴가 체크되어 있으면
-		if (state == MF_CHECKED)
+		//8.1 자동 줄 바꿈이 진행중이면
+		if (this->isRowAutoChanging == true)
 		{
-			//8.2.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//8.1.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->SendMessage(WM_SIZE);
 		}
@@ -748,41 +749,81 @@ void NotepadForm::OnCommand(UINT nId)
 		//3.2 command를 할당해제한다.
 		delete command;
 	}
+	//4. 변화를 메모장에 갱신한다.
+	this->Notify();
+	this->Invalidate();
 }
 
 //메모장에서 키보드로 이동하기
 void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	//1. KeyActionCreator를 생성한다.
-	KeyActionCreator keyActionCreator(this);
-	//2. ConcreteKeyAction을 생성한다.
-	KeyAction* keyAction = keyActionCreator.Create(nChar);
-	//3. keyAction이 NULL이 아니면
-	if (keyAction != NULL)
+	//1. 메모장의 노트에서 줄의 개수를 구한다.
+	Long rowCountOfNote = this->note->GetLength();
+	//2. 메모장의 노트의 마지막 줄의 글자 개수를 구한다.
+	Long letterCountOfFirstRow = this->note->GetAt(rowCountOfNote - 1)->GetLength();
+	//3. 메모장의 노트에 줄의 개수가 하나있는데 그 줄의 글자가 하나도 없는 경우가 아니라면
+	//글자가 하나도 없고 줄만 2개이상 있는 경우부터는 선택이 가능하기 떄문에 복사, 잘라내기, 삭제가 가능하다.
+	if (rowCountOfNote != 1 || letterCountOfFirstRow != 0)
 	{
-		//3.1 ConcreteKeyAction의 OnKeyDown 함수를 실행한다.
-		keyAction->OnKeyDown(nChar, nRepCnt, nFlags);
-		//3.2 keyAction을 할당해제한다.
-		delete keyAction;
-		//3.3 메모장에 선택이 안되어 있으면
-		if (this->isSelecting == false)
+		//3.1 KeyActionCreator를 생성한다.
+		KeyActionCreator keyActionCreator(this);
+		//3.2 ConcreteKeyAction을 생성한다.
+		KeyAction* keyAction = keyActionCreator.Create(nChar);
+		//3.3 keyAction이 NULL이 아니면
+		if (keyAction != NULL)
 		{
-			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-			this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			//3.3.1 ConcreteKeyAction의 OnKeyDown 함수를 실행한다.
+			keyAction->OnKeyDown(nChar, nRepCnt, nFlags);
+			//3.3.2 keyAction을 할당해제한다.
+			delete keyAction;
+			//3.3.3 메모장에 선택이 안되어 있으면
+			if (this->isSelecting == false)
+			{
+				this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			}
+			//3.3.4 메모장에 선택이 되어 있으면
+			else
+			{
+				this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+				this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+				this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
+			}
+			//3.3.5 변화를 메모장에 갱신한다.
+			//if 구조안에서 Notify를 해줘야 Ctrl이나 Shift, Alt Capslock과 같은 특수기능키가 눌렸을 때
+			//Notify를 호출해 캐럿이 있는 곳으로 스크롤이 이동하지 않는다. OnKeyDown은 키보드키 중 어떠한
+			//키가 눌려져도 호출되기 때문에 원하는 keyAction이 아닌경우 Notify가 실행되지 않게 해야한다!
+			this->Notify();
+			this->Invalidate();	
 		}
-		//3.4 메모장에 선택이 되어 있으면
-		else
-		{
-			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
-			this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
-		}
-		//3.5 변화를 메모장에 갱신한다.
-		//if 구조안에서 Notify를 해줘야 Ctrl이나 Shift, Alt Capslock과 같은 특수기능키가 눌렸을 때
-		//Notify를 호출해 캐럿이 있는 곳으로 스크롤이 이동하지 않는다. OnKeyDown은 키보드키 중 어떠한
-		//키가 눌려져도 호출되기 때문에 원하는 keyAction이 아닌경우 Notify가 실행되지 않게 해야한다!
-		this->Notify();
-		this->Invalidate();
 	}
+#if 0
+	bool isThereLetter = false;
+	Long rowIndex = 0;
+	Glyph* row = 0;
+	Long letterIndex = 0;
+	Glyph* letter = 0;
+	while (rowIndex < this->note->GetLength() && isThereLetter == false)
+	{
+		row = this->note->GetAt(rowIndex);
+		letterIndex = 0;
+		while (letterIndex < row->GetLength() && isThereLetter == false)
+		{
+			letter = row->GetAt(letterIndex);
+			if (letter != 0)
+			{
+				isThereLetter = true;
+			}
+			letterIndex++;
+		}
+		rowIndex++;
+	}
+
+	if (isThereLetter == true)
+
+#endif
+
 }
 
 //메모장에서 세로 스크롤을 클릭할 때
@@ -862,72 +903,50 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 	//cx가 0이면 아래에서 cx크기로 반복을 돌리는데 무한반복이 발생해서 최소화버튼을 누르면 뻑이남!) 
 	if (nType != SIZE_MINIMIZED)
 	{
-		//2.1 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
-		UINT state = this->GetMenu()->
-			GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-		//2.2 자동 줄 바꿈 메뉴가 체크되어 있으면
-		if (state == MF_CHECKED)
+		//2.1 자동줄바꿈이 진행중이면
+		if (this->isRowAutoChanging == true)
 		{
-			//2.2.1 RowAutoChange를 생성한다.(힙에 할당하면 나중에 따로 할당해제를 해줘야함
+			//2.1.1 RowAutoChange를 생성한다.(힙에 할당하면 나중에 따로 할당해제를 해줘야함
 			//그러나 주소없이 스택에 할당하면 이 함수 스택이 종료되면 자동으로 같이 사라짐.)
 			//여기서는 스택에서만 RowAutoChange의 연산을 쓰기 위한것이기 때문에 스택에 할당하는게 효율적임!
 			RowAutoChange rowAutoChange(this);
-			//2.2.2 메모장의 현재 화면 크기가 바뀌었으면
+			//2.1.2. 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
+			Long changedRowPos = this->note->GetCurrent();
+			Long changedLetterPos = this->current->GetCurrent();
+			Long originRowPos = 0;
+			Long originLetterPos = 0;
+			rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+				&originRowPos);
+			//2.1.3 메모장의 현재 화면 크기가 바뀌었으면
 			if (this->previousPageWidth != cx)
 			{
-				//2.2.2.3 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
-				Long changedRowPos = this->note->GetCurrent();
-				Long changedLetterPos = this->current->GetCurrent();
-				Long originRowPos = 0;
-				Long originLetterPos = 0;
-				rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
-					&originRowPos);
-				//2.2.2.4 자동개행을 취소한다.
+				//2.1.3.1 자동개행을 취소한다.
 				rowAutoChange.UndoAllRows();
-				//2.2.2.5 화면크기 변경에 따라 다시 자동개행을 해준다.
+				//2.1.3.2 화면크기 변경에 따라 다시 자동개행을 해준다.
 				rowAutoChange.DoAllRows();
-				//2.2.2.6 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
-				rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
-					&changedRowPos);
-				//2.2.2.7 현재 줄의 위치와 글자의 위치를 조정한다.
-				this->note->Move(changedRowPos);
-				this->current = this->note->
-					GetAt(this->note->GetCurrent());
-				this->current->Move(changedLetterPos);
-				//2.2.2.8 캐럿의 위치가 변경되었음을 알린다.
-				this->Notify();
-				//2.2.2.9 변경사항을 갱신한다.
-				this->Invalidate(TRUE);
-				//2.2.2.10 메모장의 현재 화면의 가로 길이가 바뀌었기 때문에 이를 갱신해준다.
+				//2.1.3.3 메모장의 현재 화면의 가로 길이가 바뀌었기 때문에 이를 갱신해준다.
 				this->previousPageWidth = cx;
 			}
-			//2.2.3 메모장의 현재 화면 크기가 바뀌지 않았으면
+			//2.1.4 메모장의 현재 화면 크기가 바뀌지 않았으면
 			else
 			{
-				//2.2.3.1 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
-				Long changedRowPos = this->note->GetCurrent();
-				Long changedLetterPos = this->current->GetCurrent();
-				Long originRowPos = 0;
-				Long originLetterPos = 0;
-				rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
-					&originRowPos);
-				//2.2.3.2 자동개행을 취소한다.
+				//2.1.4.1 자동개행을 취소한다.
 				rowAutoChange.UndoRow();
-				//2.2.3.3 화면크기 변경에 따라 다시 자동개행을 해준다.
+				//2.1.4.2 화면크기 변경에 따라 다시 자동개행을 해준다.
 				rowAutoChange.DoRow();
-				//2.2.3.4 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
-				rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
-					&changedRowPos);
-				//2.2.3.5 현재 줄의 위치와 글자의 위치를 조정한다.
-				this->note->Move(changedRowPos);
-				this->current = this->note->
-					GetAt(this->note->GetCurrent());
-				this->current->Move(changedLetterPos);
-				//2.2.3.6 캐럿의 위치가 변경되었음을 알린다.
-				this->Notify();
-				//2.2.3.7 변경사항을 갱신한다.
-				this->Invalidate(TRUE);
 			}
+			//2.1.5 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+			rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
+				&changedRowPos);
+			//2.1.6 현재 줄의 위치와 글자의 위치를 조정한다.
+			this->note->Move(changedRowPos);
+			this->current = this->note->
+				GetAt(this->note->GetCurrent());
+			this->current->Move(changedLetterPos);
+			//2.1.7 캐럿의 위치가 변경되었음을 알린다.
+			this->Notify();
+			//2.1.8 변경사항을 갱신한다.
+			this->Invalidate(TRUE);
 		}
 	}
 	

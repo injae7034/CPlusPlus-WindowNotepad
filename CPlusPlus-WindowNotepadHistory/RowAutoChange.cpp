@@ -174,8 +174,9 @@ void RowAutoChange::UndoRow()
 	Long i = this->notepadForm->note->GetCurrent();
 	Glyph* row = this->notepadForm->note->GetAt(i);
 	//진짜 줄을 찾는다.
-	//2. 가짜줄인동안 반복한다.
-	while (dynamic_cast<DummyRow*>(row))
+	//2. 첫번째줄의 위치보다 큰동안 그리고 가짜줄인동안 반복한다.
+	//현재 줄을 위치가 첫번째이면 반복을 하지 않음 왜냐한면 첫번째 줄을 절대 DummyRow일 수 없기 떄문에!
+	while (i > 0 && dynamic_cast<DummyRow*>(row))
 	{
 		//2.1 i를 감소시킨다.
 		i--;
@@ -189,7 +190,9 @@ void RowAutoChange::UndoRow()
 	row = this->notepadForm->note->GetAt(i);
 	//다음 진짜 줄이 나오기전까지 가짜줄들을 모두 Join시킨다.
 	//6. 가짜줄인동안 반복한다.
-	while (dynamic_cast<DummyRow*>(row))
+	//i가 줄의 개수보다는 작은동안 반복해야한다. 아니면 메모장에 없는 줄을 호출해서
+	//dynami_cast하기 때문에 뻑이 난다!
+	while (i < this->notepadForm->note->GetLength() && dynamic_cast<DummyRow*>(row))
 	{
 		//6.1 가짜줄을 진짜 줄에 Join시킨다.
 		row->Join(realRow);

@@ -47,19 +47,15 @@ void FontChangeCommand::Execute()
         //3.5 새로 선택한 글꼴 정보를 반영한 TextExtent를 힙에 할당(생성)한다.
         this->notepadForm->textExtent = new TextExtent(this->notepadForm);
         //3.6 캐럿의 크기와 위치가 변경되었음을 알린다.
+        //글자크기가 바꼈기 때문에 여기서 스크롤을 조절해줘야한다!!!
         this->notepadForm->Notify();
-        //3.7 자동 줄 바꿈 메뉴가 체크되었는지 확인한다.
-        UINT state = this->notepadForm->GetMenu()->
-            GetMenuState(IDM_ROW_AUTOCHANGE, MF_BYCOMMAND);
-        //3.8 자동 줄 바꿈 메뉴가 체크되어 있으면
-        if (state == MF_CHECKED)
+        //4.5 자동 줄 바꿈 메뉴가 체크되어 있으면
+        if (this->notepadForm->isRowAutoChanging == true)
         {
-            //3.9.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+            //4.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
             //OnSize에서 부분자동개행을 하도록 한다. 
             this->notepadForm->SendMessage(WM_SIZE);
         }
-        //3.9 변경사항을 갱신한다.
-        this->notepadForm->Invalidate(TRUE);
     }
 }
 
