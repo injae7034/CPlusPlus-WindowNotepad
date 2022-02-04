@@ -36,6 +36,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
 	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_CLIPBOARD_VIEW, OnCommand)
+	ON_WM_MENUSELECT(IDR_MENU1 ,OnMenuSelect)
 	ON_WM_KEYDOWN()
 	ON_WM_VSCROLL()
 	ON_WM_HSCROLL()
@@ -100,29 +101,40 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	this->m_bAutoMenuEnable = FALSE;
 	//10. 복사하기 메뉴를 비활성화시킨다. 비활성화가 디폴트고 선택영역이 생기면 활성화시켜줌!
 	this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-	//11. 붙여넣기 메뉴를 비활성화시킨다. 비활성화가 디폴트고 복사한게 있으면 활성화시켜줌!
-	this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-	//12. textExtent를 힙에 할당한다.
+	//11. 외부클립보드에 현재 문자열이 저장되어있으면
+	unsigned int priority_list = CF_TEXT;
+	if (GetPriorityClipboardFormat(&priority_list, 1) == CF_TEXT)
+	{
+		//11.1 붙여넣기 메뉴를 활성화시켜준다.
+		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
+	}
+	//12. 외부클립보드에 현재 문자열이 저장되어 있지않으면
+	else if (GetPriorityClipboardFormat(&priority_list, 1) == NULL)
+	{
+		//12.1 붙여넣기 메뉴를 비활성화시킨다.
+		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	}
+	//13. textExtent를 힙에 할당한다.
 	this->textExtent = new TextExtent(this);
-	//13. 선택한 메모장의 노트(내용)를 불러온다.
+	//14. 선택한 메모장의 노트(내용)를 불러온다.
 	File file;
 	string path = "test.txt";
 	file.Load(this, path);
-	//14. 처음 만들어지는 메모장 이름을 정한다.
+	//15. 처음 만들어지는 메모장 이름을 정한다.
 	string name = this->fileName;
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//15. 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
+	//16. 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
 	rowIndex = this->note->First();
-	//16. 현재 줄의 위치를 다시 저장한다.
+	//17. 현재 줄의 위치를 다시 저장한다.
 	this->current = this->note->GetAt(rowIndex);
-	//17. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
+	//18. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
 	Long letterIndex = this->current->First();
-	//18. scrollController를 생성한다.
+	//19. scrollController를 생성한다.
 	this->scrollController = new ScrollController(this);
-	//19. pageMoveController를 생성한다.
+	//21. pageMoveController를 생성한다.
 	this->pageMoveController = new PageMoveController(this);
-	//20. selectingTexts를 생성한다.
+	//22. selectingTexts를 생성한다.
 	this->selectingTexts = new SelectingTexts(this);
 
 	return 0;
@@ -914,6 +926,24 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 		}
 	}
 	
+}
+
+//메뉴버튼을 클릭했을 때
+void NotepadForm::OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu)
+{
+	//1. 외부클립보드에 문자열이 저장되어 있으면
+	unsigned int priority_list = CF_TEXT;
+	if (GetPriorityClipboardFormat(&priority_list, 1) == CF_TEXT)
+	{
+		//1.1 붙여넣기 메뉴를 활성화시켜준다.
+		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
+	}
+	//2. 외부클립보드에 문자열이 저장되어 있지 않으면
+	else if (GetPriorityClipboardFormat(&priority_list, 1) == NULL)
+	{
+		//2.1 붙여넣기 메뉴를 비활성화시킨다.
+		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	}
 }
 
 //메모장에서 닫기버튼을 클릭했을 떄

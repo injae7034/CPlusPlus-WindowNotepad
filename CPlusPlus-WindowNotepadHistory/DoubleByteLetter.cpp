@@ -11,7 +11,7 @@ DoubleByteLetter::DoubleByteLetter()
 	this->script[1] = '\0';
 }
 
-//매개변수 1개 생성자
+//매개변수 2개 생성자
 DoubleByteLetter::DoubleByteLetter(char(*script), bool isSelected)
 // char(*script)는 배열포인터이고 char* script는 그냥 주소를 저장한거임
 //개념상 배열포인터(배열의 시작주소)를 입력하는것이 맞다

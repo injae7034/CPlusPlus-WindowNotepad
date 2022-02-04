@@ -52,6 +52,7 @@ protected://#
 	afx_msg LRESULT OnImeChar(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg void OnCommand(UINT nID);
+	afx_msg void OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);

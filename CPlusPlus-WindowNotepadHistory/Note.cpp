@@ -40,13 +40,22 @@ Glyph* Note::Clone()
 //GetContent
 string Note::GetContent()
 {
+	//1. 마지막 줄전까지 반복한다.
 	string content;
-	Long index = 0;
-	while (index < this->length)
+	Long rowIndex = 0;
+	Long lastRowIndex = this->length - 1;
+	while (rowIndex < lastRowIndex)
 	{
-		content += this->glyphs.GetAt(index)->GetContent();
+		content += this->glyphs.GetAt(rowIndex)->GetContent();
 		content += '\n';
-		index++;
+		rowIndex++;
+	}
+	//2. 마지막줄을 처리한다.
+	//(마지막 줄만 따로 처리하는 이유는 마지막 줄을 따로 처리안하고 위의 반복문에 넣어주면
+	//개행문자가 같이 입력되서 마지막 줄 다음에 한 줄이 더생기기 때문이다.)
+	if (rowIndex == lastRowIndex)
+	{
+		content += this->glyphs.GetAt(rowIndex)->GetContent();
 	}
 
 	return content;

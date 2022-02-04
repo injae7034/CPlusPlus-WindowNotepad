@@ -188,9 +188,53 @@ void CopyCommand::Execute()
 		}
 	}
 	//9. notepadForm의 clipboard에 새로 생성한 Note(복사한 내용)를 추가시켜준다.
-	this->notepadForm->clipboard->Add(copyNote);
+	Long noteIndex = this->notepadForm->clipboard->Add(copyNote);
 	//10. 복사한 texts가 생겼기 때문에 붙여넣기 메뉴를 활성화시켜준다.
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
+	
+	//내부클립보드에 복사한 내용을 외부클립보드로 옮기기
+	//11. notepadForm의 clipboard에 새로 생성한 Note(복사한 내용)와 그 길이를 구한다.
+	CString content = this->notepadForm->clipboard->
+		GetAt(noteIndex)->GetContent().c_str();
+	//저장할 문자열의 길이를 구한다. ('\0'까지 포함한 크기)
+	int contentLength = content.GetLength() + 1;
+	//12. 외부 클립보드가 열렸으면
+	//클립보드는 여러 프로그램들이 공유할 수 있는 기능이기 때문에 어떤 프로그램(윈도우)이 클립보드를
+	//사용하는지 지정하고 사용하는 것이 좋다
+	if (this->notepadForm->OpenClipboard() != 0)
+	{
+		//12.1 notepadForm의 clipboard에 새로 생성한 Note(복사한 내용)을 클립보드에 옮길 공간을 생성
+		//클립보드에 문자열을 복사하기 위해서는 문자열을 저장한 메모리를 클립보드로 전달해야 합니다.
+		//따라서 문자열을 저장할 메모리를 먼저 만들어야 하는데, 이 메모리 형식이 핸들을 사용해야 하기
+		//때문에 HeapAlloc, malloc 같은 힙 함수는 사용이 불가능합니다.그래서 아래와 핸들 값 형식을
+		//사용하는 GlobalAlloc 함수를 사용해서 메모리를 할당해야 하고, 클립보드는 다른 프로그램과
+		//공유하는 형식이기 때문에 이 메모리 속성에 GMEM_DDESHARE와 GMEM_MOVEABLE를 추가한다.
+		//(이 메모리는 클립보드로 전달되기 때문에 자신의 프로그램에서 해제하면 안된다)
+		HGLOBAL hClipboardData = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, contentLength);
+		//이렇게 할당된 메모리는 핸들 값을 반환하기 때문에 이 메모리에 문자열을 복사하기 위해서는 사용
+		//가능한 주소를 얻어야 한다. 따라서 GlobalLock 함수를 사용하여 자신이 이 메모리를 사용하겠다고
+		//설정하고 사용 가능한 주소를 얻어야 한다.이때, 주의해야 할 점은 클립보드에서 사용하는
+		//문자열이 ASCII 형식으로 구성되어야 하기 때문에 유니코드를 지원(MFC 프로그램들은 기본적으로
+		//(유니코드 형식임)하는 프로그램에서는 ASCII 형식으로 문자열을 변경해서 사용해야 한다.
+		char* pchData = (char*)GlobalLock(hClipboardData);
+		if (pchData != NULL)
+		{
+			// 할당된 메모리 영역에 삽입할 문자열을 복사한다.
+			memcpy(pchData, content, contentLength);
+			// 문자열을 복사하기 위해서 Lock 했던 메모리를 해제한다. 
+			// 클립보드를 연다. 
+			GlobalUnlock(hClipboardData);
+			// 클립보드에 저장된 기존 문자열을 삭제한다. 
+			//다른 프로그램이 클립보드를 사용하거나 다른 문자열이 클립보드에 저장되어 있을 수 있기
+			//때문에 EmptyClipboard 함수를 사용해서 클립보드에 데이터를 저장하기 위한 준비
+			EmptyClipboard();
+			// 클립보드로 문자열을 복사하고, 클립보드에 저장하고자 하는 정보가 문자열임을 알려준다.
+			SetClipboardData(CF_TEXT, hClipboardData);
+			// 클립보드를 닫는다.
+			CloseClipboard(); 
+		}
+	}
+
 }
 
 //소멸자
