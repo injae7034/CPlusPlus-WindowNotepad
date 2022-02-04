@@ -6,7 +6,7 @@
 #include "TextExtent.h"
 #include "DummyRow.h"
 
-//디폴트생성자
+//디폴트 생성자
 RowAutoChange::RowAutoChange(NotepadForm* notepadForm)
 {
 	this->notepadForm = notepadForm;

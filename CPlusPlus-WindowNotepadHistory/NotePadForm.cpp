@@ -39,6 +39,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	//윈도우의 메뉴 그림이랑은 아무 상관이 없음!!
 	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_NOTE_FIND, OnCommand)
 	ON_WM_MENUSELECT(IDR_MENU1 ,OnMenuSelect)
+	//ON_REGISTERED_MESSAGE() 찾기공통대화상자에서 부모윈도우로 메세지를 전달하기 위해 필요함
 	ON_WM_KEYDOWN()
 	ON_WM_VSCROLL()
 	ON_WM_HSCROLL()
@@ -700,6 +701,7 @@ void NotepadForm::OnClose()
 		{
 			delete this->selectingTexts;
 		}
+		
 		//NotepadForm는 Subject의 상속을 받았기 때문에 NotepadForm이 소멸될 때
 		//Subject의 소멸자가 호출되면 ScrollController를 알아서 할당해제시켜준다.
 		//ScrollController는 NotepadForm이 생성될 때 힙에 한번 할당되고 NotepadForm이 소멸될 때

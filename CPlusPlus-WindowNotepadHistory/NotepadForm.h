@@ -8,6 +8,7 @@
 #include<string>
 using namespace std;
 
+class FindingDialog;
 class SelectingTexts;
 class CaretController;
 class PageMoveController;
