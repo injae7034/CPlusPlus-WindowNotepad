@@ -65,8 +65,12 @@ BEGIN
     END
     POPUP "편집"
     BEGIN
-        MENUITEM "복사하기",                        IDM_COPY
-        MENUITEM "붙여넣기",                        ID_40021
+        MENUITEM "복사하기",                        IDM_NOTE_COPY, GRAYED
+        MENUITEM "붙여넣기",                        IDM_NOTE_PASTE
+    END
+    POPUP "보기"
+    BEGIN
+        MENUITEM "클립보드",                        IDM_CLIPBOARD_VIEW
     END
 END
 

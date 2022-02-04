@@ -26,9 +26,10 @@ public:
 	//GetScript를 사용할 수 없다
 	virtual string GetPartOfContent(Long current) { return "\0"; }
 	//Glyph*에서 사용하려면 전부 Glyph 헤더 파일에 있어야한다.
-	virtual void Select(bool isSelected) {}
+	virtual void Select(bool isSelected) {}//Letter에서 사용
 	virtual void CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
-		Long* endingRowPos, Long* endingLetterPos) {}
+		Long* endingRowPos, Long* endingLetterPos) {}//Note에서 사용
+	virtual Long RemoveAll() { return 0; }//Clipboard에서 사용
 	virtual Long First() { return 0; }
 	virtual Long Last() { return 0; }
 	virtual Long Previous() { return 0; }

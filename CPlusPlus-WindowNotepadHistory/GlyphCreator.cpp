@@ -3,6 +3,7 @@
 #include "Row.h"
 #include "SingleByteLetter.h"
 #include "DoubleByteLetter.h"
+#include "Clipboard.h"
 #include<cstring>
 
 using namespace std;
@@ -23,8 +24,11 @@ GlyphCreator::~GlyphCreator()
 Glyph* GlyphCreator::Create(char(*letter))
 {
 	Glyph* glyph = 0;
-	
-	if (letter[0] == '\0')
+	if (letter == "clipboard")
+	{
+		glyph = new Clipboard();
+	}
+	else if (letter[0] == '\0')
 	{
 		glyph = new Note();
 	}

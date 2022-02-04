@@ -35,7 +35,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_MESSAGE(WM_IME_CHAR, OnImeChar)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
-	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_ROW_AUTOCHANGE, OnCommand)
+	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_CLIPBOARD_VIEW, OnCommand)
 	ON_WM_KEYDOWN()
 	ON_WM_VSCROLL()
 	ON_WM_HSCROLL()
@@ -77,43 +77,52 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	//1. glyphCreator를 만든다.
 	GlyphCreator glyphCreator;
-	//2. 노트를 만든다.
+	//2. 클립보드를 만든다.
+	this->clipboard = glyphCreator.Create((char*)"clipboard");
+	//3. 노트를 만든다.
 	this->note = glyphCreator.Create((char*)"\0");
-	//3. 줄을 만든다.
+	//4. 줄을 만든다.
 	Glyph* row = glyphCreator.Create((char*)"\n");
-	//4. 줄을 메모장에 추가한다.
+	//5. 줄을 메모장에 추가한다.
 	Long rowIndex;
 	rowIndex = this->note->Add(row);
-	//5. 현재 줄의 위치를 저장한다.
+	//6. 현재 줄의 위치를 저장한다.
 	this->current = this->note->GetAt(rowIndex);
-	//6. 현재 화면의 가로 길이를 저장한다.
+	//7. 현재 화면의 가로 길이를 저장한다.
 	CRect rect;
 	this->GetClientRect(&rect);
 	this->previousPageWidth = rect.Width();
-	//7. CMenu를 notepadForm에 연결한다.
+	//8. CMenu를 notepadForm에 연결한다.
 	this->menu.LoadMenu(IDR_MENU1);
 	SetMenu(&this->menu);
-	//8. textExtent를 힙에 할당한다.
+	//9. CMenu의 메뉴들이 자동으로 Enable되는 것을 막기 위해 FALSE 처리를 해줘야함
+	//아니면 다른 곳에서 Unenable시켜도 계속해서 자동으로 Enable시켜버림!
+	this->m_bAutoMenuEnable = FALSE;
+	//10. 복사하기 메뉴를 비활성화시킨다. 비활성화가 디폴트고 선택영역이 생기면 활성화시켜줌!
+	this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	//11. 붙여넣기 메뉴를 비활성화시킨다. 비활성화가 디폴트고 복사한게 있으면 활성화시켜줌!
+	this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	//12. textExtent를 힙에 할당한다.
 	this->textExtent = new TextExtent(this);
-	//9. 선택한 메모장의 노트(내용)를 불러온다.
+	//13. 선택한 메모장의 노트(내용)를 불러온다.
 	File file;
 	string path = "test.txt";
 	file.Load(this, path);
-	//10. 처음 만들어지는 메모장 이름을 정한다.
+	//14. 처음 만들어지는 메모장 이름을 정한다.
 	string name = this->fileName;
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//11. 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
+	//15. 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
 	rowIndex = this->note->First();
-	//12. 현재 줄의 위치를 다시 저장한다.
+	//16. 현재 줄의 위치를 다시 저장한다.
 	this->current = this->note->GetAt(rowIndex);
-	//13. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
+	//17. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
 	Long letterIndex = this->current->First();
-	//14. scrollController를 생성한다.
+	//18. scrollController를 생성한다.
 	this->scrollController = new ScrollController(this);
-	//15. pageMoveController를 생성한다.
+	//19. pageMoveController를 생성한다.
 	this->pageMoveController = new PageMoveController(this);
-	//16. selectingTexts를 생성한다.
+	//20. selectingTexts를 생성한다.
 	this->selectingTexts = new SelectingTexts(this);
 
 	return 0;
@@ -740,7 +749,17 @@ void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		keyAction->OnKeyDown(nChar, nRepCnt, nFlags);
 		//3.2 keyAction을 할당해제한다.
 		delete keyAction;
-		//3.3 변화를 메모장에 갱신한다.
+		//3.3 메모장에 선택이 안되어 있으면
+		if (this->isSelecting == false)
+		{
+			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		}
+		//3.4 메모장에 선택이 되어 있으면
+		else
+		{
+			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+		}
+		//3.5 변화를 메모장에 갱신한다.
 		//if 구조안에서 Notify를 해줘야 Ctrl이나 Shift, Alt Capslock과 같은 특수기능키가 눌렸을 때
 		//Notify를 호출해 캐럿이 있는 곳으로 스크롤이 이동하지 않는다. OnKeyDown은 키보드키 중 어떠한
 		//키가 눌려져도 호출되기 때문에 원하는 keyAction이 아닌경우 Notify가 실행되지 않게 해야한다!

@@ -25,13 +25,17 @@
 #define ID_40021                        40021
 #define IDM                             40022
 #define IDM_COPY                        40023
+#define ID_40024                        40024
+#define IDM_NOTE_COPY                   40025
+#define IDM_NOTE_PASTE                  40026
+#define IDM_CLIPBOARD_VIEW              40027
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        102
-#define _APS_NEXT_COMMAND_VALUE         40024
+#define _APS_NEXT_COMMAND_VALUE         40029
 #define _APS_NEXT_CONTROL_VALUE         1001
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

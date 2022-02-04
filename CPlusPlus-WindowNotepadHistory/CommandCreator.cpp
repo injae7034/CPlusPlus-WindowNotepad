@@ -4,6 +4,8 @@
 #include "FileSaveDifferentNameCommand.h"
 #include "FontChangeCommand.h"
 #include "RowAutoChangeCommand.h"
+#include "CopyCommand.h"
+#include "PasteCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -35,6 +37,14 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == IDM_ROW_AUTOCHANGE)
 	{
 		command = new RowAutoChangeCommand(this->notepadForm);
+	}
+	else if (nId == IDM_NOTE_COPY)
+	{
+		command = new CopyCommand(this->notepadForm);
+	}
+	else if (nId == IDM_NOTE_PASTE)
+	{
+		command = new PasteCommand(this->notepadForm);
 	}
 
 	return command;

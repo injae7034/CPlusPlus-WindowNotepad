@@ -90,148 +90,129 @@ void BackSpaceKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		Long selectedStartLetterPos = this->notepadForm->selectedStartXPos;//선택이 시작되는 글자
 		Long selectedEndRowPos = currentRowPos;//선택이 끝나는 줄
 		Long selectedEndLetterPos = currentLetterPos;//선택이 끝나는 글자
-		Glyph* selectedStartRow = 0;//선택이 시작되는 줄의 주소를 담을 공간
+		//시작은 무조건 오른쪽방향임
+		Long startRowIndex = 0;//시작하는 줄의 위치
+		Long startLetterIndex = 0;//시작하는 글자 위치
+		Long endRowIndex = 0;//끝나는 줄의 위치
+		Long endLetterIndex = 0;//끝나는 글자 위치
+		Glyph* startRow = 0;//시작하는 줄의 위치
 		//4.1 선택이 시작되는 줄과 선택이 끝나는 줄이 같으면
 		//(한 줄 내에서만 선택이 되어 있으므로 줄을 지워지지 않고 글자들만 지워짐)
 		if (selectedStartRowPos == selectedEndRowPos)
 		{
-			//4.1.1 선택이 시작되는 줄을 구한다.
-			selectedStartRow = this->notepadForm->note->GetAt(selectedStartRowPos);
-			//4.1.2 선택이 오른쪽으로 진행되었으면 
-			//선택이 시작된 글자부터 선택이 끝나는 글자까지 지운다.
-			while (selectedStartLetterPos < selectedEndLetterPos)
+			//4.1.1 선택이 오른쪽으로 진행되었으면
+			if (selectedStartLetterPos < selectedEndLetterPos)
 			{
-				//4.1.2.1 선택이 시작되는 글자를 지운다.
-				selectedStartRow->Remove(selectedStartLetterPos);
-				//4.1.2.2 선택이 시작된 글자가 지워지면서 줄의 개수가 줄고 선택이 시작된 글자의
-				//다음 글자가 선택이 시작되는 글자의 위치로 앞당겨져 오게 되므로 
-				//선택이 끝나는 줄의 값을 -1 감소시킨다. 
-				selectedEndLetterPos--;
+				//4.1.1.1 시작하는 글자위치를 선택이 시작되는 글자위치로 정한다.
+				startLetterIndex = selectedStartLetterPos;
+				//4.1.1.2 끝나는 글자위치를 선택이 끝나는 글자위치로 정한다.
+				endLetterIndex = selectedEndLetterPos;
+				//4.1.1.3 시작하는 줄의 위치를 선택이 시작하는 줄의 위치로 정한다.
+				startRowIndex = selectedStartRowPos;
+
 			}
-			//4.1.3 선택이 왼쪽으로 진행되었으면
-			//선택이 끝나는 글자부터 선택이 시작되는 글자까지 지운다.
-			while (selectedEndLetterPos < selectedStartLetterPos)
+			//4.1.2 선택이 왼쪽으로 진행되었으면
+			else
 			{
-				//4.1.3.1 선택이 끝나는 글자를 지운다.
-				selectedStartRow->Remove(selectedEndLetterPos);
-				//4.1.3.2 선택이 끝나는 글자가 지워지면서 줄의 개수가 줄고 선택이 끝나는 글자의
-				//다음 글자가 선택이 끝나는 글자의 위치로 앞당겨져 오게 되므로 
-				//선택이 시작되는 줄의 값을 -1 감소시킨다.
-				selectedStartLetterPos--;
+				//4.1.2.1 시작하는 글자위치를 선택이 끝나는 글자위치로 정한다.
+				startLetterIndex = selectedEndLetterPos;
+				//4.1.2.2 끝나는 글자위치를 선택이 시작하는 글자위치로 정한다.
+				endLetterIndex = selectedStartLetterPos;
+				//4.1.2.3 시작하는 줄의 위치를 선택이 끝나는 줄의 위치로 정한다.
+				startRowIndex = selectedEndRowPos;
+			}
+			//4.1.3 시작하는 줄을 구한다.
+			startRow = this->notepadForm->note->GetAt(startRowIndex);
+			//4.1.4 시작하는 글자위치부터 끝나는 글자까지 지운다.
+			while (startLetterIndex < endLetterIndex)
+			{
+				//4.1.4.1 줄에서 글자를 지운다.
+				startRow->Remove(startLetterIndex);
+				//4.1.4.2 줄에서 글자가 지워지면 줄의 개수가 줄고 시작하는 글자의 다음 글자가
+				//선택이 시작하는 글자의 위치로 앞당겨져 오게 되므로 선택이 끝나는 줄의 값을 감소시킨다. 
+				endLetterIndex--;
 			}
 		}
 		//4.2 선택이 시작되는 줄과 선택이 끝나는 줄이 서로 다르면
 		//(선택이 여러 줄에 걸쳐서 되어 있기 때문에 글자가 다 지워진 줄은 지워져야함)
 		else
 		{
-			Glyph* row = 0;//줄의 주소를 담을 공간
-			Long letterIndex = 0;//글자 위치
-			Glyph* selectedEndRow = 0;//선택이 끝나는 줄의 주소를 담을 공간
 			//4.2.1 선택이 오른쪽으로 진행되었으면 
-			//선택이 시작된 줄부터 선택이 끝나는 줄까지 글자를 지운다.
 			if (selectedStartRowPos < selectedEndRowPos)
 			{
-				//4.2.1.1 선택이 시작되는 줄을 구한다.
-				selectedStartRow = this->notepadForm->note->GetAt(selectedStartRowPos);
-				//4.2.1.2 선택이 시작되는 글자위치부터 선택이 시작되는 줄의 마지막글자까지 지운다.
-				while (selectedStartLetterPos < selectedStartRow->GetLength())
-				{
-					//4.2.1.2.1 선택이 시작되는 줄의 글자를 지운다.
-					selectedStartRow->Remove(selectedStartLetterPos);
-				}
-				//4.2.1.3 선택이 시작되는 줄의 다음줄부터 선택이 끝나는 줄전까지 글자와 줄을 지운다.
-				selectedStartRowPos++;
-				while (selectedStartRowPos < selectedEndRowPos)
-				{
-					//4.2.1.3.1 줄을 구한다.
-					row = this->notepadForm->note->GetAt(selectedStartRowPos);
-					//4.2.1.3.2 글자위치를 원위치시킨다.
-					letterIndex = 0;
-					//4.2.1.3.3 줄에서 마지막 글자까지 반복한다.
-					while (letterIndex < row->GetLength())
-					{
-						//4.2.1.3.3.1 줄의 글자를 지운다.
-						row->Remove(letterIndex);
-					}
-					//4.2.1.3.4 줄의 글자를 다지웠기때문에 메모장에서 줄을 지운다.
-					this->notepadForm->note->Remove(selectedStartRowPos);
-					//4.2.1.3.5 줄을 지웠기 때문에 선택이 끝나는 줄의 위치가 한칸 앞당겨진다.
-					selectedEndRowPos--;
-				}
-				//4.2.1.4 선택이 끝나는 줄을 구한다.
-				selectedEndRow = this->notepadForm->note->GetAt(selectedEndRowPos);
-				//4.2.1.5 선택이 끝나는 줄의 처음부터 선택이 끝나는 글자까지 글자를 지운다.
-				letterIndex = 0;
-				while (letterIndex < selectedEndLetterPos)
-				{
-					//4.2.1.5.1 선택이 끝나는 줄의 글자를 지운다.
-					selectedEndRow->Remove(letterIndex);
-					//4.2.1.5.2 선택이 끝나는 줄의 첫글자를 지우면 다음 글자부터 앞으로 한칸씩
-					//당겨지기 때문에 선택이 끝나는 글자위치를 -1 감소시킨다.
-					selectedEndLetterPos--;
-				}
-				//4.2.1.6 선택이 끝나는 줄을 선택이 시작되는 줄로 Join시킨다.
-				selectedEndRow->Join(selectedStartRow);
-				//4.2.1.7 선택이 끝나는 줄이 선택이 시작되는 줄로 Join되었기 때문에
-				//선택이 끝나는 줄을 메모장에서 지운다.
-				this->notepadForm->note->Remove(selectedEndRowPos);
-				//4.2.1.8 현재 줄의 위치를 선택이 시작된 위치로 변경한다.
-				this->notepadForm->current = this->notepadForm->note->
-					GetAt(this->notepadForm->selectedStartYPos);
-				//4.2.1.9 현재 글자의 위치를 선택이 시작된 위치로 변경한다.
-				this->notepadForm->current->Move(this->notepadForm->selectedStartXPos);
+				//4.2.1.1 시작하는 글자위치를 선택이 시작되는 글자위치로 정한다.
+				startLetterIndex = selectedStartLetterPos;
+				//4.2.1.2 끝나는 글자위치를 선택이 끝나는 글자위치로 정한다.
+				endLetterIndex = selectedEndLetterPos;
+				//4.2.1.3 시작하는 줄의 위치를 선택이 시작하는 줄의 위치로 정한다.
+				startRowIndex = selectedStartRowPos;
+				//4.2.1.4 끝나는 줄의 위치를 선택이 끝나는 줄의 위치로 정한다.
+				endRowIndex = selectedEndRowPos;
 			}
-			//4.2.2 선택이 왼쪽으로 진행되었으면 
-			//선택이 끝나는 줄부터 선택이 시작되는 줄까지 글자를 지운다.
+			//4.2.2 선택이 왼쪽으로 진행되었으면
 			else
 			{
-				//4.2.2.1 선택이 끝나는 줄을 구한다.
-				selectedEndRow = this->notepadForm->note->GetAt(selectedEndRowPos);
-				//4.2.2.2 선택이 끝나는 글자위치부터 선택이 끝나는 줄의 마지막글자까지 지운다.
-				while (selectedEndLetterPos < selectedEndRow->GetLength())
-				{
-					//4.2.2.2.1 선택이 끝나는 줄의 글자를 지운다.
-					selectedEndRow->Remove(selectedEndLetterPos);
-				}
-				//4.2.2.3 선택이 끝나는 줄의 다음줄부터 선택이 시작되는 줄전까지 글자와 줄을 지운다.
-				selectedEndRowPos++;
-				while (selectedEndRowPos < selectedStartRowPos)
-				{
-					//4.2.2.3.1 줄을 구한다.
-					row = this->notepadForm->note->GetAt(selectedEndRowPos);
-					//4.2.2.3.2 글자위치를 원위치시킨다.
-					letterIndex = 0;
-					//4.2.2.3.3 줄에서 마지막 글자까지 반복한다.
-					while (letterIndex < row->GetLength())
-					{
-						//4.2.2.3.3.1 줄의 글자를 지운다.
-						row->Remove(letterIndex);
-					}
-					//4.2.2.3.4 줄의 글자를 다지웠기때문에 메모장에서 줄을 지운다.
-					this->notepadForm->note->Remove(selectedEndRowPos);
-					//4.2.2.3.5 줄을 지웠기 때문에 선택이 시작되는 줄의 위치가 한칸 앞당겨진다.
-					selectedStartRowPos--;
-				}
-				//4.2.2.4 선택이 시작되는 줄을 구한다.
-				selectedStartRow = this->notepadForm->note->GetAt(selectedStartRowPos);
-				//4.2.2.5 선택이 시작되는 줄의 처음부터 선택이 시작되는 글자까지 글자를 지운다.
+				//4.2.2.1 시작하는 글자위치를 선택이 끝나는 글자위치로 정한다.
+				startLetterIndex = selectedEndLetterPos;
+				//4.2.2.2 끝나는 글자위치를 선택이 시작하는 글자위치로 정한다.
+				endLetterIndex = selectedStartLetterPos;
+				//4.2.2.3 시작하는 줄의 위치를 선택이 끝나는 줄의 위치로 정한다.
+				startRowIndex = selectedEndRowPos;
+				//4.2.2.4 끝나는 줄의 위치를 선택이 시작하는 줄의 위치로 정한다.
+				endRowIndex = selectedStartRowPos;
+			}
+			Glyph* endRow = 0;//끝나는 줄의 위치
+			Glyph* row = 0;//줄의 주소를 담을 공간
+			Long letterIndex = 0;//글자 위치
+			//4.2.3 시작하는 줄을 구한다.
+			startRow = this->notepadForm->note->GetAt(startRowIndex);
+			//4.2.4 시작하는 글자위치부터 시작하는 줄의 마지막 글자까지 지운다.
+			while (startLetterIndex < startRow->GetLength())
+			{
+				//4.2.4.1 줄에서 글자를 지운다.
+				startRow->Remove(startLetterIndex);
+			}
+			//4.2.5 시작하는 줄의 다음줄부터 끝나는 줄전까지 글자와 줄을 지운다.
+			Long nextRowIndex = startRowIndex + 1;
+			while (nextRowIndex < endRowIndex)
+			{
+				//4.2.5.1 줄을 구한다.
+				row = this->notepadForm->note->GetAt(nextRowIndex);
+				//4.2.5.2 글자위치를 원위치시킨다.
 				letterIndex = 0;
-				while (letterIndex < selectedStartLetterPos)
+				//4.2.5.3 줄에서 마지막 글자까지 반복한다.
+				while (letterIndex < row->GetLength())
 				{
-					//4.2.1.5.1 선택이 시작되는 줄의 글자를 지운다.
-					selectedStartRow->Remove(letterIndex);
-					//4.2.1.5.2 선택이 시작되는 줄의 첫글자를 지우면 다음 글자부터 앞으로 한칸씩
-					//당겨지기 때문에 선택이 시작되는 글자위치를 -1 감소시킨다.
-					selectedStartLetterPos--;
+					//4.2.5.3.1 줄의 글자를 지운다.
+					row->Remove(letterIndex);
 				}
-				//4.2.2.6 선택이 시작되는 줄을 선택이 끝나는 줄로 Join시킨다.
-				selectedStartRow->Join(selectedEndRow);
-				//4.2.2.7 선택이 시작되는 줄이 선택이 끝나는 줄로 Join되었기 때문에
-				//선택이 시작되는 줄을 메모장에서 지운다.
-				this->notepadForm->note->Remove(selectedStartRowPos);
-				//4.2.2.8 현재 글자의 위치를 선택이 끝나는 글자위치로 변경한다.
-				this->notepadForm->current->Move(selectedEndLetterPos);
-			}	
+				//4.2.5.4 줄의 글자를 다지웠기때문에 메모장에서 줄을 지운다.
+				this->notepadForm->note->Remove(nextRowIndex);
+				//4.2.5.5 줄을 지웠기 때문에 선택이 끝나는 줄의 위치가 한칸 앞당겨진다.
+				endRowIndex--;
+			}
+			//4.2.6 끝나는 줄을 구한다.
+			endRow = this->notepadForm->note->GetAt(endRowIndex);
+			//4.2.7 끝나는 줄의 처음부터 끝나는 글자까지 글자를 지운다.
+			letterIndex = 0;
+			while (letterIndex < endLetterIndex)
+			{
+				//4.2.7.1 끝나는 줄의 글자를 지운다.
+				endRow->Remove(letterIndex);
+				//4.2.7.2 끝나는 줄의 첫글자를 지우면 다음 글자부터 앞으로 한칸씩
+				//당겨지기 때문에 끝나는 글자위치를 -1 감소시킨다.
+				endLetterIndex--;
+			}
+			//4.2.8 끝나는 줄을 시작하는 줄로 Join시킨다.
+			endRow->Join(startRow);
+			//4.2.9 끝나는 줄이 시작하는 줄로 Join되었기 때문에
+			//끝나는 줄을 메모장에서 지운다.
+			this->notepadForm->note->Remove(endRowIndex);
+			//4.2.10 현재 줄의 위치를 시작하는 줄의 위치로 변경한다.
+			this->notepadForm->current = this->notepadForm->note->
+				GetAt(startRowIndex);
+			//4.2.11 현재 글자의 위치를 시작하는 글자의 위치로 변경한다.
+			this->notepadForm->current->Move(startLetterIndex);
 		}
 		//4.3 메모장 제목에 *를 추가한다.
 		string name = this->notepadForm->fileName;

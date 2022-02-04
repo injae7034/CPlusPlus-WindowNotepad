@@ -25,6 +25,7 @@ public:
 	//주소는 public으로
 	Glyph* note;
 	Glyph* current;
+	Glyph* clipboard;
 	Font font;
 	TextExtent* textExtent;
 	SelectingTexts* selectingTexts;
