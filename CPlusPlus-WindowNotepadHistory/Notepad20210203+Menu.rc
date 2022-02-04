@@ -67,6 +67,7 @@ BEGIN
     BEGIN
         MENUITEM "복사하기",                        IDM_NOTE_COPY, GRAYED
         MENUITEM "붙여넣기",                        IDM_NOTE_PASTE
+        MENUITEM "잘라내기",                        IDM_NOTE_CUT
     END
     POPUP "보기"
     BEGIN

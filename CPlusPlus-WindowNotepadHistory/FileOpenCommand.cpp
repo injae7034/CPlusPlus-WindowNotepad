@@ -106,12 +106,6 @@ void FileOpenCommand::Execute()
 			//불러오는 메모장을 위해 새로운 note를 만듬.
 			//3.2.4 glyphCreator를 만든다.
 			GlyphCreator glyphCreator;
-			//3.2.5 기존에 OnCreate에서 생성된 note를 힙에서 할당해제하고, 
-			//새로운 note를 힙에 할당한다. 
-			if (this->notepadForm->note != NULL)
-			{
-				delete this->notepadForm->note;
-			}
 			this->notepadForm->note = glyphCreator.Create((char*)"\0");
 			//3.2.6 줄을 만든다.
 			Glyph* row = glyphCreator.Create((char*)"\n");

@@ -6,6 +6,7 @@
 #include "RowAutoChangeCommand.h"
 #include "CopyCommand.h"
 #include "PasteCommand.h"
+#include "CutCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -45,6 +46,10 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == IDM_NOTE_PASTE)
 	{
 		command = new PasteCommand(this->notepadForm);
+	}
+	else if (nId == IDM_NOTE_CUT)
+	{
+		command = new CutCommand(this->notepadForm);
 	}
 
 	return command;

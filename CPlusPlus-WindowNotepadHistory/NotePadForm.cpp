@@ -35,7 +35,9 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_MESSAGE(WM_IME_CHAR, OnImeChar)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
-	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_CLIPBOARD_VIEW, OnCommand)
+	//resource.h에서 가장 처음에 추가된게 시작범위이고, 가장 마지막에 추가된게 끝나는 범위임
+	//윈도우의 메뉴 그림이랑은 아무 상관이 없음!!
+	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_NOTE_CUT, OnCommand)
 	ON_WM_MENUSELECT(IDR_MENU1 ,OnMenuSelect)
 	ON_WM_KEYDOWN()
 	ON_WM_VSCROLL()
@@ -99,8 +101,9 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//9. CMenu의 메뉴들이 자동으로 Enable되는 것을 막기 위해 FALSE 처리를 해줘야함
 	//아니면 다른 곳에서 Unenable시켜도 계속해서 자동으로 Enable시켜버림!
 	this->m_bAutoMenuEnable = FALSE;
-	//10. 복사하기 메뉴를 비활성화시킨다. 비활성화가 디폴트고 선택영역이 생기면 활성화시켜줌!
+	//10. 복사하기, 잘라내기 메뉴를 비활성화시킨다. 비활성화가 디폴트고 선택영역이 생기면 활성화시켜줌!
 	this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	//11. 외부클립보드에 현재 문자열이 저장되어있으면
 	unsigned int priority_list = CF_TEXT;
 	if (GetPriorityClipboardFormat(&priority_list, 1) == CF_TEXT)
@@ -765,11 +768,13 @@ void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		if (this->isSelecting == false)
 		{
 			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		}
 		//3.4 메모장에 선택이 되어 있으면
 		else
 		{
 			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+			this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
 		}
 		//3.5 변화를 메모장에 갱신한다.
 		//if 구조안에서 Notify를 해줘야 Ctrl이나 Shift, Alt Capslock과 같은 특수기능키가 눌렸을 때
