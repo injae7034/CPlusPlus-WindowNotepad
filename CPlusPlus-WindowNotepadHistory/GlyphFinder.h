@@ -19,6 +19,10 @@ public:
 		Long* findingEndRowIndex, Long* findingEndLetterIndex);//아래로 찾기
 	void FindUp(string keyword, Long* findingStartRowIndex, Long* findingStartLetterIndex,
 		Long* findingEndRowIndex, Long* findingEndLetterIndex);//위로 찾기
+	void FindDownWithMatchCase(string keyword, Long* findingStartRowIndex, Long* findingStartLetterIndex,
+		Long* findingEndRowIndex, Long* findingEndLetterIndex);//대/소문자 구분없이 아래로 찾기
+	void FindUpWithMatchCase(string keyword, Long* findingStartRowIndex, Long* findingStartLetterIndex,
+		Long* findingEndRowIndex, Long* findingEndLetterIndex);//대/소문자 구분없이 위로 찾기
 	~GlyphFinder();//소멸자
 };
 

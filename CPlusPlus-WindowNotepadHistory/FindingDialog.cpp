@@ -32,9 +32,14 @@ BOOL FindingDialog::OnInitDialog()
 	//OnInitDialog에서 보이게 하고 활성화를 시켜준다.
 	this->GetDlgItem(IDC_CHECKBOX_WRAPAROUND)->ShowWindow(SW_SHOW);
 	this->GetDlgItem(IDC_CHECKBOX_WRAPAROUND)->EnableWindow(1);
-	//1. '아래로' 라디오버튼을 선택한다.
+	//1. '위로' 라디오버튼을 선택하지 않는다.
 	((CButton*)GetDlgItem(IDC_RADIO_UP))->SetCheck(BST_UNCHECKED);
+	//2. '아래로' 라디오버튼을 선택한다.
 	((CButton*)GetDlgItem(IDC_RADIO_DOWN))->SetCheck(BST_CHECKED);
+	//3. '대/소문자 구분' 체크박스를 선택한다.
+	((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->SetCheck(BST_CHECKED);
+	//4. '주위에 배치' 체크박스를 선택하지 않는다.
+	((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->SetCheck(BST_UNCHECKED);
 	//2. 메모장에서 선택된 글자가 있으면
 	if (this->notepadForm->isSelecting == true)
 	{
@@ -173,8 +178,6 @@ BOOL FindingDialog::OnInitDialog()
 	return FALSE;
 }
 
-//_stricmp;//대소문자 구분 무시하는 함수(영어 대소문자를 같게 보게 해주는 함수)
-
 //2. 찾기 버튼을 클릭했을 때
 void FindingDialog::OnFindButtonClicked()
 {
@@ -183,69 +186,226 @@ void FindingDialog::OnFindButtonClicked()
 	//2. 에디트컨트롤에 적혀있는 글자를 읽는다.
 	CString keyword;
 	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(keyword);
-	//3. 아래로 찾기를 실행한다.
+	//3. 선택된 체크박스와 라디오버튼을 읽는다.
+	int wrapAroundChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->GetCheck();
+	int matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
+	int upChecked = ((CButton*)GetDlgItem(IDC_RADIO_UP))->GetCheck();
+	int downChecked = ((CButton*)GetDlgItem(IDC_RADIO_DOWN))->GetCheck();
 	Long findingStartRowIndex = 0;
 	Long findingStartLetterIndex = 0;
 	Long findingEndRowIndex = 0;
 	Long findingEndLetterIndex = 0;
-	glyphFinder.FindDown((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
-		&findingEndRowIndex, &findingEndLetterIndex);
-	//4. 찾은 게 있으면
+	Long currentRowIndex = this->notepadForm->note->GetCurrent();
+	Long currentLetterIndex = this->notepadForm->current->GetCurrent();
+	Long endRowIndex = this->notepadForm->note->GetLength() - 1;
+
+	//4. '아래로' 라디오 버튼, '대/소문자 구분' 체크박스가 선택되어 있고, 
+	//'주위에 배치' 체크박스가 선택이 안되어있으면
+	if (downChecked == BST_CHECKED && matchCaseChecked == BST_CHECKED
+		&& wrapAroundChecked == BST_UNCHECKED)
+	{
+		//4.1 아래로 찾기를 실행한다.
+		glyphFinder.FindDown((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
+			&findingEndRowIndex, &findingEndLetterIndex);
+	}
+	//5. '위로' 라디오 버튼, '대/소문자 구분' 체크박스가 선택되어 있고,
+	//'주위에 배치' 체크박스가 선택이 안되어있으면
+	else if (upChecked == BST_CHECKED && matchCaseChecked == BST_CHECKED
+		&& wrapAroundChecked == BST_UNCHECKED)
+	{
+		//5.1 선택된 texts가 있으면
+		if (this->notepadForm->isSelecting == true)
+		{
+			//5.1.1 캐럿을 이동시킨다.
+			this->notepadForm->note->Move(this->notepadForm->selectedStartYPos);
+			this->notepadForm->current = this->notepadForm->note->
+				GetAt(this->notepadForm->note->GetCurrent());
+			this->notepadForm->current->Move(this->notepadForm->selectedStartXPos);
+		}
+		//5.2 위로 찾기를 실행한다.
+		glyphFinder.FindUp((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
+			&findingEndRowIndex, &findingEndLetterIndex);
+	}
+	//6. '아래로' 라디오 버튼, '대/소문자 구분', '주위에 배치' 체크박스가 선택이 되어있으면
+	else if (downChecked == BST_CHECKED && matchCaseChecked == BST_CHECKED
+		&& wrapAroundChecked == BST_CHECKED)
+	{
+		//6.1 아래로 찾기를 실행한다.
+		glyphFinder.FindDown((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
+			&findingEndRowIndex, &findingEndLetterIndex);
+		//6.2 찾은게 없으면
+		if (findingStartRowIndex == findingEndRowIndex &&
+			findingStartLetterIndex == findingEndLetterIndex)
+		{
+			//6.2.1 현재 줄의 위치와 글자를 메모장의 제일 처음으로 보낸다.
+			this->notepadForm->note->Move(0);
+			this->notepadForm->current = this->notepadForm->note->GetAt(0);
+			this->notepadForm->current->Move(0);
+			//6.2.2 아래로 찾기를 실행한다.
+			glyphFinder.FindDown((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
+				&findingEndRowIndex, &findingEndLetterIndex);
+		}
+	}
+	//7. '위로' 라디오 버튼, '대/소문자 구분', '주위에 배치' 체크박스가 선택이 되어있으면,
+	else if (upChecked == BST_CHECKED && matchCaseChecked == BST_CHECKED
+		&& wrapAroundChecked == BST_CHECKED)
+	{
+		//7.1 선택된 texts가 있으면
+		if (this->notepadForm->isSelecting == true)
+		{
+			//7.1.1 캐럿을 이동시킨다.
+			this->notepadForm->note->Move(this->notepadForm->selectedStartYPos);
+			this->notepadForm->current = this->notepadForm->note->
+				GetAt(this->notepadForm->note->GetCurrent());
+			this->notepadForm->current->Move(this->notepadForm->selectedStartXPos);
+		}
+		//7.2 위로 찾기를 실행한다.
+		glyphFinder.FindUp((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
+			&findingEndRowIndex, &findingEndLetterIndex);
+		//7.3 찾은게 없으면
+		if (findingStartRowIndex == findingEndRowIndex &&
+			findingStartLetterIndex == findingEndLetterIndex)
+		{
+			//7.3.1 현재 줄의 위치와 글자를 메모장의 제일 마지막으로 보낸다.
+			this->notepadForm->note->Move(endRowIndex);
+			this->notepadForm->current = this->notepadForm->note->GetAt(endRowIndex);
+			this->notepadForm->current->Move(this->notepadForm->current->GetLength());
+			//7.3.2 위로 찾기를 실행한다.
+			glyphFinder.FindUp((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
+				&findingEndRowIndex, &findingEndLetterIndex);
+		}
+	}
+	//8. '아래로' 라디오 버튼이 선택되어 있고 '대/소문자 구분', '주위에 배치' 체크박스가 선택이 안되어있으면
+	else if (downChecked == BST_CHECKED && matchCaseChecked == BST_UNCHECKED
+		&& wrapAroundChecked == BST_UNCHECKED)
+	{
+		//8.1 대/소문자 구분없이 아래로 찾기를 실행한다.
+		glyphFinder.FindDownWithMatchCase((LPCTSTR)keyword, &findingStartRowIndex,
+			&findingStartLetterIndex, &findingEndRowIndex, &findingEndLetterIndex);
+	}
+	//9. '위로' 라디오 버튼이 선택되어 있고 '대/소문자 구분', '주위에 배치' 체크박스가 선택이 안되어있으면
+	else if (upChecked == BST_CHECKED && matchCaseChecked == BST_UNCHECKED
+		&& wrapAroundChecked == BST_UNCHECKED)
+	{
+		//9.1 선택된 texts가 있으면
+		if (this->notepadForm->isSelecting == true)
+		{
+			//9.1.1 캐럿을 이동시킨다.
+			this->notepadForm->note->Move(this->notepadForm->selectedStartYPos);
+			this->notepadForm->current = this->notepadForm->note->
+				GetAt(this->notepadForm->note->GetCurrent());
+			this->notepadForm->current->Move(this->notepadForm->selectedStartXPos);
+		}
+		//9.2 대/소문자 구분없이 위로 찾기를 실행한다.
+		glyphFinder.FindUpWithMatchCase((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
+			&findingEndRowIndex, &findingEndLetterIndex);
+	}
+	//10. '아래로' 라디오 버튼, '주위에 배치' 체크박스가 선택이 되어있고,
+	//'대/소문자 구분'이 선택 안되어있으면
+	else if (downChecked == BST_CHECKED && matchCaseChecked == BST_UNCHECKED
+		&& wrapAroundChecked == BST_CHECKED)
+	{
+		//10.1 대/소문자 구분없이 아래로 찾기를 실행한다.
+		glyphFinder.FindDownWithMatchCase((LPCTSTR)keyword, &findingStartRowIndex,
+			&findingStartLetterIndex, &findingEndRowIndex, &findingEndLetterIndex);
+		//10.2 찾은게 없으면
+		if (findingStartRowIndex == findingEndRowIndex &&
+			findingStartLetterIndex == findingEndLetterIndex)
+		{
+			//10.2.1 현재 줄의 위치와 글자를 메모장의 제일 처음으로 보낸다.
+			this->notepadForm->note->Move(0);
+			this->notepadForm->current = this->notepadForm->note->GetAt(0);
+			this->notepadForm->current->Move(0);
+			//10.2.2 대/소문자 구분없이 아래로 찾기를 실행한다.
+			glyphFinder.FindDownWithMatchCase((LPCTSTR)keyword, &findingStartRowIndex,
+				&findingStartLetterIndex, &findingEndRowIndex, &findingEndLetterIndex);
+		}
+	}
+	//11. '위로' 라디오 버튼, '주위에 배치' 체크박스가 선택이 되어있고,
+	//'대/소문자 구분'이 선택 안되어있으면
+	else if (upChecked == BST_CHECKED && matchCaseChecked == BST_UNCHECKED
+		&& wrapAroundChecked == BST_CHECKED)
+	{
+		//11.1 선택된 texts가 있으면
+		if (this->notepadForm->isSelecting == true)
+		{
+			//11.1.1 캐럿을 이동시킨다.
+			this->notepadForm->note->Move(this->notepadForm->selectedStartYPos);
+			this->notepadForm->current = this->notepadForm->note->
+				GetAt(this->notepadForm->note->GetCurrent());
+			this->notepadForm->current->Move(this->notepadForm->selectedStartXPos);
+		}
+		//11.2 대/소문자 구분없이 위로 찾기를 실행한다.
+		glyphFinder.FindUpWithMatchCase((LPCTSTR)keyword, &findingStartRowIndex,
+			&findingStartLetterIndex, &findingEndRowIndex, &findingEndLetterIndex);
+		//11.3 찾은게 없으면
+		if (findingStartRowIndex == findingEndRowIndex &&
+			findingStartLetterIndex == findingEndLetterIndex)
+		{
+			//11.3.1 현재 줄의 위치와 글자를 메모장의 제일 마지막으로 보낸다.
+			this->notepadForm->note->Move(endRowIndex);
+			this->notepadForm->current = this->notepadForm->note->GetAt(endRowIndex);
+			this->notepadForm->current->Move(this->notepadForm->current->GetLength());
+			//11.3.2 대/소문자 구분없이 위로 찾기를 실행한다.
+			glyphFinder.FindUpWithMatchCase((LPCTSTR)keyword, &findingStartRowIndex,
+				&findingStartLetterIndex, &findingEndRowIndex, &findingEndLetterIndex);
+		}
+	}
+
+	//12. 찾은 게 있으면
 	if (findingStartRowIndex != findingEndRowIndex ||
 		findingStartLetterIndex != findingEndLetterIndex)
 	{
-		//4.1 선택이 처음 시작되면
+		//12.1 선택이 처음 시작되면
 		if (this->notepadForm->isSelecting == false)
 		{
-			//4.1.1 선택이 진행되고 있는 중으로 상태를 바꾼다.
+			//12.1.1 선택이 진행되고 있는 중으로 상태를 바꾼다.
 			this->notepadForm->isSelecting = true;
 		}
-		//4.2 이미 선택된 texts가 있으면
+		//12.2 이미 선택된 texts가 있으면
 		else
 		{
-			//4.2.1 선택된 텍스트를 선택해제한다.(선택을 끝낸다)
+			//12.2.1 선택된 텍스트를 선택해제한다.(선택을 끝낸다)
 			this->notepadForm->selectingTexts->Undo();
-			//4.2.2 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+			//12.2.2 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
 			this->notepadForm->selectedStartXPos = 0;
-			//4.2.3 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+			//12.2.3 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
 			this->notepadForm->selectedStartYPos = 0;
 		}
-		//4.3 선택이 시작되는 캐럿의 x좌표를 저장한다.
+		//12.3 선택이 시작되는 캐럿의 x좌표를 저장한다.
 		this->notepadForm->selectedStartXPos = findingStartLetterIndex;
-		//4.4 선택이 시작되는 캐럿의 y좌표를 저장한다.
+		//12.4 선택이 시작되는 캐럿의 y좌표를 저장한다.
 		this->notepadForm->selectedStartYPos = findingStartRowIndex;
-		//4.5 찾은 글자를 선택한다.
+		//12.5 찾은 글자를 선택한다.
 		this->notepadForm->selectingTexts->DoNext(findingStartRowIndex,
 			findingStartLetterIndex, findingEndRowIndex, findingEndLetterIndex);
-		//4.6 캐럿의 위치를 메모장의 찾은 문자열이 있는 줄의 찾은 문자열 마지막 글자위치로 이동한다.
+		//12.6 캐럿의 위치를 메모장의 찾은 문자열이 있는 줄의 찾은 문자열 마지막 글자위치로 이동한다.
 		this->notepadForm->note->Move(findingEndRowIndex);
 		this->notepadForm->current = this->notepadForm->note->GetAt(findingEndRowIndex);
 		this->notepadForm->current->Move(findingEndLetterIndex);
-		//4.7 선택이 되었기 때문에 복사하기, 잘라내기, 삭제 메뉴룰 활성화시켜준다.
+		//12.7 선택이 되었기 때문에 복사하기, 잘라내기, 삭제 메뉴룰 활성화시켜준다.
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
-		//4.8 캐럿의 위치가 변경되었음을 알린다.
-		this->notepadForm->Notify();
-		//4.9 변경사항을 갱신한다.
-		this->notepadForm->Invalidate(TRUE);
 	}
-	//5. 찾은게 없으면
+	//13. 찾은게 없으면
 	else
 	{
-
-		//2.1 메세지박스의 메세지를 생성한다.
-		
-		//2.3 SaveBox 메세지 내용을 만든다.
-		//message.insert(0, "변경 내용을 ");
-
-		//5.1 "찾을 수 없습니다." 메세지박스를 출력한다.
+		//13.6 캐럿의 위치를 메모장의 찾은 문자열이 있는 줄의 찾은 문자열 마지막 글자위치로 이동한다.
+		this->notepadForm->note->Move(currentRowIndex);
+		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
+		this->notepadForm->current->Move(currentLetterIndex);
+		//13.1 "찾을 수 없습니다." 메세지박스를 출력한다.
 		string message = (LPCTSTR)keyword;
 		message.insert(0, "\"");
 		message += "\"";
 		message += "을(를) 찾을 수 없습니다.";
 		int messageBoxButton = MessageBox(message.c_str(), "메모장", MB_OK);
 	}
+	//14. 캐럿의 위치가 변경되었음을 알린다.
+	this->notepadForm->Notify();
+	//15. 변경사항을 갱신한다.
+	this->notepadForm->Invalidate(TRUE);
 }
 
 
