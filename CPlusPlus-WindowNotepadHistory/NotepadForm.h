@@ -8,6 +8,7 @@
 #include<string>
 using namespace std;
 
+
 class FindingDialog;
 class SelectingTexts;
 class CaretController;
@@ -15,6 +16,7 @@ class PageMoveController;
 class ScrollController;
 class TextExtent;
 class Glyph;
+class ReplacingDialog;
 typedef signed long int Long;
 
 class NotepadForm :public CFrameWnd, public Subject//다중상속
@@ -33,6 +35,9 @@ public:
 	ScrollController* scrollController;
 	PageMoveController* pageMoveController;
 	CaretController* caretController;
+	//CFindReplaceDialog가 부모이기 때문에 부모의 주소를 이용해서 저장소를 한개로 운영하는게 효율적이다!
+	FindingDialog* findingDialog;
+	ReplacingDialog* replacingDialog;
 	//flag는 public으로
 	bool isRowAutoChanging;//자동개행이 되는 중인지 아닌지 판별하기 위한 flag
 	bool isSelecting;//텍스트 선택을 하는 중인지 아닌지 판별하기 위한 flag

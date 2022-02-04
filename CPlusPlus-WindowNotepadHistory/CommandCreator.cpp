@@ -10,6 +10,7 @@
 #include "SelectAllCommand.h"
 #include "RemoveCommand.h"
 #include "FindCommand.h"
+#include "ReplaceCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -65,6 +66,10 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == IDM_NOTE_FIND)
 	{
 		command = new FindCommand(this->notepadForm);
+	}
+	else if (nId == IDM_NOTE_REPLACE)
+	{
+		command = new ReplaceCommand(this->notepadForm);
 	}
 
 	return command;

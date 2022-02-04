@@ -1,18 +1,18 @@
-#include "FindCommand.h"
-#include "FindingDialog.h"
+#include "ReplaceCommand.h"
 #include "ReplacingDialog.h"
+#include "FindingDialog.h"
 #include "NotepadForm.h"
 #include "afxdlgs.h"//CCommonDialog헤더파일
 
 //디폴트생성자
-FindCommand::FindCommand(NotepadForm* notepadForm)
+ReplaceCommand::ReplaceCommand(NotepadForm* notepadForm)
 	:Command(notepadForm)
 {
 
 }
 
 //Execute
-void FindCommand::Execute()
+void ReplaceCommand::Execute()
 {
 	// 찾기 프레임 윈도우를 띄우기 전에 바꾸기 프레임 윈도우가 있는지 확인하고 있으면 할당해제한다.
 	if (this->notepadForm->replacingDialog != 0)
@@ -33,19 +33,20 @@ void FindCommand::Execute()
 		this->notepadForm->findingDialog = 0;
 	}
 
-	// 찾기 프레임 윈도우를 띄운다.
-	// 찾기 프레임 윈도우는 무조건 힙에 할당해서 생성해줘야 한다.
+
+	// 바꾸기 프레임 윈도우를 띄운다.
+	// 바꾸기 프레임 윈도우는 무조건 힙에 할당해서 생성해줘야 한다.
 	// NotepadForm의 멤버인 findDialog에 FindDialog를 할당한다.
-	this->notepadForm->findingDialog = new FindingDialog(this->notepadForm);
+	this->notepadForm->replacingDialog = new ReplacingDialog(this->notepadForm);
 	// 생성된 찾기 프레임 윈도우를 좀 더 구체적으로 설정해준다.
-	this->notepadForm->findingDialog->Create
+	this->notepadForm->replacingDialog->Create
 	(TRUE, _T(""), _T(""), FR_DOWN, this->notepadForm);
 	//Modal 대화상자는 DoModal로 화면을 띄우고, Modaless 대화상자는 ShowWindow로 화면을 띄운다.
-	this->notepadForm->findingDialog->ShowWindow(SW_SHOW);
+	this->notepadForm->replacingDialog->ShowWindow(SW_SHOW);
 }
 
 //소멸자
-FindCommand::~FindCommand()
+ReplaceCommand::~ReplaceCommand()
 {
 
 }

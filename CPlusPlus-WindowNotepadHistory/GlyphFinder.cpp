@@ -1,11 +1,10 @@
 #include "GlyphFinder.h"
 #include "Glyph.h"
 #include "DummyRow.h"
-
-//#include<Findtext.dlg> 찾기공통대화상자를 커스터마이징하기 위해서 필요함
+//#include<Findtext.dlg>// 찾기공통대화상자와 바꾸기공통대화상자를 커스터마이징하기 위해서 필요함
 //이걸 적어 놓고 Ctrl + F5 를 하면 오류가 나는데 오류목록을 클릭해서 FindText.Dlg에 들어가서
-//FindDialog의 내용을 복사해서 resource에서 Dialog를 생성한뒤 거기에 복사한 내용을
-//붙여넣으면 커스터마이징 된 찾기 대화상자가 생성됨!
+//FindDialog나 ReplaceDialog의 내용을 복사해서 .rc를 메모장에서 텍스트로 열어서 거기에 복사한 내용을
+//붙여넣으면 커스터마이징 된 찾기 또는 바꾸기 대화상자가 생성됨!
 
 /*
 //

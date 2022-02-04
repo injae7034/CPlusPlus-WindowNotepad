@@ -10,6 +10,9 @@
 #include "afxdlgs.h"//CFileDialog헤더파일
 #include "KeyAction.h"
 
+#include "FindingDialog.h"
+#include "ReplacingDialog.h"
+
 #include "ScrollActionCreator.h"
 #include "ScrollAction.h"
 #include "ScrollController.h"
@@ -37,7 +40,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
 	//resource.h에서 가장 처음에 추가된게 시작범위이고, 가장 마지막에 추가된게 끝나는 범위임
 	//윈도우의 메뉴 그림이랑은 아무 상관이 없음!!
-	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_NOTE_FIND, OnCommand)
+	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_NOTE_REPLACE, OnCommand)
 	ON_WM_MENUSELECT(IDR_MENU1 ,OnMenuSelect)
 	//ON_REGISTERED_MESSAGE() 찾기공통대화상자에서 부모윈도우로 메세지를 전달하기 위해 필요함
 	ON_WM_KEYDOWN()
@@ -59,8 +62,7 @@ NotepadForm::NotepadForm()
 	this->isComposing = false;//false로 초기화시킴
 	this->isDirty = false;//false로 초기화시킴
 	this->isSelecting = false;//false로 초기화시킴
-	this->isRowAutoChanging = false;//false로 초기화 시킴
-	//this->IsOnScroll = false;//처음생성될때는 스크롤을 이용한 이동이 없기 때문에 false로 초기화함.
+	this->isRowAutoChanging = false;//false로 초기화 시킴.
 	this->fileName = "제목 없음";
 	this->filePath = "";
 	this->previousPageWidth = 0;//처음생성될때는 현재 화면 너비를 0으로 초기화해줌
@@ -142,6 +144,10 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	this->pageMoveController = new PageMoveController(this);
 	//22. selectingTexts를 생성한다.
 	this->selectingTexts = new SelectingTexts(this);
+	//23. findingDialog를 초기화해준다.
+	this->findingDialog = 0;
+	//24. replacingDialog를 초기화해준다.
+	this->replacingDialog = 0;
 
 	return 0;
 }
@@ -691,6 +697,10 @@ void NotepadForm::OnClose()
 			//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
 			//delete this->current;
 		}
+		if (this->clipboard != NULL)
+		{
+			delete this->clipboard;
+		}
 		//3.2 TextExtent를 할당해제한다.
 		if (this->textExtent != NULL)
 		{
@@ -701,7 +711,21 @@ void NotepadForm::OnClose()
 		{
 			delete this->selectingTexts;
 		}
-		//3.3 메모장을 닫는다.
+		// 바꾸기 프레임 윈도우가 있는지 확인하고 있으면 할당해제한다.
+		if (this->replacingDialog != 0)
+		{
+			//CFindReplaceDialog를 할당해제할때는 delete대신에 DestroyWindow를 이용하자!
+			this->replacingDialog->DestroyWindow();
+			//이제 프로그램이 끝나기 때문에 따로 댕글링포인터에 대한 처리는 해줄필요가 없다!
+		}
+		// 찾기 프레암 윈도우가 있는지 확인하고 있으면 할당해제한다.
+		if (this->findingDialog != 0)
+		{
+			//CFindReplaceDialog를 할당해제할때는 delete대신에 DestroyWindow를 이용하자!
+			this->findingDialog->DestroyWindow();
+			//이제 프로그램이 끝나기 때문에 따로 댕글링포인터에 대한 처리는 해줄필요가 없다!
+		}
+		// 메모장을 닫는다.
 		CFrameWnd::OnClose();
 	}
 }

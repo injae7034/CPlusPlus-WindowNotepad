@@ -3,6 +3,11 @@
 // Notepad20210203+Menu.rc에서 사용되고 있습니다.
 //
 #define IDR_MENU1                       101
+#define IDC_BUTTON_FIND                 1002
+#define IDC_BUTTON_CANCLE               1003
+#define IDC_BUTTON_CANCEL               1004
+#define IDC_BUTTON_REPLACE              1024
+#define IDC_BUTTON_REPLACEALL           1025
 #define IDC_CHECKBOX_MATCH              1041
 #define IDC_CHECKBOX_MATCHCASE          1041
 #define IDC_CHECKBOX_WRAPAROUND         1042
@@ -10,7 +15,9 @@
 #define IDC_RADIO_DOWN                  1057
 #define IDC_GROUPBOX_DIRECTION          1072
 #define IDC_EDIT_FINDINGCONTENT         1152
+#define IDC_EDIT_REPLACINGCONTENT       1153
 #define IDD_FINDINGDIALOG               1540
+#define IDD_REPLACINGDIALOG             1541
 #define ID_40001                        40001
 #define IDM_FILE_OPEN                   40003
 #define IDM_FILE_                       40004
@@ -47,15 +54,18 @@
 #define IDM_NOTE_REMOVE                 40036
 #define ID_40037                        40037
 #define IDM_NOTE_FIND                   40038
+#define ID_40039                        40039
+#define IDM_NOTE_REPLACE                40040
 #define IDC_STATIC_FINDINGCONTENT       65535
+#define IDC_STATIC_REPLACINGCONTNET     65535
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        105
-#define _APS_NEXT_COMMAND_VALUE         40039
-#define _APS_NEXT_CONTROL_VALUE         1002
+#define _APS_NEXT_RESOURCE_VALUE        106
+#define _APS_NEXT_COMMAND_VALUE         40041
+#define _APS_NEXT_CONTROL_VALUE         1005
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

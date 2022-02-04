@@ -8,7 +8,9 @@
 #include "Row.h"
 
 BEGIN_MESSAGE_MAP(FindingDialog, CFindReplaceDialog)
-	ON_BN_CLICKED(IDOK, OnFindButtonClicked)
+	ON_EN_CHANGE(IDC_EDIT_FINDINGCONTENT, OnFindingContentEditTyped)
+	ON_BN_CLICKED(IDC_BUTTON_FIND, OnFindButtonClicked)
+	ON_BN_CLICKED(IDC_BUTTON_CANCEL, OnCancelButtonClicked)
 	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
@@ -32,6 +34,8 @@ BOOL FindingDialog::OnInitDialog()
 	//OnInitDialog에서 보이게 하고 활성화를 시켜준다.
 	this->GetDlgItem(IDC_CHECKBOX_WRAPAROUND)->ShowWindow(SW_SHOW);
 	this->GetDlgItem(IDC_CHECKBOX_WRAPAROUND)->EnableWindow(1);
+	//찾기 버튼을 글자가 없으면 수행이 안되기 때문에 디폴트값으로 비활성화 시킨다.
+	this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(0);
 	//1. '위로' 라디오버튼을 선택하지 않는다.
 	((CButton*)GetDlgItem(IDC_RADIO_UP))->SetCheck(BST_UNCHECKED);
 	//2. '아래로' 라디오버튼을 선택한다.
@@ -173,12 +177,34 @@ BOOL FindingDialog::OnInitDialog()
 		{
 			delete copyRow;
 		}
+		//선택된 texts가 있기 때문에 찾기 버튼을 활성화 시킨다.
+		this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(1);
 	}
 	//3. 끝내다.
 	return FALSE;
 }
 
-//2. 찾기 버튼을 클릭했을 때
+//2. 찾을 내용 에디트에 텍스트를 입력할 때
+void FindingDialog::OnFindingContentEditTyped()
+{
+	//1. 에디트컨트롤에 적혀있는 글자를 읽는다.
+	CString content;
+	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(content);
+	//2. content가 널문자가 아니면
+	if (content != "")
+	{
+		//2.1 선택된 texts가 있기 때문에 찾기 버튼을 활성화시켜준다.
+		this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(1);
+	}
+	//3. content가 널문자이면
+	else
+	{
+		//3.1 선택된 texts가 있기 때문에 찾기 버튼을 비활성화시켜준다.
+		this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(0);
+	}
+}
+
+//3. 찾기 버튼을 클릭했을 때
 void FindingDialog::OnFindButtonClicked()
 {
 	//1. GlyphFinder를 생성한다.
@@ -391,11 +417,11 @@ void FindingDialog::OnFindButtonClicked()
 	//13. 찾은게 없으면
 	else
 	{
-		//13.6 캐럿의 위치를 메모장의 찾은 문자열이 있는 줄의 찾은 문자열 마지막 글자위치로 이동한다.
+		//13.1 캐럿의 위치를 메모장의 찾은 문자열이 있는 줄의 찾은 문자열 마지막 글자위치로 이동한다.
 		this->notepadForm->note->Move(currentRowIndex);
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
 		this->notepadForm->current->Move(currentLetterIndex);
-		//13.1 "찾을 수 없습니다." 메세지박스를 출력한다.
+		//13.2 "찾을 수 없습니다." 메세지박스를 출력한다.
 		string message = (LPCTSTR)keyword;
 		message.insert(0, "\"");
 		message += "\"";
@@ -408,10 +434,21 @@ void FindingDialog::OnFindButtonClicked()
 	this->notepadForm->Invalidate(TRUE);
 }
 
+//4. 취소 버튼을 클릭했을 때
+void FindingDialog::OnCancelButtonClicked()
+{
+	//1. OnClose로 메세지를 보낸다.
+	//SendMessage는 메세지를 보내고 거기서 행위가 끝나면 원래 메세지를 보낸 주체로 다시 돌아와서 이후에
+	//돌아온 곳에서 나머지 남은 행위들을 수행한다. 근데 여기서 문제가 WM_CLOSE로 메세지를 보내면 
+	//ReplacingDialog는 할당해제가 되서 사라지기 때문에 다시 돌아올 곳이 없다.
+	//그래서 여기서는 메세지를 보내고 보낸 주체로 다시 돌아오지 않고 거기서 행위를 하고 그대로 끝나는
+	//PostMessage를 사용해야한다.
+}
 
-//3.닫기버튼을 클릭했을 때
+//5.닫기버튼을 클릭했을 때
 void FindingDialog::OnClose()
 {
-	this->EndDialog(0);
+	//1. 찾기 다이얼로그를 닫는다.
+	CFindReplaceDialog::OnClose();
 }
 
