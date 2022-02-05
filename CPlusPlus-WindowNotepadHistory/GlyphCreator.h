@@ -7,7 +7,7 @@ class GlyphCreator
 {
 public:
 	GlyphCreator();//디폴트생성자
-	Glyph* Create(char(*letter));//팩토리 메소드 패턴
+	Glyph* Create(char(*letter), bool isRow = true);//팩토리 메소드 패턴
 	~GlyphCreator();//소멸자
 };
 

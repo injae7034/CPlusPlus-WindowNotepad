@@ -76,8 +76,32 @@ Long Subject::Attach(Long index, Observer* observer)
 //옵저버해지
 void Subject::Detach(Observer* observer)
 {
+	// 함수포인터 = [캡처절] (매개변수) mutable(옵션) -> 반환형식 { 함수내용 }
+   /*
+   캡처절에 해당 영역의 데이터를 넣어줄 수 있다.
+   ex) [index]
+   하지만 값을 복제해서 가져오는 것이라 변경할 수 없고 참조형으로 가져오면 바깥의 index 값을 수정할 수 있다.
+   mutable 속성을 사용하면 index의 값을 변경할 순 있으나 복제된 값이기에 바깥의 index와는 연관이 없다.
+   */
+	//람다식표현(함수포인터를 외부에 따로 안쓰고 함수 스택내에서 함수포인터를 정의해서 바로 사용하고,
+	//함수스택이 종료될 때 같이 사라짐!)
+	auto CompareTemp = [](void* one, void* other) -> int
+	{
+		Observer** one_ = (Observer**)one;
+		Observer* other_ = (Observer*)other;
+		int ret;
+		if (*one_ == other_)
+		{
+			ret = 0;
+		}
+		else
+		{
+			ret = 1;
+		}
+		return ret;
+	};
 	//1. 입력받은 옵저버의 주소로 옵저버링크배열의 위치를 구한다.
-	Long index = this->observers.LinearSearchUnique(observer, CompareObserver);
+	Long index = this->observers.LinearSearchUnique(observer, CompareTemp);
 	//2. 옵저버의 주소를 이용해 힙에 할당된 옵저버의 내용을 할당해제한다.
 	if (index != -1)
 	{
@@ -160,4 +184,3 @@ int CompareObserver(void* one, void* other)
 	}
 	return ret;
 }
-

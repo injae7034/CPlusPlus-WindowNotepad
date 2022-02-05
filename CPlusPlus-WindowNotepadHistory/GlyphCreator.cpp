@@ -5,6 +5,7 @@
 #include "DoubleByteLetter.h"
 #include "Clipboard.h"
 #include<cstring>
+#include "DummyRow.h"
 
 using namespace std;
 
@@ -21,10 +22,10 @@ GlyphCreator::~GlyphCreator()
 }
 
 //팩토리메소드패턴
-Glyph* GlyphCreator::Create(char(*letter))
+Glyph* GlyphCreator::Create(char(*letter), bool isRow)
 {
 	Glyph* glyph = 0;
-	if (letter == "clipboard")
+	if (strcmp(letter, "clipboard") == 0)
 	{
 		glyph = new Clipboard();
 	}
@@ -34,7 +35,14 @@ Glyph* GlyphCreator::Create(char(*letter))
 	}
 	else if (letter[0] == '\n' || letter[0] == '\r')
 	{
-		glyph = new Row();
+		if (isRow == true)
+		{
+			glyph = new Row();
+		}
+		else
+		{
+			glyph = new DummyRow();
+		}
 	}
 	else if ((letter[0] & 0x80))//한글이면
 	{

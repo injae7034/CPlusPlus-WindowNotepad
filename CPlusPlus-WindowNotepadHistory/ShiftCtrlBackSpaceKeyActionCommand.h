@@ -1,15 +1,15 @@
-#ifndef _DELETEKEYACTIONCOMMAND_H
-#define _DELETEKEYACTIONCOMMAND_H
+#ifndef _SHIFTCTRLBACKSPACEKEYACTIONCOMMAND_H
+#define _SHIFTCTRLBACKSPACEKEYACTIONCOMMAND_H
 
 #include "Command.h"
 #include "NotepadForm.h"
 
 class Glyph;
 
-class DeleteKeyActionCommand :public Command
+class ShiftCtrlBackSpaceKeyActionCommand :public Command
 {
 public:
-	DeleteKeyActionCommand(NotepadForm* notepadForm = 0);//디폴트생성자
+	ShiftCtrlBackSpaceKeyActionCommand(NotepadForm* notepadForm = 0);//디폴트생성자
 	virtual void Execute();//실행
 	virtual void Unexecute();//실행취소
 	void SetUndoMacroEnd();//실행취소출력 종료지점 설정
@@ -21,7 +21,7 @@ public:
 	bool IsRedoMacroEnd();//다시실행출력 종료지점 구하기
 	bool IsRedone();//다시실행인지 아닌지 구하기
 	bool IsDirty();//변경사항이 있는지 확인 여부
-	virtual ~DeleteKeyActionCommand();//소멸자
+	virtual ~ShiftCtrlBackSpaceKeyActionCommand();//소멸자
 	//인라인함수 선언(인라인함수는 부모클래스에서 물려받을 수 없음)
 	inline Glyph* GetGlyph() const;//멤버로 저장된 글자 구하기
 private:
@@ -35,10 +35,10 @@ private:
 };
 
 //인라인함수 정의
-inline Glyph* DeleteKeyActionCommand::GetGlyph() const
+inline Glyph* ShiftCtrlBackSpaceKeyActionCommand::GetGlyph() const
 {
 	return this->glyph;
 }
 
-#endif // !_DELETEKEYACTIONCOMMAND_H
+#endif // !_SHIFTCTRLBACKSPACEKEYACTIONCOMMAND_H
 

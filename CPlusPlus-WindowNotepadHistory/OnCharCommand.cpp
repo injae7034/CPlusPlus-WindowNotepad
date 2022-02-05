@@ -72,29 +72,34 @@ void OnCharCommand::Execute()
 		currentRowPos = this->notepadForm->note->GetCurrent();
 		//6.2 현재 줄의 캐럿의 위치를 구한다.
 		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//6.3. 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만든다.
+		//6.3 기존에 저장된 줄을 할당해제한다.
+		if (this->glyph != 0)
+		{
+			delete this->glyph;
+		}
+		//6.4. 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만들어 저장한다.
 		this->glyph = this->notepadForm->current->Split(currentLetterPos);
-		//6.4 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
+		//6.5 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
 		if (currentRowPos == this->notepadForm->note->GetLength() - 1)
 		{
-			//6.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
+			//6.5.1 새로운 줄을 마지막 줄 다음에 추가한다.
 			currentRowPos = this->notepadForm->note->Add(this->glyph->Clone());
 		}
-		//6.5 그게 아니면
+		//6.6 그게 아니면
 		else
 		{
-			//6.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
+			//6.6.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
 			currentRowPos = this->notepadForm->note->
 				Add(currentRowPos + 1, this->glyph->Clone());
 		}
-		//6.6 현재 줄을 새로 저장한다.
+		//6.7 현재 줄을 새로 저장한다.
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-		//6.7 현재 줄의 글자 위치를 처음으로 이동시킨다.
+		//6.8 현재 줄의 글자 위치를 처음으로 이동시킨다.
 		this->notepadForm->current->First();
-		//7.8 자동 줄 바꿈이 진행중이면
+		//7.9 자동 줄 바꿈이 진행중이면
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//6.8.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//6.9.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
 		}

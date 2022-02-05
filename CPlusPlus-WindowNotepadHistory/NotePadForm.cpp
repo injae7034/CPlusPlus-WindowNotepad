@@ -320,23 +320,49 @@ void NotepadForm::OnCommand(UINT nId)
 	{
 		//3.1 ConcreteCommand의 execute 함수를 실행한다.
 		command->Execute();
-		//3.2 글자를 입력하는 command이거나 지우는 command이면
-		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND
-			|| nId == ID_BACKSPACEKEYACTIONCOMMAND || nId == ID_DELETEKEYACTIONCOMMAND)
+		//3.2 글자를 입력하는 command이면 !!!***글자입력메모리 누수 잡기
+		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND)
 		{
-			//3.2.1 UndoList에 추가한다.
+			//3.2.1.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);
-			//3.2.2 redoList를 초기화시킨다.
+			//3.2.1.2 redoList를 초기화시킨다.
 			this->commandHistory->MakeRedoListEmpty();
 		}
-		//3.3 글자를 입력하는 command가 아니면
+		//3.3 글자를 지우는 command이면
+		else if (nId == ID_BACKSPACEKEYACTIONCOMMAND || nId == ID_DELETEKEYACTIONCOMMAND
+			|| nId == ID_CTRLBACKSPACEKEYACTIONCOMMAND || nId == ID_CTRLDELETEKEYACTIONCOMMAND
+			|| nId == ID_SHIFTCTRLBACKSPACEKEYACTIONCOMMAND ||
+			nId == ID_SHIFTCTRLDELETEKEYACTIONCOMMAND)
+		{
+			//3.3.1 Command에 변경사항이 있으면
+			if (command->IsDirty() == true)
+			{
+				//3.3.1.1 UndoList에 추가한다.
+				this->commandHistory->PushUndoList(command);
+				//3.3.1.2 redoList를 초기화시킨다.
+				this->commandHistory->MakeRedoListEmpty();
+			}
+			//3.3.2 Command에 변경사항이 없으면
+			else
+			{
+				//3.3.2.1 command를 할당해제한다.
+				if (command != 0)
+				{
+					delete command;
+				}
+			}
+		}
+		//3.3 글자를 입력하는 command나 글자를 지우는 command가 아니면
+		//undoList에 들어간 command가 아니면 따로 할당해제를 해줘야 메모리 누수가 안생긴다.
+		//undoList에 들어간 command는 commandHistory가 소멸될 때, 소멸자에서 같이 할당해제된다.
 		else
 		{
 			//3.3.1 command를 할당해제한다.
-			delete command;
+			if (command != 0)
+			{
+				delete command;
+			}
 		}
-		//undoList에 들어간 command가 아니면 따로 할당해제를 해줘야 메모리 누수가 안생긴다.
-		//undoList에 들어간 command는 commandHistory가 소멸될 때, 소멸자에서 같이 할당해제된다.
 	}
 	//4. 변화를 메모장에 갱신한다.
 	this->Notify();
