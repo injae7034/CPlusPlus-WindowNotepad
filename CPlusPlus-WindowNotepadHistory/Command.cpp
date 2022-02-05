@@ -78,18 +78,6 @@ Long Command::GetLetterIndex()
 	return -1;
 }
 
-//선택이 시작되는 글자의 위치구하기
-Long Command::GetSelectedStartXPos()
-{
-	return -1;
-}
-
-//선택이 시작되는 줄의 위치구하기
-Long Command::GetSelectedStartYPos()
-{
-	return -1;
-}
-
 //소멸자
 Command::~Command()
 {

@@ -19,8 +19,6 @@ public:
 	virtual bool IsSelectedTextsRemoved();
 	virtual Long GetRowIndex();
 	virtual Long GetLetterIndex();
-	virtual Long GetSelectedStartXPos();
-	virtual Long GetSelectedStartYPos();
 	virtual ~Command() = 0;//추상클래스 소멸자
 	//인라인함수정의
 	NotepadForm* GetNotepadForm() const;

@@ -17,7 +17,6 @@ DeleteKeyActionCommand::DeleteKeyActionCommand(NotepadForm* notepadForm)
 	this->isRedoMacroEnd = false;
 	this->isRedone = false;
 	this->isDirty = false;//처음에 생성될 때는 변경사항이 없으므로 false가 디폴트값임.
-	this->isSelectedTextsRemoved = false;//처음에 생성될 때는 선택영역이 안지워졌으므로 false가 디폴트값
 }
 
 //실행
@@ -158,10 +157,6 @@ void DeleteKeyActionCommand::Execute()
 	{
 		//5.1 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
 		this->notepadForm->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
-		//5.2 Command에 변경 사항이 있음을 표시한다.
-		this->isDirty = true;
-		//5.3 Command에서 선택영역이 지워졌음을 표시한다.
-		this->isSelectedTextsRemoved = true;
 	}
 	//6. Command에 변경 사항이 있으면
 	if (this->isDirty == true)
@@ -197,122 +192,118 @@ void DeleteKeyActionCommand::Execute()
 //실행취소
 void DeleteKeyActionCommand::Unexecute()
 {
-	//1. 선택된 영역을 지우지 않았으면
-	if (this->isSelectedTextsRemoved == false)
+	//1. RowAutoChange를 생성한다.
+	RowAutoChange rowAutoChange(this->notepadForm);
+	Long changedRowPos = 0;
+	Long changedLetterPos = 0;
+	Long originRowPos = this->rowIndex;
+	Long originLetterPos = this->letterIndex;
+	//2. 현재 줄의 위치를 이동시킨다.(캐럿이 다른 곳에 있으면 그 곳에 글자가 지워지기 때문에)
+	Long currentRowPos = this->notepadForm->note->Move(this->rowIndex);
+	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+	//3. 현재 글자의 위치를 이동시킨다.
+	Long currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
+	//4. 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치가 저장되어 있음)
+	if (this->notepadForm->isRowAutoChanging == true)
 	{
-		//1. RowAutoChange를 생성한다.
-		RowAutoChange rowAutoChange(this->notepadForm);
-		Long changedRowPos = 0;
-		Long changedLetterPos = 0;
-		Long originRowPos = this->rowIndex;
-		Long originLetterPos = this->letterIndex;
-		//2. 현재 줄의 위치를 이동시킨다.(캐럿이 다른 곳에 있으면 그 곳에 글자가 지워지기 때문에)
-		Long currentRowPos = this->notepadForm->note->Move(this->rowIndex);
+		//4.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+		rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
+			&changedRowPos);
+		//4.2 현재 줄의 위치와 글자 위치를 다시 조정한다.
+		currentRowPos = this->notepadForm->note->Move(changedRowPos);
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-		//3. 현재 글자의 위치를 이동시킨다.
-		Long currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
-		//4. 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치가 저장되어 있음)
-		if (this->notepadForm->isRowAutoChanging == true)
+		currentLetterPos = this->notepadForm->current->Move(changedLetterPos);
+	}
+	//5. 지울 때 저장한 glyph가 줄(개행문자)이 아니면
+	if (!dynamic_cast<Row*>(this->glyph))
+	{
+		//5.1 현재 줄의 글자 위치가 현재 줄의 글자개수와 같으면
+		if (currentLetterPos == this->notepadForm->current->GetLength())
 		{
-			//4.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
-			rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
-				&changedRowPos);
-			//4.2 현재 줄의 위치와 글자 위치를 다시 조정한다.
-			currentRowPos = this->notepadForm->note->Move(changedRowPos);
-			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-			currentLetterPos = this->notepadForm->current->Move(changedLetterPos);
+			//5.1.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
+			//여기서 command가 가지고 있는 glyph를 깊은 복사해서 줄에 추가해준다.
+			//Command의 glyph는 note와는 따로 가지고 있어야 나중에 에러가 안나고 할당해제하기 편하다.
+			//그리고 glyph의 원래 주인은 command이기 때문에 note가 깊은 복사를 해서 가져가는게 논리상 맞다.
+			//그럼 이제 note가 할당해제될 때 자기가 깊은 복사를 한 glyph를 할당해제하고,
+			//command가 할당해제될 때 자기가 가지고 있는 glyph를 할당해제 하기 때문에 어디서 할당해제할지
+			//말지 머리 아플 일이 없고, 여러모로 command의 glyph를 관리하기 편하기 때문에 
+			//command는 note와는 별도로 자기만의 glyph를 가지고 있어야한다.
+			//아니면 나중에 Backspace를 다지우고 다시 글자를 입력할 때 PushUndo에서 에러가 난다.!
+			currentLetterPos = this->notepadForm->current->Add(this->glyph->Clone());
 		}
-		//5. 지울 때 저장한 glyph가 줄(개행문자)이 아니면
-		if (!dynamic_cast<Row*>(this->glyph))
-		{
-			//5.1 현재 줄의 글자 위치가 현재 줄의 글자개수와 같으면
-			if (currentLetterPos == this->notepadForm->current->GetLength())
-			{
-				//5.1.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
-				//여기서 command가 가지고 있는 glyph를 깊은 복사해서 줄에 추가해준다.
-				//Command의 glyph는 note와는 따로 가지고 있어야 나중에 에러가 안나고 할당해제하기 편하다.
-				//그리고 glyph의 원래 주인은 command이기 때문에 note가 깊은 복사를 해서 가져가는게 논리상 맞다.
-				//그럼 이제 note가 할당해제될 때 자기가 깊은 복사를 한 glyph를 할당해제하고,
-				//command가 할당해제될 때 자기가 가지고 있는 glyph를 할당해제 하기 때문에 어디서 할당해제할지
-				//말지 머리 아플 일이 없고, 여러모로 command의 glyph를 관리하기 편하기 때문에 
-				//command는 note와는 별도로 자기만의 glyph를 가지고 있어야한다.
-				//아니면 나중에 Backspace를 다지우고 다시 글자를 입력할 때 PushUndo에서 에러가 난다.!
-				currentLetterPos = this->notepadForm->current->Add(this->glyph->Clone());
-			}
-			//5.2 현재 줄의 글자 위치가 현재 줄의 글자개수와 다르면
-			else
-			{
-				//5.2.1 현재 줄의 글자 위치에 글자를 끼워서 추가한다.
-				currentLetterPos = this->notepadForm->current->
-					Add(currentLetterPos, this->glyph->Clone());
-			}
-			//5.3 글자위치를 현재 글자보다 앞에 위치하게 조정한다.
-			currentLetterPos = this->notepadForm->current->Previous();
-		}
-		//6. 지울 때 저장한 glyph가 줄(개행문자)이면
+		//5.2 현재 줄의 글자 위치가 현재 줄의 글자개수와 다르면
 		else
 		{
-			//6.1 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만든다.
-			Glyph* row = this->notepadForm->current->Split(currentLetterPos);
-			//6.2 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
-			if (currentRowPos == this->notepadForm->note->GetLength() - 1)
-			{
-				//6.2.1 새로운 줄을 마지막 줄 다음에 추가한다.
-				currentRowPos = this->notepadForm->note->Add(row);
-			}
-			//6.3 그게 아니면
-			else
-			{
-				//6.3.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
-				currentRowPos = this->notepadForm->note->
-					Add(currentRowPos + 1, row);
-			}
-			//6.4 현재 줄을 새로 저장한다.
-			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-			//6.5 현재 줄의 글자 위치를 처음으로 이동시킨다.
-			this->notepadForm->current->First();
-			//6.6 자동 줄 바꿈이 진행중이면
-			if (this->notepadForm->isRowAutoChanging == true)
-			{
-				//6.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-				//OnSize에서 부분자동개행을 하도록 한다. 
-				this->notepadForm->SendMessage(WM_SIZE);
-			}
-			//자동개행이 끝난 후에 현재 줄의 이전 줄의 마지막 글자 위치로 이동시킨다.
-			//6.7 현재 줄을 새로 저장한다.(새로 생성된 줄이 아니라 분리한 줄을 현재 줄로 한다.)
-			currentRowPos = this->notepadForm->note->Move(currentRowPos - 1);
-			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-			//6.8 현재 줄의 글자 위치를 마지막으로 이동시킨다.
-			this->notepadForm->current->Last();
+			//5.2.1 현재 줄의 글자 위치에 글자를 끼워서 추가한다.
+			currentLetterPos = this->notepadForm->current->
+				Add(currentLetterPos, this->glyph->Clone());
 		}
-		//변경사항을 갱신함
-		//7. isComposing을 false로 바꾼다.
-		this->notepadForm->isComposing = false;
-		//8. 메모장 제목에 *를 추가한다.
-		string name = this->notepadForm->fileName;
-		name.insert(0, "*");
-		name += " - 메모장";
-		this->notepadForm->SetWindowText(CString(name.c_str()));
-		//9. 메모장에 변경사항이 있음을 저장한다.
-		this->notepadForm->isDirty = true;
-		//10. 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-		this->rowIndex = this->notepadForm->note->GetCurrent();
-		this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
-		this->letterIndex = this->notepadForm->current->GetCurrent();
-		//11. 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
+		//5.3 글자위치를 현재 글자보다 앞에 위치하게 조정한다.
+		currentLetterPos = this->notepadForm->current->Previous();
+	}
+	//6. 지울 때 저장한 glyph가 줄(개행문자)이면
+	else
+	{
+		//6.1 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만든다.
+		Glyph* row = this->notepadForm->current->Split(currentLetterPos);
+		//6.2 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
+		if (currentRowPos == this->notepadForm->note->GetLength() - 1)
+		{
+			//6.2.1 새로운 줄을 마지막 줄 다음에 추가한다.
+			currentRowPos = this->notepadForm->note->Add(row);
+		}
+		//6.3 그게 아니면
+		else
+		{
+			//6.3.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
+			currentRowPos = this->notepadForm->note->
+				Add(currentRowPos + 1, row);
+		}
+		//6.4 현재 줄을 새로 저장한다.
+		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+		//6.5 현재 줄의 글자 위치를 처음으로 이동시킨다.
+		this->notepadForm->current->First();
+		//6.6 자동 줄 바꿈이 진행중이면
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			Long changedRowPos = this->rowIndex;
-			Long changedLetterPos = this->letterIndex;
-			Long originRowPos = 0;
-			Long originLetterPos = 0;
-			//11.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
-			rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
-				&originRowPos);
-			//11.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-			this->rowIndex = originRowPos;
-			this->letterIndex = originLetterPos;
+			//6.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//OnSize에서 부분자동개행을 하도록 한다. 
+			this->notepadForm->SendMessage(WM_SIZE);
 		}
+		//자동개행이 끝난 후에 현재 줄의 이전 줄의 마지막 글자 위치로 이동시킨다.
+		//6.7 현재 줄을 새로 저장한다.(새로 생성된 줄이 아니라 분리한 줄을 현재 줄로 한다.)
+		currentRowPos = this->notepadForm->note->Move(currentRowPos - 1);
+		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+		//6.8 현재 줄의 글자 위치를 마지막으로 이동시킨다.
+		this->notepadForm->current->Last();
+	}
+	//변경사항을 갱신함
+	//7. isComposing을 false로 바꾼다.
+	this->notepadForm->isComposing = false;
+	//8. 메모장 제목에 *를 추가한다.
+	string name = this->notepadForm->fileName;
+	name.insert(0, "*");
+	name += " - 메모장";
+	this->notepadForm->SetWindowText(CString(name.c_str()));
+	//9. 메모장에 변경사항이 있음을 저장한다.
+	this->notepadForm->isDirty = true;
+	//10. 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+	this->rowIndex = this->notepadForm->note->GetCurrent();
+	this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
+	this->letterIndex = this->notepadForm->current->GetCurrent();
+	//11. 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
+	if (this->notepadForm->isRowAutoChanging == true)
+	{
+		Long changedRowPos = this->rowIndex;
+		Long changedLetterPos = this->letterIndex;
+		Long originRowPos = 0;
+		Long originLetterPos = 0;
+		//11.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+		rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+			&originRowPos);
+		//11.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+		this->rowIndex = originRowPos;
+		this->letterIndex = originLetterPos;
 	}
 }
 
@@ -363,12 +354,6 @@ bool DeleteKeyActionCommand::IsDirty()
 {
 	return this->isDirty;
 }
-//선택영역이 지워졌는지 확인 여부
-bool DeleteKeyActionCommand::IsSelectedTextsRemoved()
-{
-	return this->isSelectedTextsRemoved;
-}
-
 
 //소멸자 정의
 DeleteKeyActionCommand::~DeleteKeyActionCommand()
