@@ -131,47 +131,9 @@ void BackSpaceKeyActionCommand::Execute()
 				//4.2.3.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 				//OnSize에서 부분자동개행을 하도록 한다. 
 				this->notepadForm->SendMessage(WM_SIZE);
-				//4.2.3.2 자동개행 후에 캐럿의 위치가 줄의 마지막 글자에 있으면
-				//currentLetterPos = this->notepadForm->current->GetCurrent();
-				//if (currentLetterPos == this->notepadForm->current->GetLength())
-				//{
-					//4.2.3.2 자동개행 후에 다시 줄의 위치와 글자위치를 재조정한다.
-				//	currentRowPos = this->notepadForm->note->Move(currentRowPos);
-				//	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-				//	currentLetterPos = this->notepadForm->current->First();
-				//}
 			}
 			///4.2.4 Command에 변경 사항이 있음을 표시한다.
 			this->isDirty = true;
-		}
-		//4.3 Command에 변경 사항이 있으면
-		if (this->isDirty == true)
-		{
-			//4.3.1 메모장 제목에 *를 추가한다.
-			string name = this->notepadForm->fileName;
-			name.insert(0, "*");
-			name += " - 메모장";
-			this->notepadForm->SetWindowText(CString(name.c_str()));
-			//4.3.2 메모장에 변경사항이 있음을 저장한다.
-			this->notepadForm->isDirty = true;
-			//4.3.3 글자를 지운 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-			this->rowIndex = this->notepadForm->note->GetCurrent();
-			this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
-			this->letterIndex = this->notepadForm->current->GetCurrent();
-			//4.3.4 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
-			if (this->notepadForm->isRowAutoChanging == true)
-			{
-				Long changedRowPos = this->rowIndex;
-				Long changedLetterPos = this->letterIndex;
-				Long originRowPos = 0;
-				Long originLetterPos = 0;
-				//4.3.4.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
-				rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
-					&originRowPos);
-				//4.3.4.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-				this->rowIndex = originRowPos;
-				this->letterIndex = originLetterPos;
-			}
 		}	
 	}
 	//5. 메모장에서 선택된 texts가 있으면
@@ -179,6 +141,35 @@ void BackSpaceKeyActionCommand::Execute()
 	{
 		//5.1 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
 		this->notepadForm->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
+	}
+	//6. Command에 변경 사항이 있으면
+	if (this->isDirty == true)
+	{
+		//6.1 메모장 제목에 *를 추가한다.
+		string name = this->notepadForm->fileName;
+		name.insert(0, "*");
+		name += " - 메모장";
+		this->notepadForm->SetWindowText(CString(name.c_str()));
+		//6.2 메모장에 변경사항이 있음을 저장한다.
+		this->notepadForm->isDirty = true;
+		//6.3 글자를 지운 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+		this->rowIndex = this->notepadForm->note->GetCurrent();
+		this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
+		this->letterIndex = this->notepadForm->current->GetCurrent();
+		//6.4 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
+		if (this->notepadForm->isRowAutoChanging == true)
+		{
+			Long changedRowPos = this->rowIndex;
+			Long changedLetterPos = this->letterIndex;
+			Long originRowPos = 0;
+			Long originLetterPos = 0;
+			//6.4.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+			rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+				&originRowPos);
+			//6.4.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+			this->rowIndex = originRowPos;
+			this->letterIndex = originLetterPos;
+		}
 	}
 }
 

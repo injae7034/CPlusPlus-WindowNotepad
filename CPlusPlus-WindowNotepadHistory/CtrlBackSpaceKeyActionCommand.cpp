@@ -53,417 +53,275 @@ void CtrlBackSpaceKeyActionCommand::Execute()
 	//4. 메모장에서 선택된 texts가 없으면
 	if (this->notepadForm->isSelecting == false)
 	{
-		//제일 첫 줄이면 줄을 지울 수 없고, 제일 첫 줄에서 글자 위치가 제일 처음에 있으면
-		//아무것도 안일어남. 현재 줄의 위치가 제일 처음이 아니고, 현재 글자 위치가 제일 처음이면
-		//현재 줄을 이전 줄에 Join시킨다.
-		//4.1 현재 줄의 위치가 0보다 크고, 현재 글자 위치가 0이면
-		Glyph* letter = 0;
-		Long letterPosAfterMoving = 0;
-		Glyph* currentRow = 0;
-		if (currentRowPos > 0 && currentLetterPos == 0)
+		//4.1 현재 줄을 구한다.
+		Glyph* currentRow = this->notepadForm->note->GetAt(currentRowPos);
+		//4.2 현재 줄의 위치가 0이고, 현재 글자 위치가 0이면
+		if (currentRowPos == 0 && currentLetterPos == 0)
 		{
-			//4.1.1 현재 줄을 구한다.
-			currentRow = this->notepadForm->note->GetAt(currentRowPos);
-			//4.1.2 현재 줄이 가짜줄이 아니면(진짜 줄이면)
-			if (!dynamic_cast<DummyRow*>(currentRow))
-			{
-				//4.1.2.1 처음 실행이 되면
-				if (this->isRedone == false)
-				{
-					//4.1.2.1.1 Row를 생성한다.
-					this->glyph = new Row();
-				}
-				//4.1.2.2 현재 줄의 이전 줄을 구한다.
-				Glyph* previousRow = this->notepadForm->note->GetAt(currentRowPos - 1);
-				//4.1.2.3 현재 줄의 이전 줄의 마지막 글자 위치를 구한다.
-				Long letterPos = previousRow->GetLength();
-				//4.1.2.4 현재 줄을 이전 줄에 합친다.
-				currentRow->Join(previousRow);
-				//4.1.2.5 Note에서 현재 줄의 주소를 지운다.
-				this->notepadForm->note->Remove(currentRowPos);
-				//4.1.2.6 현재 줄이 지워졌기 때문에 현재 줄을 변경한다.
-				currentRowPos = this->notepadForm->note->GetCurrent();
-				this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-				//4.1.2.7 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
-				//이전 줄의 마지막 현재 줄의 처음 사이에 위치하도록 조정한다.
-				currentLetterPos = this->notepadForm->current->Move(letterPos);
-			}
-			//4.1.3 현재 줄이 가짜줄이면
-			else
-			{
-				//4.1.3.1 이전 줄의 마지막 글자위치로 이동한다.
-				currentRowPos = this->notepadForm->note->Move(currentRowPos - 1);
-				this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-				currentLetterPos = this->notepadForm->current->Last();
-				//4.1.3.2 처음 실행이 되면
-				if (this->isRedone == false)
-				{
-					//DummyRow를 생성해서 글자를 담고 그걸 복사해서 this->glyph에 주소를 옮기고,
-					//글자들을 단어단위로 지우기전에 옮겨서 저장한다.
-					//4.1.3.2.1 DummyRow를 생성한다.
-					this->glyph = new DummyRow();
-					//4.2.3.2.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
-					letterPosAfterMoving = this->notepadForm->current->PreviousWord();
-					//4.2.3.2.3 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
-					//현재 글자 위치보다 작은동안 반복한다.
-					while (letterPosAfterMoving < currentLetterPos)
-					{
-						//4.2.3.2.3.1 글자를 지우기 전에 글자를 구한다.
-						letter = this->notepadForm->current->GetAt(letterPosAfterMoving);
-						//4.2.3.2.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
-						this->glyph->Add(letter->Clone());
-						//4.2.3.2.3.3 글자를 지운다.
-						this->notepadForm->current->Remove(letterPosAfterMoving);
-						currentLetterPos--;
-					}
-					//4.2.3.2.4 단어단위로 이동했을 때 가짜 줄의 맨 처음 글자인동안 반복한다.
-					//한단어가 자동개행일 때 몇줄에 걸쳐져있을수도 있기 때문에 선택구조 대신에 반복구조!
-					while (letterPosAfterMoving == 0)
-					{
-						//4.2.3.2.4.1 현재 줄에서 이전 줄의 마지막 글자로 이동한다.
-						currentRowPos = this->notepadForm->note->Previous();
-						this->notepadForm->current = this->notepadForm->
-							note->GetAt(currentRowPos);
-						currentLetterPos = this->notepadForm->current->Last();
-						//4.2.3.2.4.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
-						letterPosAfterMoving = this->notepadForm->current->PreviousWord();
-						//4.2.3.2.4.3 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
-						//현재 글자 위치보다 작은동안 반복한다.
-						while (letterPosAfterMoving < currentLetterPos)
-						{
-							//4.2.3.2.4.3.1 글자를 지우기 전에 글자를 구한다.
-							letter = this->notepadForm->current->GetAt(currentLetterPos - 1);
-							//4.2.3.2.4.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
-							this->glyph->Add(0, letter->Clone());
-							//4.2.3.2.4.3.3 글자를 지운다.
-							this->notepadForm->current->Remove(currentLetterPos - 1);
-							currentLetterPos--;
-						}
-					}
-				}
-				//다시 실행될때는 여기로 들어오지 않고 자동개행 위치를 반영해서 
-				//else if (currentLetterPos > 0)여기로 들어오기 때문에 다시실행은 신경쓸 필요X
-
-				//4.1.3.3 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-				//OnSize에서 부분자동개행을 하도록 한다. 
-				//가짜줄이 있다는게 자동개행이 진행중이라는 의미임.
-				this->notepadForm->SendMessage(WM_SIZE);
-			}
-			//4.1.4 Command에 변경 사항이 있음을 표시한다.
-			this->isDirty = true;
-		}
-		// 현재 글자 위치가 처음이 아닐 때(현재 줄이 처음이든 아니든 상관없음) 현재 글자를 지운다.
-		//4.2 현재 글자 위치가 처음이 아니면
-		else if (currentLetterPos > 0)
-		{
-			//4.2.1 처음 실행이 되면
+			//4.2.1 처음 실행이면
 			if (this->isRedone == false)
 			{
-				//DummyRow를 생성해서 글자를 담고 그걸 복사해서 this->glyph에 주소를 옮기고,
-				//글자들을 단어단위로 지우기전에 옮겨서 저장한다.
-				//4.2.1.1 DummyRow를 생성한다.
+				//4.2.1.1 Command에 변경 사항이 없음을 표시한다.
+				this->isDirty = false;
+			}
+		}
+		//4.3 현재 줄의 위치가 0보다 크고, 현재 글자 위치가 0이고, 현재 줄이 진짜 줄이면
+		else if (currentRowPos > 0 && currentLetterPos == 0
+			&& !dynamic_cast<DummyRow*>(currentRow))
+		{
+			//4.3.1 처음 실행이면
+			if (this->isRedone == false)
+			{
+				//4.3.1.1 Row를 생성한다.
+				this->glyph = new Row();
+			}
+			//4.3.2.2 현재 줄의 이전 줄을 구한다.
+			Glyph* previousRow = this->notepadForm->note->GetAt(currentRowPos - 1);
+			//4.3.2.3 현재 줄의 이전 줄의 마지막 글자 위치를 구한다.
+			Long letterPos = previousRow->GetLength();
+			//4.3.2.4 현재 줄을 이전 줄에 합친다.
+			currentRow->Join(previousRow);
+			//4.3.2.5 Note에서 현재 줄의 주소를 지운다.
+			this->notepadForm->note->Remove(currentRowPos);
+			//4.3.2.6 현재 줄이 지워졌기 때문에 현재 줄을 변경한다.
+			currentRowPos = this->notepadForm->note->GetCurrent();
+			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+			//4.3.2.7 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
+			//이전 줄의 마지막 현재 줄의 처음 사이에 위치하도록 조정한다.
+			currentLetterPos = this->notepadForm->current->Move(letterPos);
+			//4.3.2.8 Command에 변경 사항이 있음을 표시한다.
+			this->isDirty = true;
+		}
+		//4.4 그 이외에는
+		else
+		{
+			//4.4.1 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
+			Long letterPosAfterMoving = this->notepadForm->current->PreviousWord();
+			Glyph* letter = 0;
+			//4.4.2 처음 실행이면
+			if (this->isRedone == false)
+			{
+				//4.4.2.1 DummyRow를 생성한다.
 				this->glyph = new DummyRow();
-				//4.2.1.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
-				letterPosAfterMoving = this->notepadForm->current->PreviousWord();
-				//4.2.1.3 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
+				//4.4.2.2 Command에 변경 사항이 있음을 표시한다.
+				this->isDirty = true;
+				//4.1.5.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
 				//현재 글자 위치보다 작은동안 반복한다.
 				while (letterPosAfterMoving < currentLetterPos)
 				{
-					//4.2.1.3.1 글자를 지우기 전에 글자를 구한다.
+					//4.1.5.2.1 글자를 지우기 전에 글자를 구한다.
 					letter = this->notepadForm->current->GetAt(letterPosAfterMoving);
-					//4.2.1.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
+					//4.1.5.2.2 글자를 깊은 복사해서 DummyRow에 저장한다.
 					this->glyph->Add(letter->Clone());
-					//4.2.1.3.3 글자를 지운다.
+					//4.1.5.2.3 글자를 지운다.
 					this->notepadForm->current->Remove(letterPosAfterMoving);
 					currentLetterPos--;
 				}
-				//4.2.1.4 단어단위로 이동했을 때 가짜 줄의 맨 처음 글자인동안 그리고
+				//4.1.5.3 단어단위로 이동했을 때 가짜 줄의 맨 처음 글자인동안 그리고
 				//현재 줄이 가짜 줄인동안 반복한다.(진짜 줄인 경우 이동후 글자위치가 0이라도 멈춰야함)
 				//한단어가 자동개행일 때 몇줄에 걸쳐져있을수도 있기 때문에 선택구조 대신에 반복구조!
 				while (letterPosAfterMoving == 0 &&
 					dynamic_cast<DummyRow*>(this->notepadForm->current))
 				{
-					//4.2.1.4.1 현재 줄에서 이전 줄의 마지막 글자로 이동한다.
+					//4.1.5.3.1 현재 줄에서 이전 줄의 마지막 글자로 이동한다.
 					currentRowPos = this->notepadForm->note->Previous();
 					this->notepadForm->current = this->notepadForm->
 						note->GetAt(currentRowPos);
 					currentLetterPos = this->notepadForm->current->Last();
-					//4.2.1.4.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
+					//4.1.5.3.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
 					letterPosAfterMoving = this->notepadForm->current->PreviousWord();
-					//4.2.1.4.3 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
+					//4.1.5.3.3 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
 					//현재 글자 위치보다 작은동안 반복한다.
 					while (letterPosAfterMoving < currentLetterPos)
 					{
-						//4.2.1.4.3.1 글자를 지우기 전에 글자를 구한다.
+						//4.1.5.3.3.1 글자를 지우기 전에 글자를 구한다.
 						letter = this->notepadForm->current->GetAt(currentLetterPos - 1);
-						//4.2.1.4.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
+						//4.1.5.3.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
 						this->glyph->Add(0, letter->Clone());
-						//4.2.1.4.3.3 글자를 지운다.
+						//4.1.5.3.3.3 글자를 지운다.
 						this->notepadForm->current->Remove(currentLetterPos - 1);
 						currentLetterPos--;
 					}
 				}
 			}
-			//4.2.2 처음 실행이 아니면
+			
+		}
+#if 0
+		//4.1 처음 실행이면
+		if (this->isRedone == false)
+		{
+			//4.1.1 현재 줄을 구한다.
+			Glyph* currentRow = this->notepadForm->note->GetAt(currentRowPos);
+			//4.1.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
+			Long letterPosAfterMoving = this->notepadForm->current->PreviousWord();
+			//4.1.3 현재 줄의 위치가 0이고, 단어 단위로 왼쪽으로 이동했을 때 이동이 없으면
+			if (currentRowPos == 0 && currentLetterPos == letterPosAfterMoving)
+			{
+				//4.1.3.1 Command에 변경 사항이 없음을 표시한다.
+				this->isDirty = false;
+			}
+			//4.1.4 현재 줄의 위치가 0보다 크고, 현재 글자 위치가 단어단위로 왼쪽으로 이동한 위치와 같고
+			//(단어 단위로 왼쪽으로 이동이 없고), 현재 줄이 가짜 줄이 아니고 진짜 줄이면
+			else if (currentRowPos > 0 && currentLetterPos == letterPosAfterMoving
+				&& !dynamic_cast<DummyRow*>(currentRow))
+			{
+				//4.1.4.1 Row를 생성한다.
+				this->glyph = new Row();
+				//4.1.4.2 현재 줄의 이전 줄을 구한다.
+				Glyph* previousRow = this->notepadForm->note->GetAt(currentRowPos - 1);
+				//4.1.4.3 현재 줄의 이전 줄의 마지막 글자 위치를 구한다.
+				Long letterPos = previousRow->GetLength();
+				//4.1.4.4 현재 줄을 이전 줄에 합친다.
+				currentRow->Join(previousRow);
+				//4.1.4.5 Note에서 현재 줄의 주소를 지운다.
+				this->notepadForm->note->Remove(currentRowPos);
+				//4.1.4.6 현재 줄이 지워졌기 때문에 현재 줄을 변경한다.
+				currentRowPos = this->notepadForm->note->GetCurrent();
+				this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+				//4.1.4.7 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
+				//이전 줄의 마지막 현재 줄의 처음 사이에 위치하도록 조정한다.
+				currentLetterPos = this->notepadForm->current->Move(letterPos);
+				//4.1.4.8 Command에 변경 사항이 있음을 표시한다.
+				this->isDirty = true;
+			}
+			//4.1.5 그 이외에는
 			else
 			{
-				//4.2.2.1 command에 저장되어 있는 줄의 글자개수를 구한다.
-				Long lengthOfCommandRow = this->glyph->GetLength();
-				//4.2.2.2 currentLetterPos가 lengthOfCommandRow보다 크거나 같으면
-				if (currentLetterPos >= lengthOfCommandRow)
+				//4.1.5.1 DummyRow를 생성한다.
+				this->glyph = new DummyRow();
+				//4.1.5.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
+				//현재 글자 위치보다 작은동안 반복한다.
+				Glyph* letter = 0;
+				while (letterPosAfterMoving < currentLetterPos)
 				{
-					//4.2.2.2.1 lengthOfCommandRow가 0보다 큰동안 반복한다.
-					while (lengthOfCommandRow > 0)
+					//4.1.5.2.1 글자를 지우기 전에 글자를 구한다.
+					letter = this->notepadForm->current->GetAt(letterPosAfterMoving);
+					//4.1.5.2.2 글자를 깊은 복사해서 DummyRow에 저장한다.
+					this->glyph->Add(letter->Clone());
+					//4.1.5.2.3 글자를 지운다.
+					this->notepadForm->current->Remove(letterPosAfterMoving);
+					currentLetterPos--;
+				}
+				//4.1.5.3 단어단위로 이동했을 때 가짜 줄의 맨 처음 글자인동안 그리고
+				//현재 줄이 가짜 줄인동안 반복한다.(진짜 줄인 경우 이동후 글자위치가 0이라도 멈춰야함)
+				//한단어가 자동개행일 때 몇줄에 걸쳐져있을수도 있기 때문에 선택구조 대신에 반복구조!
+				while (letterPosAfterMoving == 0 &&
+					dynamic_cast<DummyRow*>(this->notepadForm->current))
+				{
+					//4.1.5.3.1 현재 줄에서 이전 줄의 마지막 글자로 이동한다.
+					currentRowPos = this->notepadForm->note->Previous();
+					this->notepadForm->current = this->notepadForm->
+						note->GetAt(currentRowPos);
+					currentLetterPos = this->notepadForm->current->Last();
+					//4.1.5.3.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
+					letterPosAfterMoving = this->notepadForm->current->PreviousWord();
+					//4.1.5.3.3 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
+					//현재 글자 위치보다 작은동안 반복한다.
+					while (letterPosAfterMoving < currentLetterPos)
 					{
-						//4.2.2.2.1.1 글자를 지운다.
+						//4.1.5.3.3.1 글자를 지우기 전에 글자를 구한다.
+						letter = this->notepadForm->current->GetAt(currentLetterPos - 1);
+						//4.1.5.3.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
+						this->glyph->Add(0, letter->Clone());
+						//4.1.5.3.3.3 글자를 지운다.
+						this->notepadForm->current->Remove(currentLetterPos - 1);
+						currentLetterPos--;
+					}
+				}
+				//4.1.5.4 Command에 변경 사항이 있음을 표시한다.
+				this->isDirty = true;
+			}	
+		}
+		//4.2 다시 실행이면
+		else
+		{
+			//4.2.1 command에 저장되어 있는 줄의 글자개수를 구한다.
+			Long lengthOfCommandRow = this->glyph->GetLength();
+			//4.2.2 currentLetterPos가 lengthOfCommandRow보다 크거나 같으면
+			if (currentLetterPos >= lengthOfCommandRow)
+			{
+				//4.2.2.1 lengthOfCommandRow가 0보다 큰동안 반복한다.
+				while (lengthOfCommandRow > 0)
+				{
+					//4.2.2.1.1 글자를 지운다.
+					this->notepadForm->current->Remove(currentLetterPos - 1);
+					currentLetterPos--;
+					lengthOfCommandRow--;
+				}
+			}
+			//4.2.3 currentLetterPos가 lengthOfCommandRow보다 작으면
+			else
+			{
+				//4.2.3.1 lengthOfCommandRow가 0보다 큰동안 반복한다.
+				while (lengthOfCommandRow > 0)
+				{
+					//4.2.3.1.1 currentLetterPos가 0보다 큰 동안 그리고 
+					//lengthOfCommandRow가 0보다 큰동안 반복한다.
+					while (currentLetterPos > 0 && lengthOfCommandRow > 0)
+					{
+						//4.2.3.1.1.1 글자를 지운다.
 						this->notepadForm->current->Remove(currentLetterPos - 1);
 						currentLetterPos--;
 						lengthOfCommandRow--;
 					}
-				}
-				//4.2.2.3 currentLetterPos가 lengthOfCommandRow보다 작으면
-				else
-				{
-					//4.2.2.3.1 lengthOfCommandRow가 0보다 큰동안 반복한다.
-					while (lengthOfCommandRow > 0)
+					//4.2.3.1.2 lengthOfCommandRow가 0보다 크면
+					if (lengthOfCommandRow > 0)
 					{
-						//4.2.2.3.1.1 currentLetterPos가 0보다 큰 동안 그리고 
-						//lengthOfCommandRow가 0보다 큰동안 반복한다.
-						while (currentLetterPos > 0 && lengthOfCommandRow > 0)
-						{
-							//4.2.2.3.1.1.1 글자를 지운다.
-							this->notepadForm->current->Remove(currentLetterPos - 1);
-							currentLetterPos--;
-							lengthOfCommandRow--;
-						}
-						//4.2.2.3.1.2 lengthOfCommandRow가 0보다 크면
-						if (lengthOfCommandRow > 0)
-						{
-							//4.2.2.3.1.2.1 현재 줄의 이전 줄로 이동한다.
-							currentRowPos = this->notepadForm->note->Previous();
-							this->notepadForm->current = this->notepadForm->
-								note->GetAt(currentRowPos);
-							//4.2.2.3.1.2.1 줄의 길이를 currentLetterPos에 저장한다.
-							currentLetterPos = this->notepadForm->current->GetLength();
-						}
-					}
-				}
-			}
-
-#if 0
-			//4.2.1 현재 줄을 구한다.
-			currentRow = this->notepadForm->note->GetAt(currentRowPos);
-			//4.2.2 현재 줄이 가짜줄이 아니면(진짜 줄이면)
-			if (!dynamic_cast<DummyRow*>(currentRow))
-			{
-				//4.2.2.1 처음 실행이 되면
-				if (this->isRedone == false)
-				{
-					//DummyRow를 생성해서 글자를 담고 그걸 복사해서 this->glyph에 주소를 옮기고,
-					//글자들을 단어단위로 지우기전에 옮겨서 저장한다.
-					//4.2.1.1 DummyRow를 생성한다.
-					this->glyph = new DummyRow();
-					//4.2.1.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
-					letterPosAfterMoving = this->notepadForm->current->PreviousWord();
-					//4.2.1.3 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
-					//현재 글자 위치보다 작은동안 반복한다.
-					while (letterPosAfterMoving < currentLetterPos)
-					{
-						//4.2.1.3.1 글자를 지우기 전에 글자를 구한다.
-						letter = this->notepadForm->current->GetAt(letterPosAfterMoving);
-						//4.2.1.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
-						this->glyph->Add(letter->Clone());
-						//4.2.1.3.3 글자를 지운다.
-						this->notepadForm->current->Remove(letterPosAfterMoving);
-						currentLetterPos--;
-					}
-				}
-				//4.2.2 처음 실행이 아니면
-				else
-				{
-					//4.2.2.1 command에 저장되어 있는 줄의 글자개수를 구한다.
-					Long lengthOfCommandRow = this->glyph->GetLength();
-					//4.2.2.2 currentLetterPos가 lengthOfCommandRow보다 크거나 같으면
-					if (currentLetterPos >= lengthOfCommandRow)
-					{
-						//4.2.2.2.1 lengthOfCommandRow가 0보다 큰동안 반복한다.
-						while (lengthOfCommandRow > 0)
-						{
-							//4.2.2.2.1.1 글자를 지운다.
-							this->notepadForm->current->Remove(currentLetterPos - 1);
-							currentLetterPos--;
-							lengthOfCommandRow--;
-						}
-					}
-					//4.2.2.3 currentLetterPos가 lengthOfCommandRow보다 작으면
-					else
-					{
-						//4.2.2.3.1 lengthOfCommandRow가 0보다 큰동안 반복한다.
-						while (lengthOfCommandRow > 0)
-						{
-							//4.2.2.3.1.1 currentLetterPos가 0보다 큰 동안 그리고 
-							//lengthOfCommandRow가 0보다 큰동안 반복한다.
-							while (currentLetterPos > 0 && lengthOfCommandRow > 0)
-							{
-								//4.2.2.3.1.1.1 글자를 지운다.
-								this->notepadForm->current->Remove(currentLetterPos - 1);
-								currentLetterPos--;
-								lengthOfCommandRow--;
-							}
-							//4.2.2.3.1.2 lengthOfCommandRow가 0보다 크면
-							if (lengthOfCommandRow > 0)
-							{
-								//4.2.2.3.1.2.1 현재 줄의 이전 줄로 이동한다.
-								currentRowPos = this->notepadForm->note->Previous();
-								this->notepadForm->current = this->notepadForm->
-									note->GetAt(currentRowPos);
-								//4.2.2.3.1.2.1 줄의 길이를 currentLetterPos에 저장한다.
-								currentLetterPos = this->notepadForm->current->GetLength();
-							}
-						}
-					}
-				}
-			}
-			//4.2.3 현재 줄이 가짜줄이면
-			else
-			{
-				//4.2.3.1 처음 실행이 되면
-				if (this->isRedone == false)
-				{
-					//DummyRow를 생성해서 글자를 담고 그걸 복사해서 this->glyph에 주소를 옮기고,
-					//글자들을 단어단위로 지우기전에 옮겨서 저장한다.
-					//4.2.3.1.1 DummyRow를 생성한다.
-					this->glyph = new DummyRow();
-					//4.2.3.1.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
-					letterPosAfterMoving = this->notepadForm->current->PreviousWord();
-					//4.2.3.1.3 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
-					//현재 글자 위치보다 작은동안 반복한다.
-					while (letterPosAfterMoving < currentLetterPos)
-					{
-						//4.2.3.1.3.1 글자를 지우기 전에 글자를 구한다.
-						letter = this->notepadForm->current->GetAt(letterPosAfterMoving);
-						//4.2.3.1.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
-						this->glyph->Add(letter->Clone());
-						//4.2.3.1.3.3 글자를 지운다.
-						this->notepadForm->current->Remove(letterPosAfterMoving);
-						currentLetterPos--;
-					}
-					//4.2.3.1.4 단어단위로 이동했을 때 가짜 줄의 맨 처음 글자인동안 반복한다.
-					//한단어가 자동개행일 때 몇줄에 걸쳐져있을수도 있기 때문에 선택구조 대신에 반복구조!
-					while (letterPosAfterMoving == 0)
-					{
-						//4.2.3.1.4.1 현재 줄에서 이전 줄의 마지막 글자로 이동한다.
+						//4.2.3.1.2.1 현재 줄의 이전 줄로 이동한다.
 						currentRowPos = this->notepadForm->note->Previous();
 						this->notepadForm->current = this->notepadForm->
 							note->GetAt(currentRowPos);
-						currentLetterPos = this->notepadForm->current->Last();
-						//4.2.3.1.4.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
-						letterPosAfterMoving = this->notepadForm->current->PreviousWord();
-						//4.2.3.1.4.3 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치가 
-						//현재 글자 위치보다 작은동안 반복한다.
-						while (letterPosAfterMoving < currentLetterPos)
-						{
-							//4.2.3.1.4.3.1 글자를 지우기 전에 글자를 구한다.
-							letter = this->notepadForm->current->GetAt(currentLetterPos - 1);
-							//4.2.3.1.4.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
-							this->glyph->Add(0, letter->Clone());
-							//4.2.3.1.4.3.3 글자를 지운다.
-							this->notepadForm->current->Remove(currentLetterPos - 1);
-							currentLetterPos--;
-						}
-					}
-				}
-				//4.2.3.2 처음 실행이 아니면
-				else
-				{
-					//4.2.3.2.1 command에 저장되어 있는 줄의 글자개수를 구한다.
-					Long lengthOfCommandRow = this->glyph->GetLength();
-					//4.2.3.2.2 currentLetterPos가 lengthOfCommandRow보다 크거나 같으면
-					if (currentLetterPos >= lengthOfCommandRow)
-					{
-						//4.2.3.2.2.1 lengthOfCommandRow가 0보다 큰동안 반복한다.
-						while (lengthOfCommandRow > 0)
-						{
-							//4.2.3.2.2.1.1 글자를 지운다.
-							this->notepadForm->current->Remove(currentLetterPos - 1);
-							currentLetterPos--;
-							lengthOfCommandRow--;
-						}
-					}
-					//4.2.3.2.3 currentLetterPos가 lengthOfCommandRow보다 작으면
-					else
-					{
-						//4.2.3.2.3.1 lengthOfCommandRow가 0보다 큰동안 반복한다.
-						while (lengthOfCommandRow > 0)
-						{
-							//4.2.3.2.3.1.1 currentLetterPos가 0보다 큰 동안 그리고 
-							//lengthOfCommandRow가 0보다 큰동안 반복한다.
-							while (currentLetterPos > 0 && lengthOfCommandRow > 0)
-							{
-								//4.2.3.2.3.1.1.1 글자를 지운다.
-								this->notepadForm->current->Remove(currentLetterPos - 1);
-								currentLetterPos--;
-								lengthOfCommandRow--;
-							}
-							//4.2.3.2.3.1.2 lengthOfCommandRow가 0보다 크면
-							if (lengthOfCommandRow > 0)
-							{
-								//4.2.3.2.3.1.2.1 현재 줄의 이전 줄의 마지막 글자로 이동한다.
-								currentRowPos = this->notepadForm->note->Previous();
-								this->notepadForm->current = this->notepadForm->
-									note->GetAt(currentRowPos);
-								currentLetterPos = this->notepadForm->current->Last();
-							}
-						}
+						//4.2.3.1.2.1 줄의 길이를 currentLetterPos에 저장한다.
+						currentLetterPos = this->notepadForm->current->GetLength();
 					}
 				}
 			}
+		}
 #endif
-			//4.2.3 자동 줄 바꿈 메뉴가 체크되어 있으면
-			if (this->notepadForm->isRowAutoChanging == true)
-			{
-				//4.2.3.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-				//OnSize에서 부분자동개행을 하도록 한다. 
-				this->notepadForm->SendMessage(WM_SIZE);
-			}
-			//4.2.4 Command에 변경 사항이 있음을 표시한다.
-			this->isDirty = true;
-		}
-		//4.3 Command에 변경 사항이 있으면
-		if (this->isDirty == true)
+
+		//4.3 자동 줄 바꿈 메뉴가 체크되어 있으면
+		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//4.3.1 메모장 제목에 *를 추가한다.
-			string name = this->notepadForm->fileName;
-			name.insert(0, "*");
-			name += " - 메모장";
-			this->notepadForm->SetWindowText(CString(name.c_str()));
-			//4.3.2 메모장에 변경사항이 있음을 저장한다.
-			this->notepadForm->isDirty = true;
-			//4.3.3 글자를 지운 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-			this->rowIndex = this->notepadForm->note->GetCurrent();
-			this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
-			this->letterIndex = this->notepadForm->current->GetCurrent();
-			//4.3.4 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
-			if (this->notepadForm->isRowAutoChanging == true)
-			{
-				Long changedRowPos = this->rowIndex;
-				Long changedLetterPos = this->letterIndex;
-				Long originRowPos = 0;
-				Long originLetterPos = 0;
-				//4.3.4.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
-				rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
-					&originRowPos);
-				//4.3.4.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-				this->rowIndex = originRowPos;
-				this->letterIndex = originLetterPos;
-			}
+			//4.3.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//OnSize에서 부분자동개행을 하도록 한다. 
+			this->notepadForm->SendMessage(WM_SIZE);
 		}
+		
 	}
 	//5. 메모장에서 선택된 texts가 있으면
 	else
 	{
 		//5.1 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
 		this->notepadForm->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
+	}
+	//6. Command에 변경 사항이 있으면
+	if (this->isDirty == true)
+	{
+		//6.1 메모장 제목에 *를 추가한다.
+		string name = this->notepadForm->fileName;
+		name.insert(0, "*");
+		name += " - 메모장";
+		this->notepadForm->SetWindowText(CString(name.c_str()));
+		//6.2 메모장에 변경사항이 있음을 저장한다.
+		this->notepadForm->isDirty = true;
+		//6.3 글자를 지운 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+		this->rowIndex = this->notepadForm->note->GetCurrent();
+		this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
+		this->letterIndex = this->notepadForm->current->GetCurrent();
+		//6.4 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
+		if (this->notepadForm->isRowAutoChanging == true)
+		{
+			Long changedRowPos = this->rowIndex;
+			Long changedLetterPos = this->letterIndex;
+			Long originRowPos = 0;
+			Long originLetterPos = 0;
+			//6.4.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+			rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+				&originRowPos);
+			//6.4.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+			this->rowIndex = originRowPos;
+			this->letterIndex = originLetterPos;
+		}
 	}
 }
 

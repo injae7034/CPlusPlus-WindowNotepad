@@ -399,51 +399,55 @@ Long Composite::NextWord()
 //줄에서 캐럿을 단어단위로 왼쪽으로 이동시키기(Row기준)
 Long Composite::PreviousWord()
 {
-	//1. 현재 캐럿의 위치 이전에 해당하는 글자를 읽는다.
-	string letter = this->GetAt(this->current - 1)->GetContent();
-	//2. 현재 캐럿의 가로 위치가 1보다 크고 읽은 글자가 스페이스(공백)문자인동안 반복한다.
-	while (this->current > 1 && letter == " ")
+	//1. 현재 줄에서 글자위치가 0보다 크면
+	if (this->current > 0)
 	{
-		//2.1 현재 캐럿의 가로 위치를 한칸 이전으로 이동시킨다.
-		this->current--;
-		//2.2 현재 캐럿의 가로 위치 이전에 해당하는 글자를 읽는다.
-		letter = this->GetAt(this->current - 1)->GetContent();
+		//1.1 현재 캐럿의 위치 이전에 해당하는 글자를 읽는다.
+		string letter = this->GetAt(this->current - 1)->GetContent();
+		//1.2 현재 캐럿의 가로 위치가 1보다 크고 읽은 글자가 스페이스(공백)문자인동안 반복한다.
+		while (this->current > 1 && letter == " ")
+		{
+			//1.2.1 현재 캐럿의 가로 위치를 한칸 이전으로 이동시킨다.
+			this->current--;
+			//1.2.2 현재 캐럿의 가로 위치 이전에 해당하는 글자를 읽는다.
+			letter = this->GetAt(this->current - 1)->GetContent();
+		}
+		//1.3 현재 캐럿의 가로 위치가 1이고 읽은 글자가 스페이스(공백)문자이면
+		if (this->current == 1 && letter == " ")
+		{
+			//1.3.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
+			this->current = 0;
+		}
+		//1.4 현재 캐럿의 가로 위치가 1보다 크고 읽은 글자가 탭문자인동안 반복한다.
+		while (this->current > 1 && letter == "\t")
+		{
+			//1.4.1 현재 캐럿의 가로 위치를 한칸 이전으로 이동시킨다.
+			this->current--;
+			//1.4.2 현재 캐럿의 가로 위치 이전에 해당하는 글자를 읽는다.
+			letter = this->GetAt(this->current - 1)->GetContent();
+		}
+		//1.5 현재 캐럿의 가로 위치가 1이고 읽은 글자가 탭문자이면
+		if (this->current == 1 && letter == "\t")
+		{
+			//1.5.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
+			this->current = 0;
+		}
+		//1.6 현재 캐럿의 가로 위치가 1보다 크고 읽은 글자가 스페이스(공백)문자 그리고
+		//탭문자가 아닌동안 반복한다.
+		while (this->current > 1 && letter != " " && letter != "\t")
+		{
+			//1.6.1 현재 캐럿의 가로 위치를 이전으로 이동시킨다.
+			this->current--;
+			//1.6.2 현재 캐럿의 가로 위치에 해당하는 글자를 읽는다.
+			letter = this->GetAt(this->current - 1)->GetContent();
+		}
+		//1.7 현재 캐럿의 가로 위치가 1이고 읽은 글자가 스페이스(공백) 문자와 탭문자가 아니면
+		if (this->current == 1 && letter != " " && letter != "\t")
+		{
+			//1.7.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
+			this->current = 0;
+		}
 	}
-	//3. 현재 캐럿의 가로 위치가 1이고 읽은 글자가 스페이스(공백)문자이면
-	if (this->current == 1 && letter == " ")
-	{
-		//3.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
-		this->current = 0;
-	}
-	//4. 현재 캐럿의 가로 위치가 1보다 크고 읽은 글자가 탭문자인동안 반복한다.
-	while (this->current > 1 && letter == "\t")
-	{
-		//4.1 현재 캐럿의 가로 위치를 한칸 이전으로 이동시킨다.
-		this->current--;
-		//4.2 현재 캐럿의 가로 위치 이전에 해당하는 글자를 읽는다.
-		letter = this->GetAt(this->current - 1)->GetContent();
-	}
-	//5. 현재 캐럿의 가로 위치가 1이고 읽은 글자가 탭문자이면
-	if (this->current == 1 && letter == "\t")
-	{
-		//5.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
-		this->current = 0;
-	}
-	//6. 현재 캐럿의 가로 위치가 1보다 크고 읽은 글자가 스페이스(공백)문자 그리고
-	//탭문자가 아닌동안 반복한다.
-	while (this->current > 1 && letter != " " && letter != "\t")
-	{
-		//6.1 현재 캐럿의 가로 위치를 이전으로 이동시킨다.
-		this->current--;
-		//6.2 현재 캐럿의 가로 위치에 해당하는 글자를 읽는다.
-		letter = this->GetAt(this->current - 1)->GetContent();
-	}
-	//7. 현재 캐럿의 가로 위치가 1이고 읽은 글자가 스페이스(공백) 문자와 탭문자가 아니면
-	if (this->current == 1 && letter != " " && letter != "\t")
-	{
-		//7.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
-		this->current = 0;
-	}
-	//8. 현재 캐럿의 가로 위치를 출력한다.
+	//2. 현재 캐럿의 가로 위치를 출력한다.
 	return this->current;
 }
