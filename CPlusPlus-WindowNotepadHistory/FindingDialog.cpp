@@ -168,8 +168,20 @@ BOOL FindingDialog::OnInitDialog()
 				i++;
 			}
 		}
-		//2.7 줄에 담은 글자를 구한다.
-		string keyword = copyRow->GetContent();
+		//2.7 메모장의 현재 줄에서 처음 글자부터 현재 글자까지의 content를 구한다.
+		i = 0;
+		letter = 0;
+		string letterContent = "";
+		string keyword = "";
+		while (i < copyRow->GetLength())
+		{
+			//2.7.1 글자를 구한다.
+			letter = copyRow->GetAt(i);
+			letterContent = letter->GetContent();
+			//2.7.2 줄의 content에 더해준다.
+			keyword += letterContent;
+			i++;
+		}
 		//2.8 선택된 글자를 에디트컨트롤에 붙여넣는다.
 		this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->SetWindowText(keyword.c_str());
 		//2.9 힙에 할당된 줄을 할당해제한다.
