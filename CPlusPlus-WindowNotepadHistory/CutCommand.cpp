@@ -2,31 +2,60 @@
 #include "NotepadForm.h"
 #include "Note.h"
 #include "DummyRow.h"
+#include "RowAutoChange.h"
 
 //디폴트생성자
 CutCommand::CutCommand(NotepadForm* notepadForm)
 	:Command(notepadForm)
 {
-
+	this->rowIndex = notepadForm->note->GetCurrent();
+	this->letterIndex = notepadForm->current->GetCurrent();
+	this->glyph = 0;
+	this->isUndoMacroEnd = false;
+	this->isRedoMacroEnd = false;
+	this->isRedone = false;
+	this->selectedStartXPos = 0;
+	this->selectedStartYPos = 0;
 }
 
 //Execute
 void CutCommand::Execute()
 {
-	//복사하기 Command에 들어왔다는 말은 최소 한글자이상은 복사할게 있어서 들어왔다는 뜻임
-	//복사할게 없었으면 애초에 여기에 들어올 수 없음 그러므로 복사하기의 Execute에서는
-	//노트를 생성하고 줄을 한 개 생성해서 새로 생성한 노트에 추가까지 하는게 디폴트이다.
-	//1. 복사할 텍스트를 담을 새노트를 생성한다.
-	Glyph* copyNote = new Note();
-	//2. 줄을 생성한다.(복사한 내용이 한 글자이든 수천줄이든 일단 무조건 줄은 하나 생성해야함.)
-	//그리고 복사를 시작한 줄이 가짜줄이든 진짜줄이든 상관없이 처음 복사한 줄은 무조건 Row로 생성함. 
-	Glyph* copyRow = new Row();
-	//3. 새로 생성한 줄을 클립보드의 새로 생성한 노트에 추가한다.
-	Long rowIndexOfCopyNote = copyNote->Add(copyRow);
-	//4. 메모장에서 현재 줄과 글자의 위치를 구한다.
+	//1. RowAutoChange를 생성한다.
+	RowAutoChange rowAutoChange(this->notepadForm);
+	Long changedRowPos = 0;
+	Long changedLetterPos = 0;
+	Long originRowPos = this->rowIndex;
+	Long originLetterPos = this->letterIndex;
+	//2. 현재 줄의 위치와 글자 위치를 구한다.
 	Long currentRowPos = this->notepadForm->note->GetCurrent();
 	Long currentLetterPos = this->notepadForm->current->GetCurrent();
-	//5. 선택이 시작되는 줄과 글자, 선택이 끝나는 줄과 글자의 위치를 구한다.
+	//3. RemoveCommand가 다시 실행되면
+	if (this->isRedone == true)
+	{
+		//3.1 현재 줄의 위치와 글자위치를 재조정해준다.
+		currentRowPos = this->notepadForm->note->Move(this->rowIndex);
+		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+		currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
+		//3.2 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치가 저장되어 있음)
+		if (this->notepadForm->isRowAutoChanging == true)
+		{
+			//3.2.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+			rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
+				&changedRowPos);
+			//3.2.2 현재 줄의 위치와 글자 위치를 다시 조정한다.
+			currentRowPos = this->notepadForm->note->Move(changedRowPos);
+			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+			currentLetterPos = this->notepadForm->current->Move(changedLetterPos);
+		}
+	}
+	//4. 다시 실행이면
+	if (this->IsRedone() == true)
+	{
+		this->notepadForm->selectedStartYPos = this->selectedStartYPos;
+		this->notepadForm->selectedStartXPos = this->selectedStartXPos;
+	}
+	//5. 선택이 시작되는 줄과 글자 위치, 선택이 끝나는 줄과 글자 위치를 저장한다.
 	Long selectedStartRowPos = this->notepadForm->selectedStartYPos;//선택이 시작되는 줄
 	Long selectedStartLetterPos = this->notepadForm->selectedStartXPos;//선택이 시작되는 글자
 	Long selectedEndRowPos = currentRowPos;//선택이 끝나는 줄
@@ -40,6 +69,7 @@ void CutCommand::Execute()
 	Long i = 0;//반복제어변수
 	Glyph* startRow = 0;//시작하는 줄의 위치
 	Glyph* letter = 0;
+	Glyph* newRow = 0;//힙에 새로 생성되는 줄의 주소를 담을 공간
 	//7. 선택이 시작되는 줄과 선택이 끝나는 줄이 같으면(복사가 한 줄 내에서 이뤄졌으면)
 	if (selectedStartRowPos == selectedEndRowPos)
 	{
@@ -66,21 +96,51 @@ void CutCommand::Execute()
 		}
 		//7.1.3 시작하는 줄을 구한다.
 		startRow = this->notepadForm->note->GetAt(startRowIndex);
-		//7.1.4 시작하는 글자위치부터 끝나는 글자까지 복사한다.
-		i = startLetterIndex;
-		while (i < endLetterIndex)
+		//7.1.4 처음 실행이면
+		if (this->isRedone == false)
 		{
-			//7.1.4.1 시작하는 줄에서 줄에서 글자를 구한다.
-			letter = startRow->GetAt(i);
-			//7.1.4.2 클립보드의 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
-			copyLetterIndex = copyRow->Add(letter->Clone());
-			//7.1.4.3 메모장의 글자들은 선택이 되어 있는 상태로 남아 있어야 하지만
-			//클립보드에 옮겨지는 글자들은 선택이 안된 상태로 바꿔줘여함(왜냐하면 메모장에서
-			//선택이 된 상태로 복사가 되었기 때문에 일단 클립보드에 선택이 된 상태로 복사하고
-			//나중에 따로 선택이 안된 상태로 바꿔줘야 붙여넣기를 할 때 선택이 안된 글자들이 붙여넣어짐)
-			copyRow->GetAt(copyLetterIndex)->Select(false);
-			//7.1.4.4 시작하는 글자의 다음 글자로 이동해서 글자를 복사한다.
-			i++;
+			//7.1.4.1 Note를 생성한다.
+			this->glyph = new Note();
+			//7.1.4.2 복사할 startRow가 진짜 줄이면
+			if (!dynamic_cast<DummyRow*>(startRow))
+			{
+				//7.1.4.2.1 Row를 생성한다.
+				newRow = new Row();
+			}
+			//7.1.4.3 복사할 startRow가 가짜 줄이면
+			else
+			{
+				//7.1.4.3.1 DummyRow를 생성한다.
+				newRow = new DummyRow();
+			}
+			//7.1.4.4 새로 생성한 Row를 command의 Note에 추가한다.
+			this->glyph->Add(newRow);
+			//7.1.4.5 시작하는 글자위치부터 끝나는 글자까지 지운다.
+			while (startLetterIndex < endLetterIndex)
+			{
+				//7.1.4.5.1 글자를 지우기 전에 글자를 구한다.
+				letter = startRow->GetAt(startLetterIndex);
+				//7.1.4.5.2 글자를 깊은 복사해서 새로 생성한 줄에 저장한다.
+				newRow->Add(letter->Clone());
+				//7.1.4.5.3 줄에서 글자를 지운다.
+				startRow->Remove(startLetterIndex);
+				//7.1.4.5.4 줄에서 글자가 지워지면 줄의 개수가 줄고 시작하는 글자의 다음 글자가
+				//선택이 시작하는 글자의 위치로 앞당겨져 오게 되므로 선택이 끝나는 줄의 값을 감소시킨다. 
+				endLetterIndex--;
+			}
+		}
+		//7.1.5 다시 실행이면
+		else
+		{
+			//7.1.5.1 시작하는 글자위치부터 끝나는 글자까지 지운다.
+			while (startLetterIndex < endLetterIndex)
+			{
+				//7.1.5.1.1 줄에서 글자를 지운다.
+				startRow->Remove(startLetterIndex);
+				//7.1.5.1.2 줄에서 글자가 지워지면 줄의 개수가 줄고 시작하는 글자의 다음 글자가
+				//선택이 시작하는 글자의 위치로 앞당겨져 오게 되므로 선택이 끝나는 줄의 값을 감소시킨다. 
+				endLetterIndex--;
+			}
 		}
 	}
 	//8. 선택이 시작하는 줄과 선택이 끝나는 줄이 서로 다르면(선택이 여러줄에 걸쳐져서 되어 있으면)
@@ -113,90 +173,160 @@ void CutCommand::Execute()
 		Glyph* endRow = 0;//끝나는 줄의 위치
 		Glyph* row = 0;//줄의 주소를 담을 공간
 		Long letterIndex = 0;//글자 위치
+		Long nextRowIndex = 0;
 		//8.3 시작하는 줄을 구한다.
 		startRow = this->notepadForm->note->GetAt(startRowIndex);
-		//8.4 시작하는 글자위치부터 시작하는 줄의 마지막 글자까지 복사한다.
-		i = startLetterIndex;
-		while (i < startRow->GetLength())
+		//8.4 처음 실행이면
+		if (this->isRedone == false)
 		{
-			//8.4.1 시작하는 줄에서 글자를 구한다.
-			letter = startRow->GetAt(i);
-			//8.4.2 클립보드의 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
-			copyLetterIndex = copyRow->Add(letter->Clone());
-			//8.4.3 메모장의 글자들은 선택이 되어 있는 상태로 남아 있어야 하지만
-			//클립보드에 옮겨지는 글자들은 선택이 안된 상태로 바꿔줘여함(왜냐하면 메모장에서
-			//선택이 된 상태로 복사가 되었기 때문에 일단 클립보드에 선택이 된 상태로 복사하고
-			//나중에 따로 선택이 안된 상태로 바꿔줘야 붙여넣기를 할 때 선택이 안된 글자들이 붙여넣어짐)
-			copyRow->GetAt(copyLetterIndex)->Select(false);
-			//8.4.4 시작하는 글자의 다음 글자로 이동해서 글자를 복사한다.
-			i++;
-		}
-		//8.5 시작하는 줄의 다음줄로 이동한다.
-		Long nextRowIndex = startRowIndex + 1;
-		Glyph* realRow = copyNote->GetAt(rowIndexOfCopyNote);//진짜 줄의 주소를 담을 공간
-		//8.6 다음줄부터 끝나는 줄전까지 반복한다.
-		while (nextRowIndex < endRowIndex)
-		{
-			//8.6.1 메모장의 줄을 구한다.
-			row = this->notepadForm->note->GetAt(nextRowIndex);
-			//8.6.2 메모장의 줄이 진짜이면
-			if (!dynamic_cast<DummyRow*>(row))
+			//8.4.1 Note를 생성한다.
+			this->glyph = new Note();
+			//8.4.2 복사할 startRow가 진짜 줄이면
+			if (!dynamic_cast<DummyRow*>(startRow))
 			{
-				//8.6.2.1 진짜 줄을 생성한다.
-				realRow = new Row();
-				//8.6.2.2 진짜 줄을 새로 만든 노트에 추가한다.
-				rowIndexOfCopyNote = copyNote->Add(realRow);
+				//8.4.2.1 Row를 생성한다.
+				newRow = new Row();
 			}
-			//8.6.3 메모장의 진짜 줄의 처음부터 마지막 글자까지 반복한다.
+			//8.4.3 복사할 startRow가 가짜 줄이면
+			else
+			{
+				//8.4.3.1 DummyRow를 생성한다.
+				newRow = new DummyRow();
+			}
+			//8.4.4 새로 생성한 Row를 command의 Note에 추가한다.
+			this->glyph->Add(newRow);
+			//8.4.5 시작하는 글자위치부터 시작하는 줄의 마지막 글자까지 지운다.
+			while (startLetterIndex < startRow->GetLength())
+			{
+				//8.4.5.1 글자를 지우기 전에 글자를 구한다.
+				letter = startRow->GetAt(startLetterIndex);
+				//8.4.5.2 글자를 깊은 복사해서 새로 생성한 줄에 저장한다.
+				newRow->Add(letter->Clone());
+				//8.4.5.3 줄에서 글자를 지운다.
+				startRow->Remove(startLetterIndex);
+			}
+			//8.4.6 시작하는 줄의 다음줄부터 끝나는 줄전까지 글자와 줄을 지운다.
+			nextRowIndex = startRowIndex + 1;
+			while (nextRowIndex < endRowIndex)
+			{
+				//8.4.6.1 줄을 구한다.
+				row = this->notepadForm->note->GetAt(nextRowIndex);
+				//8.4.6.2 복사할 줄이 진짜 줄이면
+				if (!dynamic_cast<DummyRow*>(row))
+				{
+					//8.4.6.2.1 Row를 생성한다.
+					newRow = new Row();
+				}
+				//8.4.6.3 복사할 줄이 가짜 줄이면
+				else
+				{
+					//8.4.6.3.1 DummyRow를 생성한다.
+					newRow = new DummyRow();
+				}
+				//8.4.6.4 새로 생성한 Row를 command의 Note에 추가한다.
+				this->glyph->Add(newRow);
+				//8.4.6.5 글자위치를 원위치시킨다.
+				letterIndex = 0;
+				//8.4.6.6 줄에서 마지막 글자까지 반복한다.
+				while (letterIndex < row->GetLength())
+				{
+					//8.4.6.6.1 글자를 지우기 전에 글자를 구한다.
+					letter = row->GetAt(letterIndex);
+					//8.4.6.6.2 글자를 깊은 복사해서 DummyRow에 저장한다.
+					newRow->Add(letter->Clone());
+					//8.4.6.6.3 줄의 글자를 지운다.
+					row->Remove(letterIndex);
+				}
+				//8.4.6.7 줄의 글자를 다지웠기때문에 메모장에서 줄을 지운다.
+				this->notepadForm->note->Remove(nextRowIndex);
+				//8.4.6.8 줄을 지웠기 때문에 선택이 끝나는 줄의 위치가 한칸 앞당겨진다.
+				endRowIndex--;
+			}
+			//8.4.7 끝나는 줄을 구한다.
+			endRow = this->notepadForm->note->GetAt(endRowIndex);
+			//8.4.8 복사할 줄이 진짜 줄이면
+			if (!dynamic_cast<DummyRow*>(endRow))
+			{
+				//8.4.8.1 Row를 생성한다.
+				newRow = new Row();
+			}
+			//8.4.9 복사할 줄이 가짜 줄이면
+			else
+			{
+				//8.4.9.1 DummyRow를 생성한다.
+				newRow = new DummyRow();
+			}
+			//8.4.10 새로 생성한 Row를 command의 Note에 추가한다.
+			this->glyph->Add(newRow);
+			//8.4.11 끝나는 줄의 처음부터 끝나는 글자까지 글자를 지운다.
 			letterIndex = 0;
-			while (letterIndex < row->GetLength())
+			while (letterIndex < endLetterIndex)
 			{
-				//8.6.3.1 메모장의 진짜 줄에서 글자를 구한다.
-				letter = row->GetAt(letterIndex);
-				//8.6.3.2 클립보드의 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
-				copyLetterIndex = realRow->Add(letter->Clone());
-				//8.6.3.3 메모장의 글자들은 선택이 되어 있는 상태로 남아 있어야 하지만
-				//클립보드에 옮겨지는 글자들은 선택이 안된 상태로 바꿔줘여함(왜냐하면 메모장에서
-				//선택이 된 상태로 복사가 되었기 때문에 일단 클립보드에 선택이 된 상태로 복사하고
-				//나중에 따로 선택이 안된 상태로 바꿔줘야 붙여넣기를 할 때 선택이 안된 글자들이 붙여넣어짐)
-				realRow->GetAt(copyLetterIndex)->Select(false);
-				//8.6.3.4 다음 글자로 이동해서 글자를 복사한다..
-				letterIndex++;
+				//8.4.11.1 글자를 지우기 전에 글자를 구한다.
+				letter = endRow->GetAt(letterIndex);
+				//8.4.11.2 글자를 깊은 복사해서 DummyRow에 저장한다.
+				newRow->Add(letter->Clone());
+				//8.4.11.3 끝나는 줄의 글자를 지운다.
+				endRow->Remove(letterIndex);
+				//8.4.11.4 끝나는 줄의 첫글자를 지우면 다음 글자부터 앞으로 한칸씩
+				//당겨지기 때문에 끝나는 글자위치를 -1 감소시킨다.
+				endLetterIndex--;
 			}
-			//8.6.4 다음 줄로 이동한다.
-			nextRowIndex++;
 		}
-		//8.7 메모장에서 끝나는 줄을 구한다.
-		endRow = this->notepadForm->note->GetAt(nextRowIndex);
-		//8.8 메모장에서 끝나는 줄이 진짜줄이면
-		if (!dynamic_cast<DummyRow*>(endRow))
+		//8.5 다시 실행이면
+		else
 		{
-			//8.8.1 진짜 줄을 생성한다.
-			realRow = new Row();
-			//8.8.2 진짜 줄을 새로 만든 노트에 추가한다.
-			rowIndexOfCopyNote = copyNote->Add(realRow);
+			//8.5.1 시작하는 글자위치부터 시작하는 줄의 마지막 글자까지 지운다.
+			while (startLetterIndex < startRow->GetLength())
+			{
+				//8.5.1.1 줄에서 글자를 지운다.
+				startRow->Remove(startLetterIndex);
+			}
+			//8.5.2 시작하는 줄의 다음줄부터 끝나는 줄전까지 글자와 줄을 지운다.
+			nextRowIndex = startRowIndex + 1;
+			while (nextRowIndex < endRowIndex)
+			{
+				//8.5.2.1 줄을 구한다.
+				row = this->notepadForm->note->GetAt(nextRowIndex);
+				//8.5.2.2 글자위치를 원위치시킨다.
+				letterIndex = 0;
+				//8.5.2.3 줄에서 마지막 글자까지 반복한다.
+				while (letterIndex < row->GetLength())
+				{
+					//8.5.2.3.1 줄의 글자를 지운다.
+					row->Remove(letterIndex);
+				}
+				//8.5.2.4 줄의 글자를 다지웠기때문에 메모장에서 줄을 지운다.
+				this->notepadForm->note->Remove(nextRowIndex);
+				//8.5.2.5 줄을 지웠기 때문에 선택이 끝나는 줄의 위치가 한칸 앞당겨진다.
+				endRowIndex--;
+			}
+			//8.5.3 끝나는 줄을 구한다.
+			endRow = this->notepadForm->note->GetAt(endRowIndex);
+			//8.5.4 끝나는 줄의 처음부터 끝나는 글자까지 글자를 지운다.
+			letterIndex = 0;
+			while (letterIndex < endLetterIndex)
+			{
+				//8.5.4.1 끝나는 줄의 글자를 지운다.
+				endRow->Remove(letterIndex);
+				//8.5.4.2 끝나는 줄의 첫글자를 지우면 다음 글자부터 앞으로 한칸씩
+				//당겨지기 때문에 끝나는 글자위치를 -1 감소시킨다.
+				endLetterIndex--;
+			}
 		}
-		//새로운 노트의 진짜 줄에 메모장의 가짜줄의 글자를 복사한다.
-		//8.9 글자 위치를 원위치시킨다.
-		letterIndex = 0;
-		//8.10 메모장의 가짜줄에서 마지막 글자까지 반복한다.
-		while (letterIndex < endLetterIndex)
-		{
-			//8.10.1 메모장의 가짜줄에서 글자를 구한다.
-			letter = endRow->GetAt(letterIndex);
-			//8.10.2 클립보드의 새로 만든 줄(복사하는 줄)에 글자를 추가한다.
-			copyLetterIndex = realRow->Add(letter->Clone());
-			//8.10.3 메모장의 글자들은 선택이 되어 있는 상태로 남아 있어야 하지만
-			//클립보드에 옮겨지는 글자들은 선택이 안된 상태로 바꿔줘여함(왜냐하면 메모장에서
-			//선택이 된 상태로 복사가 되었기 때문에 일단 클립보드에 선택이 된 상태로 복사하고
-			//나중에 따로 선택이 안된 상태로 바꿔줘야 붙여넣기를 할 때 선택이 안된 글자들이 붙여넣어짐)
-			realRow->GetAt(copyLetterIndex)->Select(false);
-			//8.10.4 다음 글자로 이동해서 글자를 복사한다.
-			letterIndex++;
-		}
+		//8.6 끝나는 줄을 시작하는 줄로 Join시킨다.
+		endRow->Join(startRow);
+		//8.7 끝나는 줄이 시작하는 줄로 Join되었기 때문에
+		//끝나는 줄을 메모장에서 지운다.
+		this->notepadForm->note->Remove(endRowIndex);
+		//8.8 현재 줄의 위치를 시작하는 줄의 위치로 변경한다.
+		this->notepadForm->current = this->notepadForm->note->
+			GetAt(startRowIndex);
+		//8.9 현재 글자의 위치를 시작하는 글자의 위치로 변경한다.
+		this->notepadForm->current->Move(startLetterIndex);
 	}
-	//9. notepadForm의 clipboard에 새로 생성한 Note(복사한 내용)를 추가시켜준다.
-	Long noteIndex = this->notepadForm->clipboard->Add(copyNote);
+	//9. notepadForm의 clipboard에 command의 새로 생성한 Note(복사한 내용)를 추가시켜준다.
+	Long noteIndex = this->notepadForm->clipboard->Add(this->glyph->Clone());
 	//10. 복사한 texts가 생겼기 때문에 붙여넣기 메뉴를 활성화시켜준다.
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
 	//내부클립보드에 복사한 내용을 외부클립보드로 옮기기
@@ -250,6 +380,31 @@ void CutCommand::Execute()
 	this->notepadForm->SetWindowText(CString(name.c_str()));
 	//15. 메모장에 변경사항이 있음을 저장한다.
 	this->notepadForm->isDirty = true;
+	//16. 자동 줄 바꿈 메뉴가 체크되어 있으면
+	if (this->notepadForm->isRowAutoChanging == true)
+	{
+		//16.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+		//OnSize에서 부분자동개행을 하도록 한다. 
+		this->notepadForm->SendMessage(WM_SIZE);
+	}
+	//17. 글자를 지운 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+	this->rowIndex = this->notepadForm->note->GetCurrent();
+	this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
+	this->letterIndex = this->notepadForm->current->GetCurrent();
+	//18. 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
+	if (this->notepadForm->isRowAutoChanging == true)
+	{
+		Long changedRowPos = this->rowIndex;
+		Long changedLetterPos = this->letterIndex;
+		Long originRowPos = 0;
+		Long originLetterPos = 0;
+		//18.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+		rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+			&originRowPos);
+		//18.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+		this->rowIndex = originRowPos;
+		this->letterIndex = originLetterPos;
+	}
 }
 
 //소멸자
