@@ -131,6 +131,15 @@ void BackSpaceKeyActionCommand::Execute()
 				//4.2.3.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 				//OnSize에서 부분자동개행을 하도록 한다. 
 				this->notepadForm->SendMessage(WM_SIZE);
+				//4.2.3.2 자동개행 후에 캐럿의 위치가 줄의 마지막 글자에 있으면
+				//currentLetterPos = this->notepadForm->current->GetCurrent();
+				//if (currentLetterPos == this->notepadForm->current->GetLength())
+				//{
+					//4.2.3.2 자동개행 후에 다시 줄의 위치와 글자위치를 재조정한다.
+				//	currentRowPos = this->notepadForm->note->Move(currentRowPos);
+				//	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+				//	currentLetterPos = this->notepadForm->current->First();
+				//}
 			}
 			///4.2.4 Command에 변경 사항이 있음을 표시한다.
 			this->isDirty = true;
@@ -213,7 +222,7 @@ void BackSpaceKeyActionCommand::Unexecute()
 			//말지 머리 아플 일이 없고, 여러모로 command의 glyph를 관리하기 편하기 때문에 
 			//command는 note와는 별도로 자기만의 glyph를 가지고 있어야한다.
 			//아니면 나중에 Backspace를 다지우고 다시 글자를 입력할 때 PushUndo에서 에러가 난다.!
-			currentLetterPos = this->notepadForm->current->Add(this->glyph->Clone());
+			currentLetterPos = this->notepadForm->current->Add(this->glyph->Clone());	
 		}
 		//5.2 현재 줄의 글자 위치가 현재 줄의 글자개수와 다르면
 		else
@@ -222,6 +231,10 @@ void BackSpaceKeyActionCommand::Unexecute()
 			currentLetterPos = this->notepadForm->current->
 				Add(currentLetterPos, this->glyph->Clone());
 		}
+		//5.3 현재 줄의 위치와 글자위치를 다시 조정한다.
+		//currentRowPos = this->notepadForm->note->Move(currentRowPos + 1);
+		//this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+		//currentLetterPos = this->notepadForm->current->First();
 	}
 	//6. 지울 때 저장한 glyph가 줄(개행문자)이면
 	else

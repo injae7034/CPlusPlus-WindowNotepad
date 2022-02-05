@@ -4,6 +4,7 @@
 #include "CommandHistory.h"
 #include "Row.h"
 #include "RowAutoChange.h"
+#include "DummyRow.h"
 
 //디폴트생성자 정의
 DeleteKeyActionCommand::DeleteKeyActionCommand(NotepadForm* notepadForm)
@@ -52,6 +53,7 @@ void DeleteKeyActionCommand::Execute()
 	//4. 메모장에서 선택된 texts가 없으면
 	if (this->notepadForm->isSelecting == false)
 	{
+		Glyph* letter = 0;
 		//4.1 현재 노트의 마지막 줄의 위치를 구한다.
 		Long lastRowPos = this->notepadForm->note->GetLength() - 1;
 		//4.2 현재 줄에서 마지막 글자의 위치를 구한다.
@@ -61,27 +63,57 @@ void DeleteKeyActionCommand::Execute()
 		//4.3 현재 줄의 위치가 노트의 마지막 줄 위치보다 작고, 현재 글자 위치가 마지막이면
 		if (currentRowPos < lastRowPos && currentLetterPos == lastLetterPos)
 		{
-			//4.3.1 처음 실행이 되면
-			if (this->isRedone == false)
-			{
-				//4.3.1.1 Row를 생성한다.
-				this->glyph = new Row();
-			}
-			//4.3.2 현재 줄을 구한다.
-			Glyph* currentRow = this->notepadForm->note->GetAt(currentRowPos);
-			//4.3.3 현재 줄의 다음 줄을 구한다.
+			//4.3.1 현재 줄의 다음 줄을 구한다.
 			Glyph* nextRow = this->notepadForm->note->GetAt(currentRowPos + 1);
-			//4.3.4 다음 줄을 현재 줄에 합친다.
-			nextRow->Join(currentRow);
-			//4.3.6 Note에서 다음 줄의 주소를 지운다.
-			this->notepadForm->note->Remove(currentRowPos + 1);
-			//4.3.7 현재 줄이 지워졌기 때문에 현재 줄을 변경한다.
-			currentRowPos = this->notepadForm->note->GetCurrent();
-			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-			//4.1.8 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
-			//4.3.7 현재 줄의 글자 위치가 지금은 마지막이기 때문에 lastLetterPos로 옮겨준다.
-			currentLetterPos = this->notepadForm->current->Move(lastLetterPos);
-			//4.3.8 Command에 변경 사항이 있음을 표시한다.
+			//4.3.2 현재 줄의 다음 줄이 가짜줄이 아니면(진짜 줄이면)
+			if (!dynamic_cast<DummyRow*>(nextRow))
+			{
+				//4.3.2.1 처음 실행이 되면
+				if (this->isRedone == false)
+				{
+					//4.3.2.1.1 Row를 생성한다.
+					this->glyph = new Row();
+				}
+				//4.3.2.2 현재 줄을 구한다.
+				Glyph* currentRow = this->notepadForm->note->GetAt(currentRowPos);
+				//4.3.2.3 다음 줄을 현재 줄에 합친다.
+				nextRow->Join(currentRow);
+				//4.3.2.4 Note에서 다음 줄의 주소를 지운다.
+				this->notepadForm->note->Remove(currentRowPos + 1);
+				//4.3.2.5 현재 줄이 지워졌기 때문에 현재 줄을 변경한다.
+				currentRowPos = this->notepadForm->note->GetCurrent();
+				this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+				//4.3.2.6 현재 줄의 글자 위치가 지금은 줄의 마지막이기 때문에
+				//합쳐진 줄의 사이인 lastLetterPos로 옮겨준다.
+				currentLetterPos = this->notepadForm->current->Move(lastLetterPos);
+			}
+			//4.1.3 현재 줄의 다음 줄이 가짜줄이면
+			else
+			{
+				//4.1.3.1 다음 줄의 첫글자로 이동한다.
+				currentRowPos = this->notepadForm->note->Move(currentRowPos + 1);
+				this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+				currentLetterPos = this->notepadForm->current->First();
+				//4.1.3.2 처음 실행이 되면
+				if (this->isRedone == false)
+				{
+					//4.1.3.2.1 지울 글자를 구한다.
+					letter = this->notepadForm->current->GetAt(currentLetterPos);
+					//4.1.3.2.2 지울 글자를 깊은 복사해서 저장한다.
+					this->glyph = letter->Clone();
+				}
+				//4.1.3.3 다음 줄의 첫번째 글자를 지운다.
+				this->notepadForm->current->Remove(currentLetterPos);
+				//4.1.3.4 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+				//OnSize에서 부분자동개행을 하도록 한다. 
+				//가짜줄이 있다는게 자동개행이 진행중이라는 의미임.
+				this->notepadForm->SendMessage(WM_SIZE);
+				//4.1.3.5 글자 위치를 다시 현재 줄 마지막 글자로 조정해준다.
+				currentRowPos = this->notepadForm->note->Move(currentRowPos - 1);
+				this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+				currentLetterPos = this->notepadForm->current->Last();
+			}
+			//4.1.4 Command에 변경 사항이 있음을 표시한다.
 			this->isDirty = true;
 		}
 		// 현재 글자 위치가 마지막이 아닐 때(현재 줄이 마지막이든 아니든 상관없음)
@@ -93,8 +125,8 @@ void DeleteKeyActionCommand::Execute()
 			if (this->isRedone == false)
 			{
 				//4.4.1.1 지울 글자를 구한다.
-				Glyph* letter = this->notepadForm->current->GetAt(currentLetterPos);
-				//442.1.2 지울 글자를 깊은 복사해서 저장한다.
+				letter = this->notepadForm->current->GetAt(currentLetterPos);
+				//4.4.1.2 지울 글자를 깊은 복사해서 저장한다.
 				this->glyph = letter->Clone();
 			}
 			//4.4.2 현재 글자의 다음 글자를 지운다.
