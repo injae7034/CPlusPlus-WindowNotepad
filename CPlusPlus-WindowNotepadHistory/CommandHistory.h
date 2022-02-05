@@ -12,7 +12,6 @@ class CommandHistory
 {
 public:
 	NotepadForm* notepadForm;
-	Command* current;
 public:
 	CommandHistory(NotepadForm* notepadForm = 0, Long undoListCapacity = 256,
 		Long redoListCapacity = 256);//디폴트생성자

@@ -18,8 +18,6 @@ public:
 	virtual bool IsDirty();//변경사항이 있는지 확인 여부(지우는 기능관 관련된 Command 에서 사용됨)
 	virtual Long GetRowIndex();
 	virtual Long GetLetterIndex();
-	virtual void SetRowIndex(Long rowIndex);
-	virtual void SetLetterIndex(Long letterIndex);
 	virtual ~Command() = 0;//추상클래스 소멸자
 	//인라인함수정의
 	NotepadForm* GetNotepadForm() const;

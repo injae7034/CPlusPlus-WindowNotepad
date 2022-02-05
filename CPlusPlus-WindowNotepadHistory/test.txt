@@ -1,7 +1,7 @@
 // 크기 구하기CRect rect;GetClientRect( &rect );
 // 화면 그리기 CDC dcTemp;dcTemp.CreateCompatibleDC( &dc );HBITMAP hbmp = ::CreateCompatibleBitmap( dc, 10000, rect.Height() - 20 );
-// 가로 10000 크기로 생성 HBITMAP hbmpOld = (HBITMAP)dcTemp.SelectObject( hbmp ); 
-// 100마다 텍스트 출력dcTemp.PatBlt( 0, 0, 10000, rect.Height(), WHITENESS ); 
+// 가로 10000 크기로 생성 HBITMAP hbmpOld = (HBITMAP)dcTemp.SelectObject( hbmp );
+// 100마다 텍스트 출력dcTemp.PatBlt( 0, 0, 10000, rect.Height(), WHITENESS );
 for ( int iX = 0 ; iX < 10000 ; iX += 100 ) 
 {
  CString sX; sX.Format( _T( "%d" ), iX ); dcTemp.TextOut( iX, (rect.Height() / 2), sX ); 

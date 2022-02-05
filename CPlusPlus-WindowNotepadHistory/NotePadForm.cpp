@@ -326,7 +326,7 @@ void NotepadForm::OnCommand(UINT nId)
 			//3.2.1.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);
 			//3.2.1.2 redoList를 초기화시킨다.
-			this->commandHistory->MakeRedoListEmpty();		
+			this->commandHistory->MakeRedoListEmpty();	
 		}
 		//3.3 글자를 지우는 command이면
 		else if (nId == ID_BACKSPACEKEYACTIONCOMMAND || nId == ID_DELETEKEYACTIONCOMMAND
@@ -540,12 +540,6 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 			Long currentRowIndex = this->note->Move(changedRowPos);
 			this->current = this->note->GetAt(currentRowIndex);
 			Long currentLetterIndex = this->current->Move(changedLetterPos);
-			//2.1.7 현재 command의 줄위치와 글자위치를 변경한다.
-			if (this->commandHistory->current != 0)
-			{
-				this->commandHistory->current->SetRowIndex(currentRowIndex);
-				this->commandHistory->current->SetLetterIndex(currentLetterIndex);
-			}
 			//2.1.8 캐럿의 위치가 변경되었음을 알린다.
 			this->Notify();
 			//2.1.9 변경사항을 갱신한다.
