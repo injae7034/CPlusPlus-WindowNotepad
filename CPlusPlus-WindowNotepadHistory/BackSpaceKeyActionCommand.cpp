@@ -92,8 +92,6 @@ void BackSpaceKeyActionCommand::Execute()
 				//4.3.1.7 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
 				//이전 줄의 마지막 현재 줄의 처음 사이에 위치하도록 조정한다.
 				currentLetterPos = this->notepadForm->current->Move(letterPos);
-				//4.3.1.8 Command에 변경 사항이 있음을 표시한다.
-				this->isDirty = true;
 			}
 			//4.3.2 현재 줄이 가짜줄이면
 			else

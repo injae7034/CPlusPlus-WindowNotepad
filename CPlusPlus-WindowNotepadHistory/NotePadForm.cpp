@@ -154,23 +154,36 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 //키보드에 글자를 입력할 때
 void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
+	//1. Ctrl키가 눌러졌는지 안눌러졌는지 상태를 체크해서 저장한다.
+	Long ctrlPressedCheck = GetKeyState(VK_CONTROL);
 	//백스페이스가 아니면(백스페이키는 OnKeyDown을 먼저 실행하고 OnChar로 들어온다)
 	//백스페이스인경우 OnChar에서 아무 처리도 안해주고 바로 나가면 된다!
+	//단어단위로 왼쪽으로 지울 때, OnKeyDown에 SendMessage를 보낼 때, 인위적으로 Ctrl키를 누른 채로
+	//VK_BACK을 보냈기 때문에, 여기서 OnCharCommand가 실행되지 않도록 막기 위해서
+	//ctrlPressedCheck & 0x8000 && nChar != VK_BACK 조건문이 필요하다.
 	if (nChar != VK_BACK)
 	{
-		//1. Ctrl키가 눌러졌는지 안눌러졌는지 상태를 체크해서 저장한다.
-		Long ctrlPressedCheck = GetKeyState(VK_CONTROL);
-		//2. Ctrl키가 안눌러져 있으면
-		if (ctrlPressedCheck >= 0)
+		if (!(ctrlPressedCheck &0x80))
 		{
-			//2.1 glyphCreator를 생성한다.
+			//1.1.1 glyphCreator를 생성한다.
 			GlyphCreator glyphCreator;
-			//2.2 glyph를 생성해서 저장한다.
+			//1.1.2 glyph를 생성해서 저장한다.
 			this->glyph = glyphCreator.Create((char*)&nChar);
-			//2.3 OnCommand로 메세지를 보낸다.
+			//1.1.3 OnCommand로 메세지를 보낸다.
 			this->SendMessage(WM_COMMAND, ID_ONCHARCOMMAND);
 		}
+
 	}
+		
+
+	
+	
+		//Ctrl+a나 Ctrl+z나 Ctrl+y가 실행될 때 OnCharCommand가 실행되지 않기 위해서 필요한 조건문
+		//1.1 Ctrl키가 안눌러져 있으면
+		//if (ctrlPressedCheck >= 0)
+		//{
+		//}
+	
 }
 
 //메모장에 텍스트를 출력할 떄//출력시 Visitor패턴적용
@@ -326,7 +339,7 @@ void NotepadForm::OnCommand(UINT nId)
 			//3.2.1.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);
 			//3.2.1.2 redoList를 초기화시킨다.
-			this->commandHistory->MakeRedoListEmpty();	
+			this->commandHistory->MakeRedoListEmpty();
 		}
 		//3.3 글자를 지우는 command이면
 		else if (nId == ID_BACKSPACEKEYACTIONCOMMAND || nId == ID_DELETEKEYACTIONCOMMAND
