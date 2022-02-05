@@ -6,8 +6,14 @@ Command::Command(NotepadForm* notepadForm)
 	this->notepadForm = notepadForm;
 }
 
-//Command패턴
+//Command패턴 실행
 void Command::Execute()
+{
+
+}
+
+//Command패턴 실행취소
+void Command::Unexecute()
 {
 
 }

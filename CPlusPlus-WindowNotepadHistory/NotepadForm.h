@@ -9,6 +9,7 @@
 #include<string>
 using namespace std;
 
+class CommandHistory;
 class SelectingTexts;
 class CaretController;
 class PageMoveController;
@@ -35,6 +36,8 @@ public:
 	PageMoveController* pageMoveController;
 	CaretController* caretController;
 	CFindReplaceDialog* findReplaceDialog;
+	CommandHistory* commandHistory;
+	
 	//flag는 public으로
 	bool isRowAutoChanging;//자동개행이 되는 중인지 아닌지 판별하기 위한 flag
 	bool isSelecting;//텍스트 선택을 하는 중인지 아닌지 판별하기 위한 flag
@@ -46,7 +49,7 @@ public:
 	Long selectedStartYPos;//선택이 시작되는 y좌표
 	Long previousPageWidth;
 	//인라인함수 정의
-	//Long GetPreviousPageWidth() const;
+	UINT GetNChar() const;
 protected://#
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
@@ -69,14 +72,14 @@ private:
 	//menu가 계속 notepadForm에 setMenu된채로 있게됨 단독적으로 CMenu가 있는 경우
 	//OnCreate 스택이 종료되면 CMenu가 사라지기때문에 뻑이남.
 	CMenu menu;
-	//Long previousPageWidth;
+	UINT nChar;
 };
 
 //인라인함수정의
-//inline Long NotepadForm::GetPreviousPageWidth() const
-//{
-//	return this->previousPageWidth;
-//}
+inline UINT NotepadForm::GetNChar() const
+{
+	return this->nChar;
+}
 
 //함수선언(함수포인터느낌)
 LRESULT CALLBACK SaveMessageBoxProc(int nCode, WPARAM wParam, LPARAM lParam);

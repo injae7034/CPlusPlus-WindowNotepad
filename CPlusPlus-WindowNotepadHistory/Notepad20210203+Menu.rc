@@ -72,6 +72,8 @@ BEGIN
         MENUITEM "삭제",                          IDM_NOTE_REMOVE
         MENUITEM "찾기",                          IDM_NOTE_FIND
         MENUITEM "바꾸기",                         IDM_NOTE_REPLACE
+        MENUITEM "실행 취소",                       IDM_NOTE_UNDO
+        MENUITEM "다시 실행",                       IDM_NOTE_REDO
     END
 END
 

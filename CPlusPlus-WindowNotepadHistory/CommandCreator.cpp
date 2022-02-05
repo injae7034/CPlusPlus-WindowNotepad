@@ -11,6 +11,9 @@
 #include "RemoveCommand.h"
 #include "FindCommand.h"
 #include "ReplaceCommand.h"
+#include "OnCharCommand.h"
+#include "UndoCommand.h"
+#include "RedoCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -70,6 +73,18 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == IDM_NOTE_REPLACE)
 	{
 		command = new ReplaceCommand(this->notepadForm);
+	}
+	else if (nId == ID_ONCHARCOMMAND)
+	{
+		command = new OnCharCommand(this->notepadForm);
+	}
+	else if (nId == IDM_NOTE_UNDO)
+	{
+		command = new UndoCommand(this->notepadForm);
+	}
+	else if (nId == IDM_NOTE_REDO)
+	{
+		command = new RedoCommand(this->notepadForm);
 	}
 
 	return command;

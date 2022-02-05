@@ -6,7 +6,8 @@ class NotepadForm;//주소로 이용되기 때문에 전방선언이 필요함!
 class Command {
 public:
 	Command(NotepadForm* notepadForm = 0);//디폴트생성자
-	virtual void Execute() = 0;//Command Pattern
+	virtual void Execute() = 0;//실행
+	virtual void Unexecute();//실행취소
 	virtual ~Command() = 0;//추상클래스 소멸자
 	//인라인함수정의
 	NotepadForm* GetNotepadForm() const;

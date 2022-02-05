@@ -9,8 +9,8 @@ class CopyCommand :public Command
 {
 public:
 	CopyCommand(NotepadForm* notepadForm = 0);
-	void Execute();
-	~CopyCommand();//社瑚切
+	virtual void Execute();
+	virtual ~CopyCommand();//社瑚切
 };
 
 #endif // !_COPYCOMMAND_H

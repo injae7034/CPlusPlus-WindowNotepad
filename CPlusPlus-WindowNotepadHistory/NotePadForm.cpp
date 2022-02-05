@@ -19,6 +19,7 @@
 #include "PageMoveController.h"
 #include "RowAutoChange.h"
 
+#include "CommandHistory.h"
 #include "TextingOutVisitor.h"
 #include "SelectingVisitor.h"
 #include "SelectingTexts.h"
@@ -37,7 +38,7 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
 	//resource.h에서 가장 처음에 추가된게 시작범위이고, 가장 마지막에 추가된게 끝나는 범위임
 	//윈도우의 메뉴 그림이랑은 아무 상관이 없음!!
-	ON_COMMAND_RANGE(IDM_FILE_OPEN, IDM_NOTE_REPLACE, OnCommand)
+	ON_COMMAND_RANGE(IDM_FILE_OPEN, ID_ONCHARCOMMAND, OnCommand)
 	ON_WM_MENUSELECT(IDR_MENU1 ,OnMenuSelect)
 	//ON_REGISTERED_MESSAGE() //찾기공통대화상자에서 부모윈도우로 메세지를 전달하기 위해 필요함
 	ON_WM_KEYDOWN()
@@ -143,6 +144,8 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	this->selectingTexts = new SelectingTexts(this);
 	//23. CFindReplaceDialog를 초기화해준다.
 	this->findReplaceDialog = 0;
+	//24. CommandHistory를 생성한다.
+	this->commandHistory = new CommandHistory(this);
 
 	return 0;
 }
@@ -159,83 +162,10 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//2. Ctrl키가 안눌러져 있으면
 		if (ctrlPressedCheck >= 0)
 		{
-			//2.1 메모장에서 선택된 texts가 있으면
-			if (this->isSelecting == true)
-			{
-				//2.1.1 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
-				this->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
-			}
-			//2.2 glyphCreator를 생성한다.
-			GlyphCreator glyphCreator;
-			//2.3 glyph를 생성한다.
-			Glyph* glyph = glyphCreator.Create((char*)&nChar);
-			Long letterIndex;
-			Long rowIndex;
-			//2.4 입력받은 문자가 개행문자가 아니면
-			if (nChar != '\n' && nChar != '\r')
-			{
-				//2.4.1 현재 줄의 캐럿의 가로 위치를 구한다.
-				letterIndex = this->current->GetCurrent();
-				//2.4.2 FileSaveCommand가 현재 줄의 length와 같으면
-				if (letterIndex == this->current->GetLength())
-				{
-					//2.4.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
-					letterIndex = this->current->Add(glyph);
-				}
-				//2.4.3 index가 현재 줄의 length와 다르면
-				else
-				{
-					//2.4.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
-					letterIndex = this->current->Add(letterIndex, glyph);
-				}
-
-			}
-			//2.5 입력받은 문자가 개행문자이면
-			else if (nChar == '\n' || nChar == '\r')
-			{
-				//2.5.1 현재 줄의 위치를 구한다.
-				rowIndex = this->note->GetCurrent();
-				//2.5.2 현재 줄의 캐럿의 위치를 구한다.
-				letterIndex = this->current->GetCurrent();
-				//2.5.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
-				glyph = this->current->Split(letterIndex);
-				//2.5.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
-				if (rowIndex == this->note->GetLength() - 1)
-				{
-					//2.5.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
-					rowIndex = this->note->Add(glyph);
-				}
-				//2.5.5 그게 아니면
-				else
-				{
-					//2.5.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워넣는다.
-					rowIndex = this->note->Add(rowIndex + 1, glyph);
-				}
-				//2.5.4 현재 줄의 위치를 새로 저장한다.
-				this->current = this->note->GetAt(rowIndex);
-				//2.5.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
-				this->current->First();
-				//2.5.6 자동 줄 바꿈이 진행중이면
-				if (this->isRowAutoChanging == true)
-				{
-					//2.5.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-					//OnSize에서 부분자동개행을 하도록 한다. 
-					this->SendMessage(WM_SIZE);
-				}
-			}
-			//2.6 캐럿의 위치와 크기가 변경되었음을 알린다.
-			this->Notify();
-			//2.7 isComposing을 false로 바꾼다.
-			this->isComposing = false;
-			//2.8 메모장 제목에 *를 추가한다.
-			string name = this->fileName;
-			name.insert(0, "*");
-			name += " - 메모장";
-			SetWindowText(CString(name.c_str()));
-			//2.9 메모장에 변경사항이 있음을 저장한다.
-			this->isDirty = true;
-			//2.10 갱신한다.
-			Invalidate(TRUE);
+			//2.1 nChar을 대입한다.
+			this->nChar = nChar;
+			//2.2 OnCommand로 메세지를 보낸다.
+			this->SendMessage(WM_COMMAND, ID_ONCHARCOMMAND);
 		}
 	}
 }
@@ -417,10 +347,27 @@ void NotepadForm::OnCommand(UINT nId)
 	//3. command가 NULL이 아니면
 	if (command != NULL)
 	{
-		//3.1 ConcreteCommand의 execute 함수를 실행한다.
+		//3.1 글자를 입력하면
+		if (nId == ID_ONCHARCOMMAND)
+		{
+			//3.1.1 UndoList에 추가한다.
+			this->commandHistory->AddUndoList(command);
+			//3.1.2 redoList를 초기화시킨다.
+			Command* redoCommand = 0;
+			while (this->commandHistory->IsRedoListEmpty() == false)
+			{
+				redoCommand = this->commandHistory->RemoveRedoList();
+				if (redoCommand != 0)
+				{
+					delete redoCommand;
+					redoCommand = 0;
+				}
+			}
+			
+			
+		}
+		//3.2 ConcreteCommand의 execute 함수를 실행한다.
 		command->Execute();
-		//3.2 command를 할당해제한다.
-		delete command;
 	}
 	//4. 변화를 메모장에 갱신한다.
 	this->Notify();
@@ -711,6 +658,11 @@ void NotepadForm::OnClose()
 		if (this->findReplaceDialog != 0)
 		{
 			this->findReplaceDialog->DestroyWindow();
+		}
+		//3.6 CommandHistory를 할당해제한다.
+		if (this->commandHistory != 0)
+		{
+			delete this->commandHistory;
 		}
 		
 		// 메모장을 닫는다.

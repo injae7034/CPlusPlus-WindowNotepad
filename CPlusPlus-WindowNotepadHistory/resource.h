@@ -56,6 +56,11 @@
 #define IDM_NOTE_FIND                   40038
 #define ID_40039                        40039
 #define IDM_NOTE_REPLACE                40040
+#define ID_40041                        40041
+#define IDM_NOTE_UNDO                   40042
+#define ID_40043                        40043
+#define IDM_NOTE_REDO                   40044
+#define ID_ONCHARCOMMAND                41000
 #define IDC_STATIC_FINDINGCONTENT       65535
 #define IDC_STATIC_REPLACINGCONTNET     65535
 
@@ -64,8 +69,8 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40041
+#define _APS_NEXT_COMMAND_VALUE         40045
 #define _APS_NEXT_CONTROL_VALUE         1005
-#define _APS_NEXT_SYMED_VALUE           101
+#define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif
