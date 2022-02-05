@@ -2,7 +2,7 @@
 #include "NotepadForm.h"
 #include "Command.h"
 #include "OnCharCommand.h"
-#include "Note.h"
+#include "Row.h"
 
 //디폴트 생성자 정의
 CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
@@ -154,9 +154,9 @@ Long CommandHistory::PushUndoList(Command* command)
 		//2.1 lastCommand가 OnCharCommand이면
 		if (dynamic_cast<OnCharCommand*>(lastCommand))
 		{
+			Glyph* glyph = dynamic_cast<OnCharCommand*>(lastCommand)->GetGlyph();
 			//2.1.1 개행문자이면
-			if (dynamic_cast<OnCharCommand*>(lastCommand)->GetNChar() == '\n'
-				|| dynamic_cast<OnCharCommand*>(lastCommand)->GetNChar() == '\r')
+			if (dynamic_cast<Row*>(glyph))
 			{
 				//2.1.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 				lastCommand->SetUndoMacroEnd();
@@ -206,9 +206,9 @@ Long CommandHistory::PushRedoList(Command* command)
 	//1. 매개변수로 입력받은 command가 OnCharCommand이면
 	if (dynamic_cast<OnCharCommand*>(command))
 	{
+		Glyph* glyph = dynamic_cast<OnCharCommand*>(command)->GetGlyph();
 		//1.1 매개변수로 입력박은 command가 개행문자이면
-		if (dynamic_cast<OnCharCommand*>(command)->GetNChar() == '\n'
-			|| dynamic_cast<OnCharCommand*>(command)->GetNChar() == '\r')
+		if (dynamic_cast<Row*>(glyph))
 		{
 			//1.1.1 command를 redoMacro출력이 끝나는 지점으로 표시한다.
 			command->SetRedoMacroEnd();
@@ -230,9 +230,8 @@ Long CommandHistory::PushRedoList(Command* command)
 		//3.2 lastCommand와 command의 줄의 위치가 같으면
 		else if (lastCommand->GetRowIndex() == command->GetRowIndex())
 		{
-			//3.2.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
-			lastCommandLetterIndex = lastCommand->GetLetterIndex() - 1;
-			if (lastCommandLetterIndex != command->GetLetterIndex())
+			//3.2.1 lastCommand와 command의 글자 위치를 비교해 차이가 안나면
+			if (lastCommand->GetLetterIndex() != command->GetLetterIndex())
 			{
 				//3.2.1.1 매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
 				command->SetRedoMacroEnd();

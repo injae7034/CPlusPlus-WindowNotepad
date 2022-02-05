@@ -4,11 +4,12 @@
 #include "Command.h"
 #include "NotepadForm.h"
 
+class Glyph;
+
 class OnImeCharCommand :public Command
 {
 public:
-	OnImeCharCommand(NotepadForm* notepadForm, WPARAM wParam,
-		Long rowIndex = 0, Long letterIndex = 0);//디폴트생성자
+	OnImeCharCommand(NotepadForm* notepadForm, Glyph* glyph);//디폴트생성자
 	virtual void Execute();//실행
 	virtual void Unexecute();//실행취소
 	void SetUndoMacroEnd();//실행취소출력 종료지점 설정
@@ -21,10 +22,10 @@ public:
 	bool IsRedone();//다시실행인지 아닌지 구하기
 	virtual ~OnImeCharCommand();//소멸자
 	//인라인함수 선언(인라인함수는 부모클래스에서 물려받을 수 없음)
-	WPARAM GetWParam() const;//멤버로 저장된 글자 구하기
+	inline Glyph* GetGlyph() const;//멤버로 저장된 글자 구하기
 
 private:
-	WPARAM wParam;//OnCharCommand를 실행할 때 입력된 글자
+	Glyph* glyph;//OnImeCharCommand를 실행할 때 입력된 글자
 	Long rowIndex;//입력된 글자의 줄위치
 	Long letterIndex;//입력된 글자의 칸위치
 	bool isUndoMacroEnd;//실행취소출력 종료지점
@@ -33,9 +34,9 @@ private:
 };
 
 //인라인함수 정의
-inline WPARAM OnImeCharCommand::GetWParam() const
+inline Glyph* OnImeCharCommand::GetGlyph() const
 {
-	return this->wParam;
+	return this->glyph;
 }
 
 

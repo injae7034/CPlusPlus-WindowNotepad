@@ -16,6 +16,7 @@
 #include "RedoCommand.h"
 #include "Note.h"
 #include "OnImeCharCommand.h"
+#include "BackSpaceKeyActionCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -78,8 +79,7 @@ Command* CommandCreator::Create(UINT nId)
 	}
 	else if (nId == ID_ONCHARCOMMAND)
 	{
-		command = new OnCharCommand(this->notepadForm, this->notepadForm->GetNChar(),
-			this->notepadForm->note->GetCurrent(), this->notepadForm->current->GetCurrent());
+		command = new OnCharCommand(this->notepadForm, this->notepadForm->GetGlyph());
 	}
 	else if (nId == IDM_NOTE_UNDO)
 	{
@@ -91,8 +91,11 @@ Command* CommandCreator::Create(UINT nId)
 	}
 	else if (nId == ID_ONIMECHARCOMMAND)
 	{
-		command = new OnImeCharCommand(this->notepadForm, this->notepadForm->GetWParam(),
-			this->notepadForm->note->GetCurrent(), this->notepadForm->current->GetCurrent());
+		command = new OnImeCharCommand(this->notepadForm, this->notepadForm->GetGlyph());
+	}
+	else if (nId == ID_BACKSPACEKEYACTIONCOMMAND)
+	{
+		command = new BackSpaceKeyActionCommand(this->notepadForm);
 	}
 
 	return command;

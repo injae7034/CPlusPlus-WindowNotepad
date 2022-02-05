@@ -66,6 +66,7 @@ NotepadForm::NotepadForm()
 	this->previousPageWidth = 0;//처음생성될때는 현재 화면 너비를 0으로 초기화해줌
 	this->selectedStartXPos = 0;//처음생성될때는 선택된 texts가 없기 때문에 0으로 초기화해줌
 	this->selectedStartYPos = 0;//처음생성될때는 선택된 texts가 없기 때문에 0으로 초기화해줌
+	this->glyph = 0;//메모장이 처음 생성되면 글자가 없기 때문에 0으로 초기화해줌
 	//CFont에서 사용하고자 하는 글자크기와 글자체로 초기화시킴.
 	//기본생성자로 생성된 this->font에 매개변수 5개생성자로 치환(=)시킴
 	LOGFONT logFont;
@@ -162,9 +163,11 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//2. Ctrl키가 안눌러져 있으면
 		if (ctrlPressedCheck >= 0)
 		{
-			//2.1 매개변수로 입력받은 nChar을 저장한다.
-			this->nChar = nChar;
-			//2.2 OnCommand로 메세지를 보낸다.
+			//2.1 glyphCreator를 생성한다.
+			GlyphCreator glyphCreator;
+			//2.2 glyph를 생성해서 저장한다.
+			this->glyph = glyphCreator.Create((char*)&nChar);
+			//2.3 OnCommand로 메세지를 보낸다.
 			this->SendMessage(WM_COMMAND, ID_ONCHARCOMMAND);
 		}
 	}
@@ -267,10 +270,19 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 //완성된 한글을 입력받았을 때
 LRESULT NotepadForm::OnImeChar(WPARAM wParam, LPARAM lParam)
 {
-	//1. 매개변수로 입력받은 wParam을 저장한다.
-	this->wParam = wParam;
-	//2. OnCommand로 메세지를 보낸다.
+	//1. glyphCreator를 생성한다.
+	GlyphCreator glyphCreator;
+	//2. 매개변수로 입력받은 wParam을 통해 한글을 버퍼에 옮긴다.
+	WORD word = LOWORD(wParam);
+	char koreanLetter[3];
+	koreanLetter[0] = HIBYTE(word);
+	koreanLetter[1] = LOBYTE(word);
+	koreanLetter[2] = '\0';
+	//3. doubleByteLetter를 생성한다.
+	this->glyph = glyphCreator.Create((char*)koreanLetter);
+	//4. OnCommand로 메세지를 보낸다.
 	this->SendMessage(WM_COMMAND, ID_ONIMECHARCOMMAND);
+
 	return 0;
 }
 
@@ -308,8 +320,9 @@ void NotepadForm::OnCommand(UINT nId)
 	{
 		//3.1 ConcreteCommand의 execute 함수를 실행한다.
 		command->Execute();
-		//3.2 글자를 입력하는 command이면
-		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND)
+		//3.2 글자를 입력하는 command이거나 지우는 command이면
+		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND
+			|| nId == ID_BACKSPACEKEYACTIONCOMMAND)
 		{
 			//3.2.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);

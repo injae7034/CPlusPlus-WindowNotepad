@@ -49,8 +49,7 @@ public:
 	Long selectedStartYPos;//선택이 시작되는 y좌표
 	Long previousPageWidth;
 	//인라인함수 정의
-	UINT GetNChar() const;
-	WPARAM GetWParam() const;
+	inline Glyph* GetGlyph() const;
 protected://#
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
@@ -73,18 +72,13 @@ private:
 	//menu가 계속 notepadForm에 setMenu된채로 있게됨 단독적으로 CMenu가 있는 경우
 	//OnCreate 스택이 종료되면 CMenu가 사라지기때문에 뻑이남.
 	CMenu menu;
-	UINT nChar;
-	WPARAM wParam;
+	Glyph* glyph;
 };
 
 //인라인함수정의
-inline UINT NotepadForm::GetNChar() const
+inline Glyph* NotepadForm::GetGlyph() const
 {
-	return this->nChar;
-}
-inline WPARAM NotepadForm::GetWParam() const
-{
-	return this->wParam;
+	return this->glyph;
 }
 
 //함수선언(함수포인터느낌)
