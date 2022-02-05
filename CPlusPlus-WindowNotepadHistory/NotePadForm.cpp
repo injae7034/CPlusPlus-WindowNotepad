@@ -323,7 +323,7 @@ void NotepadForm::OnCommand(UINT nId)
 		//3.2 글자를 입력하는 command이거나 지우는 command이면
 		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND
 			|| nId == ID_BACKSPACEKEYACTIONCOMMAND || nId == ID_DELETEKEYACTIONCOMMAND
-			|| nId == ID_CTRLBACKSPACEKEYACTIONCOMMAND)
+			|| nId == ID_CTRLBACKSPACEKEYACTIONCOMMAND || nId == ID_CTRLDELETEKEYACTIONCOMMAND)
 		{
 			//3.2.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);

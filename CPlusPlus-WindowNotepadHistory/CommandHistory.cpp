@@ -6,6 +6,7 @@
 #include "BackSpaceKeyActionCommand.h"
 #include "DeleteKeyActionCommand.h"
 #include "CtrlBackSpaceKeyActionCommand.h"
+#include "CtrlDeleteKeyActionCommand.h"
 
 //디폴트 생성자 정의
 CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
@@ -154,47 +155,56 @@ Long CommandHistory::PushUndoList(Command* command)
 	//2. undoList에서 lastCommand가 있으면(undoList에 저장된 command가 한 개라도 있으면)
 	if (lastCommand != 0)
 	{
-		//2.1 lastCommand가 OnCharCommand이면
-		if (dynamic_cast<OnCharCommand*>(lastCommand))
+		//2.1 lastCommand가 다시 실행된 Command이면
+		if (lastCommand->IsRedone() == true)
+		{
+			//2.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+			lastCommand->SetUndoMacroEnd();
+			//2.1.2  표시가 끝났음을 나타낸다.
+			isDone = true;
+		}
+		//2.2 lastCommand가 OnCharCommand이면
+		else if (dynamic_cast<OnCharCommand*>(lastCommand))
 		{
 			Glyph* glyph = dynamic_cast<OnCharCommand*>(lastCommand)->GetGlyph();
-			//2.1.1 개행문자이면
+			//2.2.1 개행문자이면
 			if (dynamic_cast<Row*>(glyph))
 			{
-				//2.1.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+				//2.2.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 				lastCommand->SetUndoMacroEnd();
-				//2.1.1.2  표시가 끝났음을 나타낸다.
+				//2.2.1.2  표시가 끝났음을 나타낸다.
 				isDone = true;
 			}
 		}
-		//2.2 lastCommand가 지우기 관련 Command이면
+		//2.3 lastCommand가 지우기 관련 Command이면
 		else if (dynamic_cast<BackSpaceKeyActionCommand*>(lastCommand) ||
 			dynamic_cast<DeleteKeyActionCommand*>(lastCommand) ||
-			dynamic_cast<CtrlBackSpaceKeyActionCommand*>(lastCommand))
+			dynamic_cast<CtrlBackSpaceKeyActionCommand*>(lastCommand) ||
+			dynamic_cast<CtrlDeleteKeyActionCommand*>(lastCommand))
 		{
-			//2.2.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+			//2.3.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 			lastCommand->SetUndoMacroEnd();
-			//2.2.2 표시가 끝났음을 나타낸다.
+			//2.3.2 표시가 끝났음을 나타낸다.
 			isDone = true;
 		}
-		//2.3 표시가 아직 안되었으면
+		//2.4 표시가 아직 안되었으면
 		if (isDone == false)
 		{
-			//2.2.1 lastCommand와 command의 줄의 위치가 같으면
-			if (isDone == false && lastCommand->GetRowIndex() == command->GetRowIndex())
+			//2.4.1 lastCommand와 command의 줄의 위치가 같으면
+			if (lastCommand->GetRowIndex() == command->GetRowIndex())
 			{
-				//2.2.1.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
+				//2.4.1.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
 				lastCommandLetterIndex = lastCommand->GetLetterIndex() + 1;
 				if (lastCommandLetterIndex != command->GetLetterIndex())
 				{
-					//2.2.1.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+					//2.4.1.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 					lastCommand->SetUndoMacroEnd();
 				}
 			}
-			//2.2.2 lastCommand와 command의 줄의 위치가 서로 다르면
+			//2.4.2 lastCommand와 command의 줄의 위치가 서로 다르면
 			else if (lastCommand->GetRowIndex() != command->GetRowIndex())
 			{
-				//2.2.2.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+				//2.4.2.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 				lastCommand->SetUndoMacroEnd();
 			}
 		}
@@ -244,6 +254,8 @@ Long CommandHistory::PushRedoList(Command* command)
 		else if (lastCommand->GetRowIndex() == command->GetRowIndex())
 		{
 			//3.2.1 lastCommand와 command의 글자 위치를 비교해 차이가 안나면
+			//Unexecute를 실행했으면 글자위치 차이가 1이 날텐데, Unexecute하기 전에
+			//먼저 PushRedoList가 실행되기 때문에 글자위치 차이가 안나는 것으로 비교해야 한다!
 			if (lastCommand->GetLetterIndex() != command->GetLetterIndex())
 			{
 				//3.2.1.1 매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.

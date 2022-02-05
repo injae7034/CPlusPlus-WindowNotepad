@@ -13,7 +13,8 @@ public:
 	virtual bool IsRedoMacroEnd();//다시실행 매크로 종료지점인지 아닌지 확인
 	virtual void SetUndoMacroEnd();//실행취소 매크로 종료지점 설정
 	virtual void SetRedoMacroEnd();//다시실행 매크로 종료지점 설정
-	virtual void SetRedone();
+	virtual void SetRedone();//다시 실행이라고 설정함
+	virtual bool IsRedone();//다시 실행인지 아닌지 확인함
 	virtual Long GetRowIndex();
 	virtual Long GetLetterIndex();
 	virtual ~Command() = 0;//추상클래스 소멸자

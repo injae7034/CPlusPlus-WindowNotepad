@@ -60,6 +60,7 @@
 #define IDM_NOTE_UNDO                   40042
 #define ID_40043                        40043
 #define IDM_NOTE_REDO                   40044
+#define ID_CTRLDELETEKEYACTIONCOMMAND   40995
 #define ID_CTRLBACKSPACEKEYACTIONCOMMAND 40996
 #define ID_DELETEKEYACTIONCOMMAND       40997
 #define ID_BACKSPACEKEYACTIONCOMMAND    40998
@@ -75,6 +76,6 @@
 #define _APS_NEXT_RESOURCE_VALUE        106
 #define _APS_NEXT_COMMAND_VALUE         40045
 #define _APS_NEXT_CONTROL_VALUE         1005
-#define _APS_NEXT_SYMED_VALUE           106
+#define _APS_NEXT_SYMED_VALUE           107
 #endif
 #endif
