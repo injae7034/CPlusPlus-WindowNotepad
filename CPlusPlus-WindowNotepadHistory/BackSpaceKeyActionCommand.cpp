@@ -3,13 +3,35 @@
 #include "GlyphCreator.h"
 #include "CommandHistory.h"
 #include "Row.h"
+#include "RowAutoChange.h"
 
 //디폴트생성자 정의
 BackSpaceKeyActionCommand::BackSpaceKeyActionCommand(NotepadForm* notepadForm)
 	:Command(notepadForm)
 {
-	this->rowIndex = notepadForm->note->GetCurrent();
-	this->letterIndex = notepadForm->current->GetCurrent();
+	//1. 자동개행 중이 아니면
+	if (this->notepadForm->isRowAutoChanging == false)
+	{
+		//1.1 command에 줄의 위치와 글자 위치를 저장한다.
+		this->rowIndex = notepadForm->note->GetCurrent();
+		this->letterIndex = notepadForm->current->GetCurrent();
+	}
+	//2. 자동개행 중이면
+	else
+	{
+		//2.1 RowAutoChange를 생성한다.
+		RowAutoChange rowAutoChange(this->notepadForm);
+		//2.2 자동개행 중인 상태의 현재 줄과 글자의 위치로 자동개행 전의 원래 줄과 글자의 위치를 구한다.
+		Long changedRowPos = this->notepadForm->note->GetCurrent();
+		Long changedLetterPos = this->notepadForm->current->GetCurrent();
+		Long originRowPos = 0;
+		Long originLetterPos = 0;
+		rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+			&originRowPos);
+		//2.3 command에 자동개행 전의 진짜 줄의 위치와 글자 위치를 저장한다.
+		this->rowIndex = originRowPos;
+		this->letterIndex = originLetterPos;
+	}
 	this->glyph = 0;
 	this->isUndoMacroEnd = false;
 	this->isRedoMacroEnd = false;
@@ -26,10 +48,15 @@ void BackSpaceKeyActionCommand::Execute()
 	//2. OnCharCommand가 다시 실행되면
 	if (this->isRedone == true)
 	{
-		//2.1 현재 줄의 위치와 글자위치를 재조정해준다.
-		currentRowPos = this->notepadForm->note->Move(this->rowIndex);
-		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-		currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
+		//2.1 자동개행이 진행 중이 아니면
+		if (this->notepadForm->isRowAutoChanging == false)
+		{
+			//2.1.1 현재 줄의 위치와 글자위치를 재조정해준다.
+			currentRowPos = this->notepadForm->note->Move(this->rowIndex);
+			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+			currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
+		}
+		
 	}
 	//3. 메모장에서 선택된 texts가 없으면
 	if (this->notepadForm->isSelecting == false)

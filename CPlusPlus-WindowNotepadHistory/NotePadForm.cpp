@@ -488,6 +488,10 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 {
 	//1. 현재 메모장의 창의 상태(최소화, 최대화, 이전 크기로 복원)와 가로 길이와 세로 길이를 입력받는다.
 	CFrameWnd::OnSize(nType, cx, cy);
+	//1. 현재 화면의 크기를 구한다.
+	CRect rect;
+	this->GetClientRect(&rect);
+	cx = rect.Width();
 	//2. 현재 메모장의 상태가 최소화가 아니면(최소화이면 cx와 cy 값이 둘다 0이 되고, 
 	//cx가 0이면 아래에서 cx크기로 반복을 돌리는데 무한반복이 발생해서 최소화버튼을 누르면 뻑이남!) 
 	if (nType != SIZE_MINIMIZED)

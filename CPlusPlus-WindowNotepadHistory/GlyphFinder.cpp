@@ -92,8 +92,8 @@ void GlyphFinder::FindDown(string keyword, Long* findingStartRowIndex,
         nextRowIndex = currentRowIndex + 1;
         nextRow = this->note->GetAt(nextRowIndex);
         //자동개행 하는 것처럼 가짜 줄의 내용을 앞의 줄에 추가한다 왜냐하면 자동개행이 안된 상태에서는
-        //한줄내에서만(진짜줄 한줄내에서) 찾고 선택하는게 가능하지만, 자동개행이 된 상태에서는 여러 가짜 줄에서
-        //걸쳐서 찾아지고, 선택이 가능하다(원래라면(자동개행이 안된 상태에서는)한줄이기 때문에)
+        //한줄내에서만(진짜줄 한줄내에서) 찾고 선택하는게 가능하지만, 자동개행이 된 상태에서는 여러 가짜 
+        //줄에서 걸쳐서 찾아지고, 선택이 가능하다(원래라면(자동개행이 안된 상태에서는)한줄이기 때문에)
         //8.4 다음 줄의 위치가 줄의 개수보다 작은동안 그리고 다음 줄이 가짜 줄인 동안 반복한다.
         while (nextRowIndex < this->note->GetLength() &&
             dynamic_cast<DummyRow*>(nextRow))
@@ -193,8 +193,8 @@ void GlyphFinder::FindDown(string keyword, Long* findingStartRowIndex,
                     //자동개행이 취소된 상태에서 해당 문자열을 찾았는데 최종적으로 읽은 글자가
                     //현재 개별적인 줄의 길이보다 길기 때문에 다음 줄로 넘어가서 다시 비교해야한다.
                     currentRowIndex++;
-                    //8.7.8.5.2 현재 글자위치도 자동개행이 취소된 상태의 글자위치기 때문에
-                    //현재 글자위치가 현재 줄의 개수보다 크기 때문에 그만큼 빼서 자동개행이 된 상태로 조정한다
+                    //8.7.8.5.2 현재 글자위치도 자동개행이 취소된 상태의 글자위치기 때문에 현재 글자 
+                    //위치가 현재 줄의 개수보다 크기 때문에 그만큼 빼서 자동개행이 된 상태로 조정한다
                     //앞에서 currentLetterIndex++로 인해 1이 증가된 상태이기 때문에 +1을 따로 안해줘도됨!
                     currentLetterIndex -= currentRow->GetLength();
                     //8.7.8.5.3 현재 줄의 다음줄을 구한다.

@@ -274,6 +274,7 @@ void RowAutoChange::GetOriginPos(Long changedLetterPos, Long changedRowPos,
 {
 	//1. 자동개행 후 줄과 캐럿의 위치를 입력받는다.
 	//2. 자동개행 후 캐럿이 있는 곳까지 줄의 개수를 구한다.
+	//메모장 첫번째줄부터 현재 줄까지의 줄의 개수(줄의 개수는 현재 줄의 위치 + 1 이다!
 	Long rowCount = changedRowPos + 1;
 	//자동개행 전에 원래 줄의 위치를 구한다.
 	//진짜 줄(Row)이면 count와 i 둘다 세고, 가짜 줄(DummyRow)이면 i만 센다.
