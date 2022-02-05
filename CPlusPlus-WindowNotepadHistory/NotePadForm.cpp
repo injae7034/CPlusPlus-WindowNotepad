@@ -188,62 +188,89 @@ void NotepadForm::OnPaint()
 //한글을 입력받을 때
 LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 {
-	//1. 매개변수로 입력받은 wParam을 저장한다.
-	this->wParam = wParam;
-	//2. OnCommand로 메세지를 보낸다.
-	this->SendMessage(WM_COMMAND, ID_ONCOMPOSITIONCOMMAND);
-	//3. 한글 조립과정을 반복한다.
+	//1. 메모장에서 선택된 texts가 있으면
+	if (this->isSelecting == true)
+	{
+		//1.1 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
+		this->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
+	}
+	//2. glyphCreator를 생성한다.
+	GlyphCreator glyphCreator;
+	WORD word = LOWORD(wParam);
+	//3. 키보드로부터 입력받을 정보를 바탕으로 새로운 한글을 저장한다.
+	char koreanLetter[3];
+	koreanLetter[0] = HIBYTE(word);
+	koreanLetter[1] = LOBYTE(word);
+	koreanLetter[2] = '\0';
+	//4. 현재 줄의 캐럿의 가로 위치를 구한다.
+	Long index = this->current->GetCurrent();
+	//5. IsComposing값이 '참'이면(한글이 조립중인 상태이면)
+	if (this->isComposing == true)
+	{
+		//5.1 현재 줄의 캐럿의 가로 위치 바로 앞에 있는 기존 한글을 지운다.
+		//그러기 위해서는 캐럿의 현재 가로 위치에 1감소한 값을 넣어주면 된다.
+		//기존 한글을 지워야 새로 입력 받은 한글을 대체할 수 있다.
+		this->current->Remove(index - 1);
+		//5.2 갱신된 current의 위치를 index에 저장한다.
+		index = this->current->GetCurrent();
+	}
+	//6. 현재위치의 한글을 지웠기 때문에 한글이 조립중이 아님으로 상태를 변경한다.
+	this->isComposing = false;
+	//7. 새로운 한글이 입력되었으면(한글 조립중에 글자를 다 지워버리면 '\0'문자로
+	//OnComposition에 입력된다 백스페이스키가 입력되면 기존 한글이 지워지고 '\0'가 들어 오게 된다.)
+	if (koreanLetter[0] != '\0')
+	{
+		//7.1 doubleByteLetter를 생성한다.
+		Glyph* doubleByteLetter = glyphCreator.Create((char*)koreanLetter);
+		//7.2 index가 현재 줄의 length와 같으면
+		if (index == this->current->GetLength())
+		{
+			//7.2.1 현재 줄의 마지막 글자 뒤에 새로운 한글을 추가한다.
+			index = this->current->Add(doubleByteLetter);
+		}
+		//7.3 index가 현재 줄의 length와 다르면
+		else
+		{
+			//7.3.1 현재 줄의 index번째에 새로운 한글을 끼워 쓴다.
+			index = this->current->Add(index, doubleByteLetter);
+		}
+		//7.4 한글을 현재 위치에 추가했기때문에 한글이 조립중인 상태로 변경한다.
+		this->isComposing = true;
+	}
+	//8. 한글 조립중에 백스페이스키룰 눌러서 조립 중인 한글을 지워버리면
+	else
+	{
+		//BackSpace와 Delete키와 별도로 한글조립중에 지우는 경우도 OnSize로 보내줘야 한다.
+		//8.1 자동 줄 바꿈이 진행중이면
+		if (this->isRowAutoChanging == true)
+		{
+			//8.1.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//OnSize에서 부분자동개행을 하도록 한다. 
+			this->SendMessage(WM_SIZE);
+		}
+	}
+	//9. 캐럿의 위치와 크기가 변경되었음을 알린다.
+	this->Notify();
+	//10. 메모장 제목에 *를 추가한다.
+	string name = this->fileName;
+	name.insert(0, "*");
+	name += " - 메모장";
+	SetWindowText(CString(name.c_str()));
+	//11. 메모장에 변경사항이 있음을 저장한다.
+	this->isDirty = true;
+	//12. 갱신한다.
+	Invalidate(TRUE);
+
 	return ::DefWindowProc(this->m_hWnd, WM_IME_COMPOSITION, wParam, lParam);
 }
 
 //완성된 한글을 입력받았을 때
 LRESULT NotepadForm::OnImeChar(WPARAM wParam, LPARAM lParam)
 {
-	//1. glyphCreator를 생성한다.
-	GlyphCreator glyphCreator;
-	WORD word = LOWORD(wParam);
-	char koreanLetter[3];
-	koreanLetter[0] = HIBYTE(word);
-	koreanLetter[1] = LOBYTE(word);
-	koreanLetter[2] = '\0';
-	//2. doubleByteLetter를 생성한다.
-	Glyph* doubleByteLetter = glyphCreator.Create((char*)koreanLetter);
-	//3. 현재 줄의 캐럿의 가로 위치를 구한다.
-	Long index = this->current->GetCurrent();
-	//4. 현재 줄의 캐럿의 가로 위치 바로 앞에 있는 기존 한글을 지운다.
-	// 그러기 위해서는 캐럿의 현재 가로 위치에 1감소한 값을 넣어주면 된다.
-	this->current->Remove(index - 1);
-	//5. 기존에 있던 글자가 지워졌기 때문에 캐럿의 현재 가로 위치는 1감소했기때문에
-	//캐럿의 현재 가로 위치값을 나타내는 index역시 1 감소시켜준다.
-	//index--;
-	//갱신된 current의 위치를 index에 저장한다.
-	index = this->current->GetCurrent();
-	//5. index가 현재 줄의 length와 같으면
-	if (index == this->current->GetLength())
-	{
-		//5.1 현재 줄의 마지막 글자 뒤에 새로운 한글을 추가한다.
-		index = this->current->Add(doubleByteLetter);
-	}
-	//6. index가 현재 줄의 length와 다르면
-	else
-	{
-		//6.1 현재 줄의 index번째에 새로운 한글을 끼워 쓴다.
-		index = this->current->Add(index, doubleByteLetter);
-	}
-	//7. IsComposing을 false로 바꾼다.
-	this->isComposing = false;
-	//8. 캐럿이 변경되었음을 알린다.
-	this->Notify();
-	//9. 메모장 제목에 *를 추가한다.
-	string name = this->fileName;
-	name.insert(0, "*");
-	name += " - 메모장";
-	SetWindowText(CString(name.c_str()));
-	//10. 메모장에 변경사항이 있음을 저장한다.
-	this->isDirty = true;
-	//11. 갱신한다.
-	Invalidate(TRUE);
-
+	//1. 매개변수로 입력받은 wParam을 저장한다.
+	this->wParam = wParam;
+	//2. OnCommand로 메세지를 보낸다.
+	this->SendMessage(WM_COMMAND, ID_ONIMECHARCOMMAND);
 	return 0;
 }
 
@@ -282,7 +309,7 @@ void NotepadForm::OnCommand(UINT nId)
 		//3.1 ConcreteCommand의 execute 함수를 실행한다.
 		command->Execute();
 		//3.2 글자를 입력하는 command이면
-		if (nId == ID_ONCHARCOMMAND || nId == ID_ONCOMPOSITIONCOMMAND)
+		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND)
 		{
 			//3.2.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);

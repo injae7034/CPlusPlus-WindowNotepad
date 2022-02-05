@@ -15,7 +15,7 @@
 #include "UndoCommand.h"
 #include "RedoCommand.h"
 #include "Note.h"
-#include "OnCompositionCommand.h"
+#include "OnImeCharCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -89,9 +89,9 @@ Command* CommandCreator::Create(UINT nId)
 	{
 		command = new RedoCommand(this->notepadForm);
 	}
-	else if (nId == ID_ONCOMPOSITIONCOMMAND)
+	else if (nId == ID_ONIMECHARCOMMAND)
 	{
-		command = new OnCompositionCommand(this->notepadForm, this->notepadForm->GetWParam(),
+		command = new OnImeCharCommand(this->notepadForm, this->notepadForm->GetWParam(),
 			this->notepadForm->note->GetCurrent(), this->notepadForm->current->GetCurrent());
 	}
 

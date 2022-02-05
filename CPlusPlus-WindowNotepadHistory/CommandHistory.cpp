@@ -3,7 +3,6 @@
 #include "Command.h"
 #include "OnCharCommand.h"
 #include "Note.h"
-#include "OnCompositionCommand.h"
 
 //디폴트 생성자 정의
 CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,

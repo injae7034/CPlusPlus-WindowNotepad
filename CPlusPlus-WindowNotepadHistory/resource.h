@@ -60,7 +60,7 @@
 #define IDM_NOTE_UNDO                   40042
 #define ID_40043                        40043
 #define IDM_NOTE_REDO                   40044
-#define ID_ONCOMPOSITIONCOMMAND         40999
+#define ID_ONIMECHARCOMMAND             40999
 #define ID_ONCHARCOMMAND                41000
 #define IDC_STATIC_FINDINGCONTENT       65535
 #define IDC_STATIC_REPLACINGCONTNET     65535
