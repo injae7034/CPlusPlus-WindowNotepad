@@ -18,6 +18,7 @@ CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
 	this->undoListLength = 0;
 	this->redoListCapacity = redoListCapacity;
 	this->redoListLength = 0;
+	this->current = 0;
 }
 
 //실행취소 정의

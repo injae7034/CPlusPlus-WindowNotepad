@@ -22,6 +22,8 @@ OnCharCommand::OnCharCommand(NotepadForm* notepadForm, Glyph* glyph)
 //Execute 정의
 void OnCharCommand::Execute()
 {
+	this->notepadForm->commandHistory->current = this;
+
 	//선택영역이 있으면 선택영역 삭제
 	//1. 메모장에서 선택된 texts가 있으면
 	if (this->notepadForm->isSelecting == true)
@@ -111,6 +113,11 @@ void OnCharCommand::Execute()
 	this->notepadForm->SetWindowText(CString(name.c_str()));
 	//9. 메모장에 변경사항이 있음을 저장한다.
 	this->notepadForm->isDirty = true;
+	//10.1 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+	this->rowIndex = this->notepadForm->note->GetCurrent();
+	this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
+	this->letterIndex = this->notepadForm->current->GetCurrent();
+#if 0
 	//10. 자동개행 중이 아니면
 	if (this->notepadForm->isRowAutoChanging == false)
 	{
@@ -122,6 +129,7 @@ void OnCharCommand::Execute()
 	//11. 자동개행 중이면
 	else
 	{
+#if 0
 		//11.1 현재 화면의 크기를 구한다.
 		CRect rect;
 		this->notepadForm->GetClientRect(&rect);
@@ -151,12 +159,15 @@ void OnCharCommand::Execute()
 			this->rowIndex = this->notepadForm->note->GetCurrent();
 			this->letterIndex++;
 		}
+#endif
 
-#if 0
-		Long rowIndexBeforeRowAutoChange = 0;//자동개행 전의 원래 진짜 줄의 위치
-		Long letterIndexBeforeRowAutoChange = 0;//자동개행 전의 원래 진짜 글자의 위치
-		Long rowIndexAfterRowAutoChange = 0;//자동개행 후 줄의 위치
-		Long letterIndexAfterRowAutoChange = 0;//자동 개행 후 글자의 위치
+		//Long rowIndexBeforeRowAutoChange = 0;//자동개행 전의 원래 진짜 줄의 위치
+		//Long letterIndexBeforeRowAutoChange = 0;//자동개행 전의 원래 진짜 글자의 위치
+		//Long rowIndexAfterRowAutoChange = 0;//자동개행 후 줄의 위치
+		//Long letterIndexAfterRowAutoChange = 0;//자동 개행 후 글자의 위치
+		
+		Long realRowIndex = 0;//진짜 줄의 위치
+		Long realLetterIndex = 0;//진짜 줄의 글자 위치
 		//현재 줄의 위치와 글자 위치를 구한다.
 		currentRowPos = this->notepadForm->note->GetCurrent();
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
@@ -173,28 +184,79 @@ void OnCharCommand::Execute()
 		if (i >= 0)
 		{
 			//진짜 줄의 위치를 저장한다.
-			rowIndexBeforeRowAutoChange = i;
+			realRowIndex = i;
 		}
+		i = realRowIndex;
+		Long length = 0;
+		while (i < currentRowPos)
+		{
+			row = this->notepadForm->note->GetAt(i);
+			length += (row->GetLength() - 1);
+			i++;
+		}
+		length += currentLetterPos;
+		realLetterIndex = length;
+		this->rowIndex = realRowIndex;
+		this->letterIndex = realLetterIndex;
+#if 0
 		//다음 진짜 줄까지 줄의 개수를 센다.
+		i++;
 		row = this->notepadForm->note->GetAt(i);
-		Long rowCountOfNote = 0;
 		while (i < this->notepadForm->note->GetLength() && dynamic_cast<DummyRow*>(row))
 		{
 			i++;
 			row = this->notepadForm->note->GetAt(i);
 		}
+		//진짜 줄이 가지고 있는 줄의 개수를 구한다.(자기 자신 + 가짜줄)
+		Long rowCount = i - realRowIndex;
+		//진짜 줄의 개수를 구한다.
+		i = 0;
+		Long j = realRowIndex;
+		Long length = this->notepadForm->note->GetAt(j)->GetLength() - 1;
+		Long realRowLength = length;
+		while (i < rowCount)
+		{
+			j++;
+			length = this->notepadForm->note->GetAt(j)->GetLength() - 1;
+			realRowLength += length;
+			i++;
+		}
+		realRowLength += 1;
 #endif
+
 	}
+#endif
 }
 
 //Unexcute
 void OnCharCommand::Unexecute()
 {
+	this->notepadForm->commandHistory->current = this;
+
 	//4. 현재 줄의 위치를 이동시킨다.(캐럿이 다른 곳에 있으면 그 곳에 글자가 지워지기 때문에)
 	Long currentRowPos = this->notepadForm->note->Move(this->rowIndex);
 	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 	//5. 현재 글자의 위치를 이동시킨다.
 	Long currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
+#if 0
+	//자동개행 진행중이면
+	if (this->notepadForm->isRowAutoChanging == true)
+	{
+		RowAutoChange rowAutoChange(this->notepadForm);
+		Long changedRowPos = 0;
+		Long changedLetterPos = 0;
+		Long originRowPos = this->rowIndex;
+		Long originLetterPos = this->letterIndex;
+		this->rowIndex = changedRowPos;
+		this->letterIndex = changedLetterPos;
+		rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
+			&changedRowPos);
+		currentRowPos = this->notepadForm->note->Move(this->rowIndex);
+		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+		//5. 현재 글자의 위치를 이동시킨다.
+		currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
+	}
+#endif
 	//6. 입력받은 문자가 개행문자가 아니면
 	if (!dynamic_cast<Row*>(this->glyph))
 	{
@@ -239,6 +301,51 @@ void OnCharCommand::Unexecute()
 	this->rowIndex = this->notepadForm->note->GetCurrent();
 	this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
 	this->letterIndex = this->notepadForm->current->GetCurrent();
+#if 0
+	//10. 자동개행 중이 아니면
+	if (this->notepadForm->isRowAutoChanging == false)
+	{
+		//10.1 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+		this->rowIndex = this->notepadForm->note->GetCurrent();
+		this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
+		this->letterIndex = this->notepadForm->current->GetCurrent();
+	}
+	else
+	{
+		Long realRowIndex = 0;//진짜 줄의 위치
+		Long realLetterIndex = 0;//진짜 줄의 글자 위치
+		//현재 줄의 위치와 글자 위치를 구한다.
+		currentRowPos = this->notepadForm->note->GetCurrent();
+		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+		currentLetterPos = this->notepadForm->current->GetCurrent();
+		//줄을 구한다.
+		Glyph* row = this->notepadForm->current;
+		//줄이 가짜줄인 동안 반복한다. (진짜 줄의 위치 찾기)
+		Long i = currentRowPos;
+		while (i >= 0 && dynamic_cast<DummyRow*>(row))
+		{
+			i--;
+			row = this->notepadForm->note->GetAt(i);
+		}
+		if (i >= 0)
+		{
+			//진짜 줄의 위치를 저장한다.
+			realRowIndex = i;
+		}
+		i = realRowIndex;
+		Long length = 0;
+		while (i < currentRowPos)
+		{
+			row = this->notepadForm->note->GetAt(i);
+			length += (row->GetLength() - 1);
+			i++;
+		}
+		length += currentLetterPos;
+		realLetterIndex = length;
+		this->rowIndex = realRowIndex;
+		this->letterIndex = realLetterIndex;
+	}
+#endif
 }
 
 //SetMacroEnd(실행취소 및 다시실행 매크로출력 종료지점 설정)
@@ -266,6 +373,16 @@ Long OnCharCommand::GetRowIndex()
 Long OnCharCommand::GetLetterIndex()
 {
 	return this->letterIndex;
+}
+//줄위치 설정하기
+void OnCharCommand::SetRowIndex(Long rowIndex)
+{
+	this->rowIndex = rowIndex;
+}
+//글자위치 설정하기
+void OnCharCommand::SetLetterIndex(Long letterIndex)
+{
+	this->letterIndex = letterIndex;
 }
 //실행취소 종료지점여부 구하기
 bool OnCharCommand::IsUndoMacroEnd()

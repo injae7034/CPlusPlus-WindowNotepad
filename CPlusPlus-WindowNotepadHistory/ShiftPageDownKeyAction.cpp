@@ -20,8 +20,14 @@ void ShiftPageDownKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//스크롤을 캐럿이 있는 곳으로 이동시킨 캐럿이 있는 곳을 기준삼아 다시 스크롤을 페이지단위로 이동시킨다.
 	//2. 페이지 단위로 이동하기 전에 수직스크롤의 현재 위치를 저장한다.
 	Long previousVPos = this->notepadForm->scrollController->scroll[1]->GetCurrentPos();
-	//3. 수직스크롤을 다음 페이지로 이동시키고 이동된 수직스크롤의 현재 위치를 반환받는다.
-	Long currentVPos = this->notepadForm->scrollController->scroll[1]->PageNext();
+	//3. 스크롤의 max값이 현재 화면의 크기보다 크면
+	Long currentVPos = 0;
+	if (this->notepadForm->scrollController->scroll[1]->GetMax() >
+		this->notepadForm->scrollController->scroll[1]->GetPageSize())
+	{
+		//3.1 수직스크롤을 다음 페이지로 이동시키고 이동된 수직스크롤의 현재 위치를 반환받는다.
+		currentVPos = this->notepadForm->scrollController->scroll[1]->PageNext();
+	}
 	//4. 수직스크롤에 이동이 있으면(previousVPos와 currentVPos가 다르면 이동이 있었다는 뜻임)
 	if (previousVPos != currentVPos)
 	{

@@ -72,6 +72,18 @@ Long Command::GetLetterIndex()
 	return -1;
 }
 
+//줄 위치 설정하기
+void Command::SetRowIndex(Long rowIndex)
+{
+
+}
+
+//글자 위치 설정하기
+void Command::SetLetterIndex(Long letterIndex)
+{
+
+}
+
 //소멸자
 Command::~Command()
 {

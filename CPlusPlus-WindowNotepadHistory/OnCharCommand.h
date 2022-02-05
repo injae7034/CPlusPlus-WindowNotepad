@@ -18,6 +18,8 @@ public:
 	virtual ~OnCharCommand();//소멸자
 	virtual Long GetRowIndex();//멤버로 저장된 글자의 줄의 위치를 구하기
 	virtual Long GetLetterIndex();//멤버로 저장괸 글자의 칸의 위치를 구하기
+	virtual void SetRowIndex(Long rowIndex);
+	virtual void SetLetterIndex(Long letterIndex);
 	virtual bool IsUndoMacroEnd();//실행취소출력 종료지점 구하기
 	virtual bool IsRedoMacroEnd();//다시실행출력 종료지점 구하기
 	virtual bool IsRedone();//다시실행인지 아닌지 구하기

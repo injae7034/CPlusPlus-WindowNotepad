@@ -320,13 +320,13 @@ void NotepadForm::OnCommand(UINT nId)
 	{
 		//3.1 ConcreteCommand의 execute 함수를 실행한다.
 		command->Execute();
-		//3.2 글자를 입력하는 command이면 !!!***글자입력메모리 누수 잡기
+		//3.2 글자를 입력하는 command이면 
 		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND)
 		{
 			//3.2.1.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);
 			//3.2.1.2 redoList를 초기화시킨다.
-			this->commandHistory->MakeRedoListEmpty();
+			this->commandHistory->MakeRedoListEmpty();		
 		}
 		//3.3 글자를 지우는 command이면
 		else if (nId == ID_BACKSPACEKEYACTIONCOMMAND || nId == ID_DELETEKEYACTIONCOMMAND
@@ -372,14 +372,19 @@ void NotepadForm::OnCommand(UINT nId)
 //메모장에서 키보드로 이동하기
 void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
+	//글자가 아무것도 없는 첫줄 첫번째 글자위치에서 shift누르고 이동하면 선택할게 없는데 선택이 되어서
+	//그걸 막으려고 OnKeyDown에서 조건문으로 처음부터 못들어가게 막았는데 이렇게 되면 나중에 글자가 하나도
+	//없을 경우 실행취소(CtrlZKeyAction)나 다시 실행(CtrlYKeyAction) 역시 안들어가는 문제가 발생함!
+	//이렇게 처음부터 막지 말고 차라리 shift들어가서 실질적으로 이동이 있으면 선택을 해주고,
+	//이동이 없으면 선택을 안하고 그냥 빠져나가게 하는게 훨씬 더 깔끔하다.
 	//1. 메모장의 노트에서 줄의 개수를 구한다.
-	Long rowCountOfNote = this->note->GetLength();
+	//Long rowCountOfNote = this->note->GetLength();
 	//2. 메모장의 노트의 마지막 줄의 글자 개수를 구한다.
-	Long letterCountOfFirstRow = this->note->GetAt(rowCountOfNote - 1)->GetLength();
+	//Long letterCountOfFirstRow = this->note->GetAt(rowCountOfNote - 1)->GetLength();
 	//3. 메모장의 노트에 줄의 개수가 하나있는데 그 줄의 글자가 하나도 없는 경우가 아니라면
 	//글자가 하나도 없고 줄만 2개이상 있는 경우부터는 선택이 가능하기 떄문에 복사, 잘라내기, 삭제가 가능하다.
-	if (rowCountOfNote != 1 || letterCountOfFirstRow != 0)
-	{
+	//if (rowCountOfNote != 1 || letterCountOfFirstRow != 0)
+	//{
 		//3.1 KeyActionCreator를 생성한다.
 		KeyActionCreator keyActionCreator(this);
 		//3.2 ConcreteKeyAction을 생성한다.
@@ -412,7 +417,7 @@ void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			this->Notify();
 			this->Invalidate();	
 		}
-	}
+	//}
 }
 
 //메모장에서 세로 스크롤을 클릭할 때
@@ -532,13 +537,18 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 			rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
 				&changedRowPos);
 			//2.1.6 현재 줄의 위치와 글자의 위치를 조정한다.
-			this->note->Move(changedRowPos);
-			this->current = this->note->
-				GetAt(this->note->GetCurrent());
-			this->current->Move(changedLetterPos);
-			//2.1.7 캐럿의 위치가 변경되었음을 알린다.
+			Long currentRowIndex = this->note->Move(changedRowPos);
+			this->current = this->note->GetAt(currentRowIndex);
+			Long currentLetterIndex = this->current->Move(changedLetterPos);
+			//2.1.7 현재 command의 줄위치와 글자위치를 변경한다.
+			if (this->commandHistory->current != 0)
+			{
+				this->commandHistory->current->SetRowIndex(currentRowIndex);
+				this->commandHistory->current->SetLetterIndex(currentLetterIndex);
+			}
+			//2.1.8 캐럿의 위치가 변경되었음을 알린다.
 			this->Notify();
-			//2.1.8 변경사항을 갱신한다.
+			//2.1.9 변경사항을 갱신한다.
 			this->Invalidate(TRUE);
 		}
 	}
