@@ -86,34 +86,29 @@ void OnCharCommand::Execute()
 	//6. 입력받은 문자가 개행문자이면
 	else
 	{
-		//6.1 기존에 저장된 줄을 할당해제한다.
-		if (this->glyph != 0)
-		{
-			delete this->glyph;
-		}
-		//6.2 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만들어 저장한다.
-		this->glyph = this->notepadForm->current->Split(currentLetterPos);
-		//6.3 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
+		//6.1 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만든다.
+		Glyph* row = this->notepadForm->current->Split(currentLetterPos);
+		//6.2 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
 		if (currentRowPos == this->notepadForm->note->GetLength() - 1)
 		{
-			//6.3.1 새로운 줄을 마지막 줄 다음에 추가한다.
-			currentRowPos = this->notepadForm->note->Add(this->glyph->Clone());
+			//6.2.1 새로운 줄을 마지막 줄 다음에 추가한다.
+			currentRowPos = this->notepadForm->note->Add(row);
 		}
-		//6.4 그게 아니면
+		//6.3 그게 아니면
 		else
 		{
-			//6.4.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
+			//6.3.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
 			currentRowPos = this->notepadForm->note->
-				Add(currentRowPos + 1, this->glyph->Clone());
+				Add(currentRowPos + 1, row);
 		}
-		//6.5 현재 줄을 새로 저장한다.
+		//6.4 현재 줄을 새로 저장한다.
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-		//6.6 현재 줄의 글자 위치를 처음으로 이동시킨다.
+		//6.5 현재 줄의 글자 위치를 처음으로 이동시킨다.
 		this->notepadForm->current->First();
-		//6.7 자동 줄 바꿈이 진행중이면
+		//6.6 자동 줄 바꿈이 진행중이면
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//6.7.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//6.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
 		}
@@ -146,155 +141,6 @@ void OnCharCommand::Execute()
 		this->rowIndex = originRowPos;
 		this->letterIndex = originLetterPos;
 	}
-#if 0
-
-	Long realRowIndex = 0;//진짜 줄의 위치
-	Long realLetterIndex = 0;//진짜 줄의 글자 위치
-	//현재 줄을 구한다.
-	Glyph* currentRow = this->notepadForm->current;
-	//줄이 가짜줄인 동안 반복한다. (진짜 줄의 위치 찾기)
-	Long i = currentRowPos;
-	while (i >= 0 && dynamic_cast<DummyRow*>(row))
-	{
-		i--;
-		row = this->notepadForm->note->GetAt(i);
-	}
-	if (i >= 0)
-	{
-		//진짜 줄의 위치를 저장한다.
-		realRowIndex = i;
-	}
-	//다음 진짜 줄까지 줄의 개수를 센다.
-	i++;
-	Glyph* nextRow = this->notepadForm->note->GetAt(i);
-	while (i < this->notepadForm->note->GetLength() && dynamic_cast<DummyRow*>(row))
-	{
-		i++;
-		nextRow = this->notepadForm->note->GetAt(i);
-	}
-	//진짜 줄이 가지고 있는 줄의 개수를 구한다.(자기 자신 + 가짜줄)
-	Long rowCount = i - realRowIndex;
-	//진짜 줄의 총 글자개수를 구한다.
-	i = 0;
-	Long j = realRowIndex;
-	Long letterLength = this->notepadForm->note->GetAt(j)->GetLength() - 1;
-	Long realRowLetterLength = letterLength + 1;
-	while (i < rowCount)
-	{
-		j++;
-		letterLength = this->notepadForm->note->GetAt(j)->GetLength() - 1;
-		realRowLetterLength += letterLength;
-		i++;
-	}
-
-	//10. 자동개행 중이 아니면
-	if (this->notepadForm->isRowAutoChanging == false)
-	{
-		//10.1 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-		this->rowIndex = this->notepadForm->note->GetCurrent();
-		this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
-		this->letterIndex = this->notepadForm->current->GetCurrent();
-	}
-	//11. 자동개행 중이면
-	else
-	{
-#if 0
-		//11.1 현재 화면의 크기를 구한다.
-		CRect rect;
-		this->notepadForm->GetClientRect(&rect);
-		//11.2 현재 화면의 가로 길이를 구한다.
-		Long pageWidth = rect.Width();
-		//11.3 현재 줄의 위치와 글자 위치를 구한다.
-		currentRowPos = this->notepadForm->note->GetCurrent();
-		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//11.4 현재 줄을 구한다.
-		Glyph* row = this->notepadForm->current;
-		//11.5 현재 줄에서 현재 글자를 추가하기 전 위치까지의 contents 가로길이를 구한다.
-		Long rowTextWidth = this->notepadForm->textExtent->GetTextWidth
-		(row->GetPartOfContent(currentLetterPos));
-		//11.6 contents의 가로 길이가 화면의 가로 길이보다 크거나 같으면
-		if (rowTextWidth >= pageWidth)
-		{
-			//11.6.1 command의 줄 위치에 현재 줄의 다음 줄을 저장한다.
-			this->rowIndex = currentRowPos + 1;
-			//11.6.2 command의 글자 위치에 1을 저장한다.
-			this->letterIndex = 1;
-		}
-		//11.7 contents의 가로 길이가 화면의 가로 길이보다 작으면
-		else
-		{
-			//10.1 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-			this->rowIndex = this->notepadForm->note->GetCurrent();
-			this->letterIndex++;
-		}
-#endif
-
-		//Long rowIndexBeforeRowAutoChange = 0;//자동개행 전의 원래 진짜 줄의 위치
-		//Long letterIndexBeforeRowAutoChange = 0;//자동개행 전의 원래 진짜 글자의 위치
-		//Long rowIndexAfterRowAutoChange = 0;//자동개행 후 줄의 위치
-		//Long letterIndexAfterRowAutoChange = 0;//자동 개행 후 글자의 위치
-		
-		Long realRowIndex = 0;//진짜 줄의 위치
-		Long realLetterIndex = 0;//진짜 줄의 글자 위치
-		//현재 줄의 위치와 글자 위치를 구한다.
-		currentRowPos = this->notepadForm->note->GetCurrent();
-		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//줄을 구한다.
-		Glyph* row = this->notepadForm->current;
-		//줄이 가짜줄인 동안 반복한다. (진짜 줄의 위치 찾기)
-		Long i = currentRowPos;
-		while (i >= 0 && dynamic_cast<DummyRow*>(row))
-		{
-			i--;
-			row = this->notepadForm->note->GetAt(i);
-		}
-		if (i >= 0)
-		{
-			//진짜 줄의 위치를 저장한다.
-			realRowIndex = i;
-		}
-		i = realRowIndex;
-		Long length = 0;
-		while (i < currentRowPos)
-		{
-			row = this->notepadForm->note->GetAt(i);
-			length += (row->GetLength() - 1);
-			i++;
-		}
-		length += currentLetterPos;
-		realLetterIndex = length;
-		this->rowIndex = realRowIndex;
-		this->letterIndex = realLetterIndex;
-#if 0
-		//다음 진짜 줄까지 줄의 개수를 센다.
-		i++;
-		row = this->notepadForm->note->GetAt(i);
-		while (i < this->notepadForm->note->GetLength() && dynamic_cast<DummyRow*>(row))
-		{
-			i++;
-			row = this->notepadForm->note->GetAt(i);
-		}
-		//진짜 줄이 가지고 있는 줄의 개수를 구한다.(자기 자신 + 가짜줄)
-		Long rowCount = i - realRowIndex;
-		//진짜 줄의 개수를 구한다.
-		i = 0;
-		Long j = realRowIndex;
-		Long length = this->notepadForm->note->GetAt(j)->GetLength() - 1;
-		Long realRowLength = length;
-		while (i < rowCount)
-		{
-			j++;
-			length = this->notepadForm->note->GetAt(j)->GetLength() - 1;
-			realRowLength += length;
-			i++;
-		}
-		realRowLength += 1;
-#endif
-
-	}
-#endif
 }
 
 //Unexcute
@@ -380,71 +226,6 @@ void OnCharCommand::Unexecute()
 		this->rowIndex = originRowPos;
 		this->letterIndex = originLetterPos;
 	}
-
-#if 0
-	//자동개행 진행중이면
-	if (this->notepadForm->isRowAutoChanging == true)
-	{
-		RowAutoChange rowAutoChange(this->notepadForm);
-		Long changedRowPos = 0;
-		Long changedLetterPos = 0;
-		Long originRowPos = this->rowIndex;
-		Long originLetterPos = this->letterIndex;
-		this->rowIndex = changedRowPos;
-		this->letterIndex = changedLetterPos;
-		rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
-			&changedRowPos);
-		currentRowPos = this->notepadForm->note->Move(this->rowIndex);
-		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-		//5. 현재 글자의 위치를 이동시킨다.
-		currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
-	}
-#endif
-#if 0
-	//10. 자동개행 중이 아니면
-	if (this->notepadForm->isRowAutoChanging == false)
-	{
-		//10.1 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-		this->rowIndex = this->notepadForm->note->GetCurrent();
-		this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
-		this->letterIndex = this->notepadForm->current->GetCurrent();
-	}
-	else
-	{
-		Long realRowIndex = 0;//진짜 줄의 위치
-		Long realLetterIndex = 0;//진짜 줄의 글자 위치
-		//현재 줄의 위치와 글자 위치를 구한다.
-		currentRowPos = this->notepadForm->note->GetCurrent();
-		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//줄을 구한다.
-		Glyph* row = this->notepadForm->current;
-		//줄이 가짜줄인 동안 반복한다. (진짜 줄의 위치 찾기)
-		Long i = currentRowPos;
-		while (i >= 0 && dynamic_cast<DummyRow*>(row))
-		{
-			i--;
-			row = this->notepadForm->note->GetAt(i);
-		}
-		if (i >= 0)
-		{
-			//진짜 줄의 위치를 저장한다.
-			realRowIndex = i;
-		}
-		i = realRowIndex;
-		Long length = 0;
-		while (i < currentRowPos)
-		{
-			row = this->notepadForm->note->GetAt(i);
-			length += (row->GetLength() - 1);
-			i++;
-		}
-		length += currentLetterPos;
-		realLetterIndex = length;
-		this->rowIndex = realRowIndex;
-		this->letterIndex = realLetterIndex;
-	}
-#endif
 }
 
 //SetMacroEnd(실행취소 및 다시실행 매크로출력 종료지점 설정)

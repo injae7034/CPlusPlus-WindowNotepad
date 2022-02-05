@@ -4,6 +4,7 @@
 #include "CommandHistory.h"
 #include "Row.h"
 #include "RowAutoChange.h"
+#include "DummyRow.h"
 
 //디폴트생성자 정의
 BackSpaceKeyActionCommand::BackSpaceKeyActionCommand(NotepadForm* notepadForm)
@@ -56,59 +57,82 @@ void BackSpaceKeyActionCommand::Execute()
 		//아무것도 안일어남. 현재 줄의 위치가 제일 처음이 아니고, 현재 글자 위치가 제일 처음이면
 		//현재 줄을 이전 줄에 Join시킨다.
 		//4.1 현재 줄의 위치가 0보다 크고, 현재 글자 위치가 0이면
-		Glyph* currentRow = 0;
-		Glyph* previousRow = 0;
+		Glyph* letter = 0;
 		if (currentRowPos > 0 && currentLetterPos == 0)
 		{
 			//4.1.1 현재 줄을 구한다.
-			currentRow = this->notepadForm->note->GetAt(currentRowPos);
-			//4.1.2 기존에 저장된 줄이 있으면 할당해제한다.
-			if (this->glyph != 0)
+			Glyph* currentRow = this->notepadForm->note->GetAt(currentRowPos);
+			//4.1.2 현재 줄이 가짜줄이 아니면(진짜 줄이면)
+			if (!dynamic_cast<DummyRow*>(currentRow))
 			{
-				delete this->glyph;
+				//4.1.2.1 처음 실행이 되면
+				if (this->isRedone == false)
+				{
+					//4.1.2.1.1 Row를 생성한다.
+					this->glyph = new Row();
+				}
+				//4.1.2.2 현재 줄의 이전 줄을 구한다.
+				Glyph* previousRow = this->notepadForm->note->GetAt(currentRowPos - 1);
+				//4.1.2.3 현재 줄의 이전 줄의 마지막 글자 위치를 구한다.
+				Long letterPos = previousRow->GetLength();
+				//4.1.2.4 현재 줄을 이전 줄에 합친다.
+				currentRow->Join(previousRow);
+				//4.1.2.5 Note에서 현재 줄의 주소를 지운다.
+				this->notepadForm->note->Remove(currentRowPos);
+				//4.1.2.6 현재 줄이 지워졌기 때문에 현재 줄을 변경한다.
+				currentRowPos = this->notepadForm->note->GetCurrent();
+				this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+				//4.1.2.7 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
+				//이전 줄의 마지막 현재 줄의 처음 사이에 위치하도록 조정한다.
+				currentLetterPos = this->notepadForm->current->Move(letterPos);
 			}
-			//4.1.3 현재 줄을 깊은 복사한다.
-			this->glyph = currentRow->Clone();
-			//4.1.4 현재 줄의 이전 줄을 구한다.
-			previousRow = this->notepadForm->note->GetAt(currentRowPos - 1);
-			//4.1.5 현재 줄의 이전 줄의 마지막 글자 위치를 구한다.
-			Long letterPos = previousRow->GetLength();
-			//4.1.6 현재 줄을 이전 줄에 합친다.
-			currentRow->Join(previousRow);
-			//4.1.7 Note에서 현재 줄의 주소를 지운다.
-			this->notepadForm->note->Remove(currentRowPos);
-			//4.1.8 현재 줄이 지워졌기 때문에 현재 줄을 변경한다.
-			currentRowPos = this->notepadForm->note->GetCurrent();
-			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-			//4.1.9 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
-			//이전 줄의 마지막 현재 줄의 처음 사이에 위치하도록 조정한다.
-			Long index = this->notepadForm->current->Move(letterPos);
-			//4.1.10 Command에 변경 사항이 있음을 표시한다.
+			//4.1.3 현재 줄이 가짜줄이면
+			else
+			{
+				//4.1.3.1 이전 줄로 이동한다.
+				currentRowPos = this->notepadForm->note->Move(currentRowPos - 1);
+				this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+				//4.1.3.2 처음 실행이 되면
+				if (this->isRedone == false)
+				{
+					//4.1.3.2.1 지울 글자를 구한다.
+					letter = this->notepadForm->current->
+						GetAt(this->notepadForm->current->GetLength() - 1);
+					//4.1.3.2.2 지울 글자를 깊은 복사해서 저장한다.
+					this->glyph = letter->Clone();
+				}
+				//4.1.3.3 이전 줄의 마지막 글자를 지운다.
+				this->notepadForm->current->Remove(this->notepadForm->current->GetLength() - 1);
+				//4.1.3.4 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+				//OnSize에서 부분자동개행을 하도록 한다. 
+				//가짜줄이 있다는게 자동개행이 진행중이라는 의미임.
+				this->notepadForm->SendMessage(WM_SIZE);
+			}
+			//4.1.4 Command에 변경 사항이 있음을 표시한다.
 			this->isDirty = true;
 		}
 		// 현재 글자 위치가 처음이 아닐 때(현재 줄이 처음이든 아니든 상관없음) 현재 글자를 지운다.
 		//4.2 현재 글자 위치가 처음이 아니면
 		else if (currentLetterPos > 0)
 		{
-			//4.2.1 현재 글자를 지우기 전에 지울 글자를 구한다.
-			Glyph* letter = this->notepadForm->current->GetAt(currentLetterPos - 1);
-			//4.2.2 기존에 글자가 있으면 글자를 할당해제한다.
-			if (this->glyph != 0)
+			//4.2.1 처음 실행이 되면
+			if (this->isRedone == false)
 			{
-				delete this->glyph;
+				//4.2.1.1 지울 글자를 구한다.
+				letter = this->notepadForm->current->GetAt(currentLetterPos - 1);
+				//4.2.1.2 지울 글자를 깊은 복사해서 저장한다.
+				this->glyph = letter->Clone();
 			}
-			//4.2.2 현재 글자를 깊은 복사해서 저장한다.
-			this->glyph = letter->Clone();
-			//4.2.3 현재 글자를 지운다.
+			//4.2.2 현재 글자를 지운다.
 			this->notepadForm->current->Remove(currentLetterPos - 1);
-			//4.2.4 자동 줄 바꿈 메뉴가 체크되어 있으면
+			//4.2.3 자동 줄 바꿈 메뉴가 체크되어 있으면
 			if (this->notepadForm->isRowAutoChanging == true)
 			{
-				//4.2.4.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+				//4.2.3.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 				//OnSize에서 부분자동개행을 하도록 한다. 
 				this->notepadForm->SendMessage(WM_SIZE);
 			}
-			///4.1.10 Command에 변경 사항이 있음을 표시한다.
+			///4.2.4 Command에 변경 사항이 있음을 표시한다.
 			this->isDirty = true;
 		}
 		//4.3 Command에 변경 사항이 있으면
@@ -202,38 +226,29 @@ void BackSpaceKeyActionCommand::Unexecute()
 	//6. 지울 때 저장한 glyph가 줄(개행문자)이면
 	else
 	{
-		//6.1 현재 줄의 위치를 구한다.
-		currentRowPos = this->notepadForm->note->GetCurrent();
-		//6.2 현재 줄의 캐럿의 위치를 구한다.
-		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//6.3 기존에 저장된 줄이 있으면 할당해제한다.
-		if (this->glyph != 0)
-		{
-			delete this->glyph;
-		}
-		//6.4. 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만들어 저장한다.
-		this->glyph = this->notepadForm->current->Split(currentLetterPos);
-		//6.5 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
+		//6.1 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만든다.
+		Glyph* row = this->notepadForm->current->Split(currentLetterPos);
+		//6.2 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
 		if (currentRowPos == this->notepadForm->note->GetLength() - 1)
 		{
-			//6.5.1 새로운 줄을 마지막 줄 다음에 추가한다.
-			currentRowPos = this->notepadForm->note->Add(this->glyph->Clone());
+			//6.2.1 새로운 줄을 마지막 줄 다음에 추가한다.
+			currentRowPos = this->notepadForm->note->Add(row);
 		}
-		//6.6 그게 아니면
+		//6.3 그게 아니면
 		else
 		{
-			//6.6.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
+			//6.3.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
 			currentRowPos = this->notepadForm->note->
-				Add(currentRowPos + 1, this->glyph->Clone());
+				Add(currentRowPos + 1, row);
 		}
-		//6.7 현재 줄을 새로 저장한다.
+		//6.4 현재 줄을 새로 저장한다.
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-		//6.8 현재 줄의 글자 위치를 처음으로 이동시킨다.
+		//6.5 현재 줄의 글자 위치를 처음으로 이동시킨다.
 		this->notepadForm->current->First();
-		//6.9 자동 줄 바꿈이 진행중이면
+		//6.6 자동 줄 바꿈이 진행중이면
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//6.9.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//6.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
 		}
