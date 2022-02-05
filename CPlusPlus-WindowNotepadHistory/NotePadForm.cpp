@@ -347,27 +347,26 @@ void NotepadForm::OnCommand(UINT nId)
 	//3. command가 NULL이 아니면
 	if (command != NULL)
 	{
-		//3.1 글자를 입력하는 command이면
+		//3.2 ConcreteCommand의 execute 함수를 실행한다.
+		command->Execute();
+		//3.1 글자를 입력하는 command이면(UndoCommand나 RedoCommand는 CommandHistory에 저장 안한다.)
 		if (nId == ID_ONCHARCOMMAND)
 		{
 			//3.1.1 UndoList에 추가한다.
-			this->commandHistory->AddUndoList(command);
+			this->commandHistory->PushUndoList(command);
 			//3.1.2 redoList를 초기화시킨다.
-			Command* redoCommand = 0;
-			while (this->commandHistory->IsRedoListEmpty() == false)
-			{
-				redoCommand = this->commandHistory->RemoveRedoList();
-				if (redoCommand != 0)
-				{
-					delete redoCommand;
-					redoCommand = 0;
-				}
-			}
+			this->commandHistory->MakeRedoListEmpty();
 		}
-		//4.3 ConcreteCommand의 execute 함수를 실행한다.
-		command->Execute();
+		//3.2 ConcreteCommand의 execute 함수를 실행한다.
+		//command->Execute();
+		if (nId == IDM_NOTE_FIND || nId == IDM_NOTE_REPLACE)
+		{
+			delete command;
+		}
+		//deleteCommand가 사라져서 현재 FindDialog나 ReplacingDialog를 띄우면
+		//FindCommand와 ReplaceCommand가 사라지지 않아서 메모리 누수가 생김 이에 대해서
+		//따로 처리해줘야함!!
 	}
-
 	//4. 변화를 메모장에 갱신한다.
 	this->Notify();
 	this->Invalidate();

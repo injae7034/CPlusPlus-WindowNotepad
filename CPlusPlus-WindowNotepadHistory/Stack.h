@@ -19,7 +19,7 @@ public:
 	//인라인함수
 	Long GetCapacity() const;
 	Long GetLength() const;
-	bool IsEmpty() const;// 이걸 이용해서 
+	bool IsEmpty() const;
 private:
 	Array<T> objects;
 	Long capacity;
@@ -140,14 +140,19 @@ T& Stack<T>::Pop()
 	return *newObject;
 	//끝내다.
 #endif
-	//
-	T Object = this->objects.GetAt(this->length - 1);
-	//마지막 배열 요소를 지운다.
-	this->objects.DeleteFromRear();
-	//할당량을 감소시킨다.
-	this->capacity--;
-	//사용량을 감소시킨다.
-	this->length--;
+	T Object = 0;
+	//스택에 object가 있으면
+	if (this->length > 0)
+	{
+		//마지막 배열 요소를 구한다.
+		Object = this->objects.GetAt(this->length - 1);
+		//마지막 배열 요소를 지운다.
+		this->objects.DeleteFromRear();
+		//할당량을 감소시킨다.
+		this->capacity--;
+		//사용량을 감소시킨다.
+		this->length--;
+	}
 	//복사한 마지막 배열 요소를 반환한다.
 	return Object;
 }
@@ -155,9 +160,15 @@ T& Stack<T>::Pop()
 template <typename T>
 T& Stack<T>::GetTop()
 {
-	//1. 제일 마지막에 위치한 value를 출력한다.
-	return this->objects[this->length - 1];
-	//2. 끝내다.
+	T object = 0;
+	//1. Stack에 Object가 있으면
+	if (this->length > 0)
+	{
+		object = this->objects[this->length - 1];
+	}
+	//2. object를 반환한다.
+	return object;
+	//3. 끝내다.
 }
 
 //치환연산자 정의
