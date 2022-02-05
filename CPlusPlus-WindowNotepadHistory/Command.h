@@ -2,12 +2,20 @@
 #define _COMMAND_H
 
 class NotepadForm;//주소로 이용되기 때문에 전방선언이 필요함!
+typedef signed long int Long;
 
 class Command {
 public:
 	Command(NotepadForm* notepadForm = 0);//디폴트생성자
 	virtual void Execute() = 0;//실행
 	virtual void Unexecute();//실행취소
+	virtual bool IsUndoMacroEnd();//실행취소 매크로 종료지점인지 아닌지 확인
+	virtual bool IsRedoMacroEnd();//다시실행 매크로 종료지점인지 아닌지 확인
+	virtual void SetUndoMacroEnd();//실행취소 매크로 종료지점 설정
+	virtual void SetRedoMacroEnd();//다시실행 매크로 종료지점 설정
+	virtual void SetRedone();
+	virtual Long GetRowIndex();
+	virtual Long GetLetterIndex();
 	virtual ~Command() = 0;//추상클래스 소멸자
 	//인라인함수정의
 	NotepadForm* GetNotepadForm() const;

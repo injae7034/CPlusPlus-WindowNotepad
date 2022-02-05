@@ -39,7 +39,6 @@ public:
 	CommandHistory* commandHistory;
 	
 	//flag는 public으로
-	bool isRedone;//처음실행인지 다시실행인지 구분하기 위한 flag
 	bool isRowAutoChanging;//자동개행이 되는 중인지 아닌지 판별하기 위한 flag
 	bool isSelecting;//텍스트 선택을 하는 중인지 아닌지 판별하기 위한 flag
 	bool isComposing;//한글이 조립중인지 아닌지 판별하기 위한 flag
@@ -51,7 +50,7 @@ public:
 	Long previousPageWidth;
 	//인라인함수 정의
 	UINT GetNChar() const;
-	Long GetStartSplitIndex() const;
+	WPARAM GetWParam() const;
 protected://#
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
@@ -75,7 +74,7 @@ private:
 	//OnCreate 스택이 종료되면 CMenu가 사라지기때문에 뻑이남.
 	CMenu menu;
 	UINT nChar;
-	Long startSplitIndex;
+	WPARAM wParam;
 };
 
 //인라인함수정의
@@ -83,11 +82,10 @@ inline UINT NotepadForm::GetNChar() const
 {
 	return this->nChar;
 }
-inline Long NotepadForm::GetStartSplitIndex() const
+inline WPARAM NotepadForm::GetWParam() const
 {
-	return this->startSplitIndex;
+	return this->wParam;
 }
-
 
 //함수선언(함수포인터느낌)
 LRESULT CALLBACK SaveMessageBoxProc(int nCode, WPARAM wParam, LPARAM lParam);

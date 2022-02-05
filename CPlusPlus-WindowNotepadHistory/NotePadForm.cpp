@@ -61,9 +61,6 @@ NotepadForm::NotepadForm()
 	this->isDirty = false;//false로 초기화시킴
 	this->isSelecting = false;//false로 초기화시킴
 	this->isRowAutoChanging = false;//false로 초기화 시킴.
-
-	this->isRedone = false;//처음에는 무조건 다시실행이 아니기 때문에 false로 초기화시켜줌.
-
 	this->fileName = "제목 없음";
 	this->filePath = "";
 	this->previousPageWidth = 0;//처음생성될때는 현재 화면 너비를 0으로 초기화해줌
@@ -78,9 +75,6 @@ NotepadForm::NotepadForm()
 	this->font = Font(logFont, RGB(0, 0, 0));
 	this->textExtent = NULL;
 	this->selectingTexts = NULL;
-
-	this->nChar = 0;
-	this->startSplitIndex = 0;
 }
 
 //메모장 윈도우가 생성될 때
@@ -168,101 +162,10 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//2. Ctrl키가 안눌러져 있으면
 		if (ctrlPressedCheck >= 0)
 		{
-			//2.1 메모장에서 선택된 texts가 있으면
-			if (this->isSelecting == true)
-			{
-				//2.1.1 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
-				this->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
-			}
-			//2.2 glyphCreator를 생성한다.
-			GlyphCreator glyphCreator;
-			//2.3 glyph를 생성한다.
-			Glyph* glyph = glyphCreator.Create((char*)&nChar);
-			Long letterIndex;
-			Long rowIndex;
-			//2.4 입력받은 문자가 개행문자가 아니면
-			if (nChar != '\n' && nChar != '\r')
-			{
-				//2.4.1 현재 줄의 글자 위치를 구한다.
-				letterIndex = this->current->GetCurrent();
-				//2.4.2 현재 줄의 글자 위치가 현재 줄의 글자개수와 같으면
-				if (letterIndex == this->current->GetLength())
-				{
-					//2.4.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
-					letterIndex = this->current->Add(glyph);
-				}
-				//2.4.3 현재 줄의 글자 위치가 현재 줄의 글자개수와 다르면
-				else
-				{
-					//2.4.3.1 현재 줄의 글자 위치에 글자를 끼워서 추가한다.
-					letterIndex = this->current->Add(letterIndex, glyph);
-				}
-			}
-			//2.5 입력받은 문자가 개행문자이면
-			else if (nChar == '\n' || nChar == '\r')
-			{
-				//2.5.1 현재 줄의 위치를 구한다.
-				rowIndex = this->note->GetCurrent();
-				//2.5.2 현재 줄의 캐럿의 위치를 구한다.
-				letterIndex = this->current->GetCurrent();
-				this->startSplitIndex = letterIndex;
-				//2.5.3. 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만든다.
-				glyph = this->current->Split(letterIndex);
-				//2.5.4 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
-				if (rowIndex == this->note->GetLength() - 1)
-				{
-					//2.5.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
-					rowIndex = this->note->Add(glyph);
-				}
-				//2.5.5 그게 아니면
-				else
-				{
-					//2.5.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
-					rowIndex = this->note->Add(rowIndex + 1, glyph);
-				}
-				//2.5.6 현재 줄을 새로 저장한다.
-				this->current = this->note->GetAt(rowIndex);
-				//2.5.7 현재 줄의 글자 위치를 처음으로 이동시킨다.
-				this->current->First();
-				//2.5.8 자동 줄 바꿈이 진행중이면
-				if (this->isRowAutoChanging == true)
-				{
-					//2.5.8.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-					//OnSize에서 부분자동개행을 하도록 한다. 
-					this->SendMessage(WM_SIZE);
-				}
-			}
-			//7. 캐럿의 위치와 크기가 변경되었음을 알린다.
-			this->Notify();
-			//8. isComposing을 false로 바꾼다.
-			this->isComposing = false;
-			//9. 메모장 제목에 *를 추가한다.
-			string name = this->fileName;
-			name.insert(0, "*");
-			name += " - 메모장";
-			this->SetWindowText(CString(name.c_str()));
-			//10. 메모장에 변경사항이 있음을 저장한다.
-			this->isDirty = true;
-			//11. 갱신한다.
-			this->Invalidate(TRUE);
-
-			//12. 다시 실행이 아니면(다시 실행이면 OnCommand로 가면 안된다 그러면 무한반복이됨!)
-			if (this->isRedone == false)
-			{
-				//12.1 nChar을 대입한다.
-				this->nChar = nChar;
-				//12.2 OnCommand로 메세지를 보낸다.
-				this->SendMessage(WM_COMMAND, ID_ONCHARCOMMAND);
-			}
-			//13. 다시 실행이면
-			else
-			{
-				//12.1 nChar을 대입한다.
-				this->nChar = nChar;
-				//13.1 다시 실행이 이미 실행이 되었기 때문에 다시 실행을 다시 false로 바꿔준다.
-				this->isRedone = false;
-			}
-			
+			//2.1 매개변수로 입력받은 nChar을 저장한다.
+			this->nChar = nChar;
+			//2.2 OnCommand로 메세지를 보낸다.
+			this->SendMessage(WM_COMMAND, ID_ONCHARCOMMAND);
 		}
 	}
 }
@@ -285,79 +188,11 @@ void NotepadForm::OnPaint()
 //한글을 입력받을 때
 LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 {
-	//1. 메모장에서 선택된 texts가 있으면
-	if (this->isSelecting == true)
-	{
-		//1.1 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
-		this->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
-	}
-	//2. glyphCreator를 생성한다.
-	GlyphCreator glyphCreator;
-	WORD word = LOWORD(wParam);
-	//3. 키보드로부터 입력받을 정보를 바탕으로 새로운 한글을 저장한다.
-	char koreanLetter[3];
-	koreanLetter[0] = HIBYTE(word);
-	koreanLetter[1] = LOBYTE(word);
-	koreanLetter[2] = '\0';
-	//4. 현재 줄의 캐럿의 가로 위치를 구한다.
-	Long index = this->current->GetCurrent();
-	//5. IsComposing값이 '참'이면(한글이 조립중인 상태이면)
-	if (this->isComposing == true)
-	{
-		//5.1 현재 줄의 캐럿의 가로 위치 바로 앞에 있는 기존 한글을 지운다.
-		//그러기 위해서는 캐럿의 현재 가로 위치에 1감소한 값을 넣어주면 된다.
-		//기존 한글을 지워야 새로 입력 받은 한글을 대체할 수 있다.
-		this->current->Remove(index - 1);
-		//5.2 갱신된 current의 위치를 index에 저장한다.
-		index = this->current->GetCurrent();
-	}
-	//6. 현재위치의 한글을 지웠기 때문에 한글이 조립중이 아님으로 상태를 변경한다.
-	this->isComposing = false;
-	//7. 새로운 한글이 입력되었으면(한글 조립중에 글자를 다 지워버리면 '\0'문자로
-	//OnComposition에 입력된다 백스페이스키가 입력되면 기존 한글이 지워지고 '\0'가 들어 오게 된다.)
-	if (koreanLetter[0] != '\0')
-	{
-		//7.1 doubleByteLetter를 생성한다.
-		Glyph* doubleByteLetter = glyphCreator.Create((char*)koreanLetter);
-		//7.2 index가 현재 줄의 length와 같으면
-		if (index == this->current->GetLength())
-		{
-			//7.2.1 현재 줄의 마지막 글자 뒤에 새로운 한글을 추가한다.
-			index = this->current->Add(doubleByteLetter);
-		}
-		//7.3 index가 현재 줄의 length와 다르면
-		else
-		{
-			//7.3.1 현재 줄의 index번째에 새로운 한글을 끼워 쓴다.
-			index = this->current->Add(index, doubleByteLetter);
-		}
-		//7.4 한글을 현재 위치에 추가했기때문에 한글이 조립중인 상태로 변경한다.
-		this->isComposing = true;
-	}
-	//8. 한글 조립중에 백스페이스키룰 눌러서 조립 중인 한글을 지워버리면
-	else
-	{
-		//BackSpace와 Delete키와 별도로 한글조립중에 지우는 경우도 OnSize로 보내줘야 한다.
-		//8.1 자동 줄 바꿈이 진행중이면
-		if (this->isRowAutoChanging == true)
-		{
-			//8.1.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-			//OnSize에서 부분자동개행을 하도록 한다. 
-			this->SendMessage(WM_SIZE);
-		}
-	}
-	//9. 캐럿의 위치와 크기가 변경되었음을 알린다.
-	this->Notify();
-	//10. 메모장 제목에 *를 추가한다.
-	string name = this->fileName;
-	name.insert(0, "*");
-	name += " - 메모장";
-	SetWindowText(CString(name.c_str()));
-	//11. 메모장에 변경사항이 있음을 저장한다.
-	this->isDirty = true;
-	//12. 갱신한다.
-	Invalidate(TRUE);
-
+	//1. 매개변수로 입력받은 wParam을 저장한다.
+	this->wParam = wParam;
+	//2. OnCommand로 메세지를 보낸다.
+	this->SendMessage(WM_COMMAND, ID_ONCOMPOSITIONCOMMAND);
+	//3. 한글 조립과정을 반복한다.
 	return ::DefWindowProc(this->m_hWnd, WM_IME_COMPOSITION, wParam, lParam);
 }
 
@@ -444,27 +279,24 @@ void NotepadForm::OnCommand(UINT nId)
 	//3. command가 NULL이 아니면
 	if (command != NULL)
 	{
-		//3.1 글자를 입력하는 command이면(UndoCommand나 RedoCommand는 CommandHistory에 저장 안한다.)
-		if (nId == ID_ONCHARCOMMAND)
+		//3.1 ConcreteCommand의 execute 함수를 실행한다.
+		command->Execute();
+		//3.2 글자를 입력하는 command이면
+		if (nId == ID_ONCHARCOMMAND || nId == ID_ONCOMPOSITIONCOMMAND)
 		{
-			//3.1.1 UndoList에 추가한다.
+			//3.2.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);
-			//3.1.2 redoList를 초기화시킨다.
+			//3.2.2 redoList를 초기화시킨다.
 			this->commandHistory->MakeRedoListEmpty();
 		}
-		//3.2 글자를 입력하는 command가 아니면
+		//3.3 글자를 입력하는 command가 아니면
 		else
 		{
-			//3.2.1 ConcreteCommand의 execute 함수를 실행한다.
-			command->Execute();
-		}
-		if (nId == IDM_NOTE_FIND || nId == IDM_NOTE_REPLACE)
-		{
+			//3.3.1 command를 할당해제한다.
 			delete command;
 		}
-		//deleteCommand가 사라져서 현재 FindDialog나 ReplacingDialog를 띄우면
-		//FindCommand와 ReplaceCommand가 사라지지 않아서 메모리 누수가 생김 이에 대해서
-		//따로 처리해줘야함!!
+		//undoList에 들어간 command가 아니면 따로 할당해제를 해줘야 메모리 누수가 안생긴다.
+		//undoList에 들어간 command는 commandHistory가 소멸될 때, 소멸자에서 같이 할당해제된다.
 	}
 	//4. 변화를 메모장에 갱신한다.
 	this->Notify();
