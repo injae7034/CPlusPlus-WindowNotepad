@@ -334,6 +334,30 @@ void CtrlRightArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		currentRowIndex = this->notepadForm->note->Move(currentRowIndex);
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
 		currentLetterIndex = this->notepadForm->current->Move(currentLetterIndex);
+		//5.15 현재 줄이 마지막 줄이 아니면
+		Long lastRowIndex = this->notepadForm->note->GetLength() - 1;
+		if (currentRowIndex < lastRowIndex)
+		{
+			//5.15.1 다음 줄을 구한다.
+			Glyph* nextRow = this->notepadForm->note->GetAt(currentRowIndex + 1);
+			//5.15.2 다음 줄이 가짜 줄이면
+			if (dynamic_cast<DummyRow*>(nextRow))
+			{
+				//5.15.2.1 현재 글자위치가 글자의 마지막에 있으면
+				Long letterIndex = this->notepadForm->current->GetLength();
+				if (currentLetterIndex == letterIndex)
+				{
+					//5.15.2.1.1 다음 줄로 이동시킨다.
+					currentRowIndex = this->notepadForm->note->Next();
+					//5.15.2.1.2 현재 줄을 다음으로 이동한 줄로 변경한다.
+					this->notepadForm->current = this->notepadForm->
+						note->GetAt(currentRowIndex);
+					//5.15.2.1.3 캐럿의 현재 위치를 처음으로 보낸다.(현재 줄이 다음 줄로 옮겨졌기 때문에
+					//캐럿은 이전 줄의 마지막 위치에서 다음 줄의 처음 위치로 이동한다.)
+					currentLetterIndex = this->notepadForm->current->First();
+				}
+			}
+		}
 	}
 }
 

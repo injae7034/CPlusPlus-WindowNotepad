@@ -119,6 +119,7 @@ void GlyphFinder::FindDown(string keyword, Long* findingStartRowIndex,
         while (nextRowIndex < this->note->GetLength() &&
             dynamic_cast<DummyRow*>(nextRow))
         {
+            //8.4.1 가짜 줄의 content를 구한다.
             k = 0;
             dummyRowContent = "";
             while (k < nextRow->GetLength())
@@ -239,15 +240,15 @@ void GlyphFinder::FindDown(string keyword, Long* findingStartRowIndex,
                     currentLetterIndex -= currentRow->GetLength();
                     //8.7.8.5.3 현재 줄의 다음줄을 구한다.
                     currentRow = this->note->GetAt(currentRowIndex);
-                    //5.13.4 다음 줄의 content를 저장한다.
+                    //8.7.8.5.4 다음 줄의 content를 저장한다.
                     k = 0;
                     nextRowContent = "";
                     while (k < currentRow->GetLength())
                     {
-                        //5.13.4.1 글자를 구한다.
+                        //8.7.8.5.4.1 글자를 구한다.
                         letter = currentRow->GetAt(k);
                         letterContent = letter->GetContent();
-                        //5.13.4.2 줄의 content에 더해준다.
+                        //8.7.8.5.4.2 줄의 content에 더해준다.
                         nextRowContent += letterContent;
                         k++;
                     }
@@ -343,10 +344,22 @@ void GlyphFinder::FindUp(string keyword, Long* findingStartRowIndex, Long* findi
     Long currentRowIndex = this->note->GetCurrent();
     //3. 메모장에서 현재 글자의 위치를 구한다.
     Long currentLetterIndex = this->note->GetAt(currentRowIndex)->GetCurrent();
-    //4. 메모장의 현재 줄에서 현재 글자까지의 content를 구한다.
-    string currentLetters = this->note->GetAt(currentRowIndex)
-        ->GetPartOfContent(currentLetterIndex);
-    //5. 메모장의 현재 줄에서 현재 글자까지의 content의 길이를 구한다.
+    //4. 메모장의 현재 줄에서 처음 글자부터 현재 글자까지의 content를 구한다.
+    Long i = 0;
+    Glyph* currentRow = this->note->GetAt(currentRowIndex);
+    Glyph* letter = 0;
+    string letterContent = "";
+    string currentLetters = "";
+    while (i < currentLetterIndex)
+    {
+        //4.1 글자를 구한다.
+        letter = currentRow->GetAt(i);
+        letterContent = letter->GetContent();
+        //4.2 줄의 content에 더해준다.
+        currentLetters += letterContent;
+        i++;
+    }
+    //5. 메모장의 현재 줄에서 처음글자부터 현재 글자까지의 content의 길이를 구한다.
     Long currentLettersLength = currentLetters.length();
     //6. 찾을 문자열을 찾았는지 여부를 일단 못찾았기 때문에 false로 초기화한다.
     bool isMatched = false;
@@ -363,7 +376,6 @@ void GlyphFinder::FindUp(string keyword, Long* findingStartRowIndex, Long* findi
     string rowContent;//줄의 content를 담을 공간
     string previousRowContent;//이전 줄의 content를 담을 공감
     Long contentLength = 0;//찾을 문자열의 한글자의 길이
-    Glyph* currentRow = 0;
     string currentRowContent;
     Long currentRowContentLength = 0;
     Long previousRowContentLength = 0;
@@ -372,67 +384,95 @@ void GlyphFinder::FindUp(string keyword, Long* findingStartRowIndex, Long* findi
     Long nextRowIndex = 0;
     string koreanCompositionTemp;//역순으로 거슬러 올라가기 때문에 역순으로 한글을 조립하면 한글이 제대로
     //조립되지 않기 때문에 한글을 임시로 저장하고 원래 순서대로 조립할 임시 저장소가 필요함.
-    Long i = 0;//줄의 content에서 글자를 읽을 배열요소 및 반복제변수
     Long j = keywordLength - 1;//찾을 문자열의 content에서 글자를 읽을 배열요소 및 반복제어변수
+    Long k = 0;
     //8. 현재 줄의 위치가 0보다 크거나 같은 동안 그리고 해당문자열을 찾을 때까지 반복한다.
     while (currentRowIndex >= 0 && isMatched == false)
     {
-        //8.1 현재 줄을 구한다.
+        //8.1 줄을 구한다.
         row = this->note->GetAt(currentRowIndex);
-        //8.2 현재 줄의 content를 구한다.
-        rowContent = row->GetPartOfContent(currentLetterIndex);
-        //8.2 현재 줄이 가짜 줄이면(현재 줄의 위치가 0이면 가짜 줄일 수 X)
+        //8.2 줄의 content를 구한다.
+        k = 0;
+        rowContent = "";
+        while (k < currentLetterIndex)
+        {
+            //8.2.1 글자를 구한다.
+            letter = row->GetAt(k);
+            letterContent = letter->GetContent();
+            //8.2.2 줄의 content에 더해준다.
+            rowContent += letterContent;
+            k++;
+        }
+        //8.3 현재 줄이 가짜 줄이면(현재 줄의 위치가 0이면 가짜 줄일 수 X)
         if (dynamic_cast<DummyRow*>(row))
         {
-
-            //8.2.2 이전 줄로 이동한다.
+            //8.3.1 이전 줄로 이동한다.
             previousRowIndex = currentRowIndex - 1;
-            //8.2.3 이전 줄을 구한다
+            //8.3.2 이전 줄을 구한다
             previousRow = this->note->GetAt(previousRowIndex);
-            //8.2.4 이전 줄이 가짜줄인동안 반복한다.
+            //8.3.3 이전 줄이 가짜줄인동안 반복한다.(줄의 위치가 0인 줄은 무조건 진짜 줄이기 때문에 줄의 
+            //위치가 -1이 될 수 없고, 없는 줄을 구하지 않기 때문에 따로 previousRowIndex > 0조건이 필요X)
             while (dynamic_cast<DummyRow*>(previousRow))
             {
-                //8.2.4.1 이전 줄의 content를 구한다.
-                previousRowContent = previousRow->GetContent();
-                //8.2.4.2 이전 줄의 content에 현재 줄의 cotent를 더해준다.(누적)
+                //8.3.3.1 이전 줄의 content를 구한다.
+                k = 0;
+                previousRowContent = "";
+                while (k < previousRow->GetLength())
+                {
+                    //8.3.3.1.1 글자를 구한다.
+                    letter = previousRow->GetAt(k);
+                    letterContent = letter->GetContent();
+                    //8.3.3.1.2 줄의 content에 더해준다.
+                    previousRowContent += letterContent;
+                    k++;
+                }
+                //8.3.3.2 이전 줄의 content에 현재 줄의 cotent를 더해준다.(누적)
                 previousRowContent += rowContent;
-                //8.2.4.3 더해준 값을 옮겨 저장한다.(반복 구조에서 제대로 누적시키기 위해서)
+                //8.3.3.3 더해준 값을 옮겨 저장한다.(반복 구조에서 제대로 누적시키기 위해서)
                 rowContent = previousRowContent;
-                //8.2.4.4 메모장의 현재 글자위치에 이전 줄의 글자개수를 더해준다.
+                //8.3.3.4 메모장의 현재 글자위치에 이전 줄의 글자개수를 더해준다.
                 currentLetterIndex += previousRow->GetLength();
-                //8.2.4.5 이전으로 이동한다.
+                //8.3.3.5 이전으로 이동한다.
                 previousRowIndex--;
-                //8.2.4.6 이전 줄을 구한다.
+                //8.3.3.6 이전 줄을 구한다.
                 previousRow = this->note->GetAt(previousRowIndex);
             }
-            //이전으로 이동했을 때 진짜 줄이 나와서 반복구조를 나왔기 때문에 진짜 줄에 반복구조에서
-            //합친 content를 합쳐준다.
-            //8.2.5 자동개행을 부분취소하고 진짜 줄의 위치를 찾아서
-            //진짜 줄의 위치를 현재 줄의 위치로 설정한다.
+            //이전으로 이동했을 때 진짜 줄이 나와서 반복구조를 나왔기 때문에 지금 이전 줄이 진짜 줄이다.
+            //따라서 이전 줄(진짜 줄)의 content를 구해서 아까 반복구조에서 구했던 가짜줄의 content를 더해준다
+            //8.3.4 진짜 줄의 위치를 현재 줄의 위치로 설정한다.
             currentRowIndex = previousRowIndex;
-            //8.2.6 진짜 줄의 content를 구한다.
-            previousRowContent = previousRow->GetContent();
-            //8.2.7 진짜 줄의 content를 누적시킨다.
+            //8.3.5 진짜 줄의 content를 구한다.
+            k = 0;
+            previousRowContent = "";
+            while (k < previousRow->GetLength())
+            {
+                //8.3.5.1 글자를 구한다.
+                letter = previousRow->GetAt(k);
+                letterContent = letter->GetContent();
+                //8.3.5.2 줄의 content에 더해준다.
+                previousRowContent += letterContent;
+                k++;
+            }
+            //8.3.6 진짜 줄의 content를 누적시킨다.
             previousRowContent += rowContent;
-            //8.2.8 더해준 값을 옮겨 저장한다.(반복 구조에서 제대로 누적시키기 위해서)
+            //8.3.7 더해준 값을 옮겨 저장한다.(반복 구조에서 제대로 누적시키기 위해서)
             rowContent = previousRowContent;
-            //8.2.9 메모장의 현재 글자위치에 이전 줄의 글자개수를 더해준다.
+            //8.3.8 메모장의 현재 글자위치에 이전 줄의 글자개수를 더해준다.
             currentLetterIndex += previousRow->GetLength();
-            //8.2.10 현재 줄의 길이를 구한다.(자동개행 취소된 마지막 글자위치에서 시작)
+            //8.3.9 현재 줄의 길이를 구한다.(자동개행 취소된 마지막 글자위치에서 시작)
             currentLettersLength = rowContent.length();
         }
-        
+        //8.4 진짜 줄의 위치를 저장한다.
         realRowIndex = currentRowIndex;
-
-        //8.3 줄에서 읽을 글자 위치를 초기화시킨다.
+        //8.5 줄에서 읽어야 할 글자 위치를 초기화시킨다.
         i = currentLettersLength - 1;
-        //8.4 읽을 글자 위치가 0보다 크거나 같은 동안 그리고 해당문자열을 찾을때까지 반복한다.
+        //8.6 읽을 글자 위치가 0보다 크거나 같은 동안 그리고 해당문자열을 찾을때까지 반복한다.
         while (i >= 0 && isMatched == false)
         {
-            //8.4.1 줄에서 i번째 읽을 글자가 한글이면
+            //8.6.1 줄에서 i번째 읽을 글자가 한글이면
             if ((rowContent[i] & 0x80))//한글이면(2byte문자)
             {
-                //8.4.1.1 2byte로 저장한다.
+                //8.6.1.1 2byte로 저장한다.
                 letterContentOfRow = rowContent[i];
                 //역순으로 거슬러 가기 때문에 제대로 한글을 조립하기 위해서 임시저장을 해야함.
                 koreanCompositionTemp = letterContentOfRow;
@@ -440,149 +480,179 @@ void GlyphFinder::FindUp(string keyword, Long* findingStartRowIndex, Long* findi
                 letterContentOfRow = rowContent[i];
                 letterContentOfRow += koreanCompositionTemp;
             }
-            //8.4.2 한글이 아니면
+            //8.6.2 한글이 아니면
             else
             {
-                //8.4.2.1 1byte로 저장한다
+                //8.6.2.1 1byte로 저장한다
                 letterContentOfRow = rowContent[i];
             }
-            //8.4.3 찾을 문자열에서 j번째 읽을 글자가 한글이면
+            //8.6.3 찾을 문자열에서 j번째 읽을 글자가 한글이면
             if ((keyword[j] & 0x80))//한글이면(2byte문자)
             {
-                //8.4.3.1 2byte로 저장한다.
+                //8.6.3.1 2byte로 저장한다.
                 partContentOfKeyword = keyword[j];
                 //역순으로 거슬러 가기 때문에 제대로 한글을 조립하기 위해서 임시저장을 해야함.
                 koreanCompositionTemp = partContentOfKeyword;
                 j--;
                 partContentOfKeyword = keyword[j];
                 partContentOfKeyword += koreanCompositionTemp;
-                //8.4.3.2 길이를 2로 설정한다(한글이 길이를 2 차지하기 때문에)
+                //8.6.3.2 길이를 2로 설정한다(한글이 길이를 2 차지하기 때문에)
                 contentLength = 2;
             }
-            //8.4.4 한글이 아니면
+            //8.6.4 한글이 아니면
             else
             {
-                //8.4.4.1 1byte로 저장한다
+                //8.6.4.1 1byte로 저장한다
                 partContentOfKeyword = keyword[j];
-                //8.4.4.2 길이를 1로 설정한다.(한글을 제외한 영문 및 특수문자는 길이가 1이기 때문에)
+                //8.6.4.2 길이를 1로 설정한다.(한글을 제외한 영문 및 특수문자는 길이가 1이기 때문에)
                 contentLength = 1;
             }
-            //8.4.5 줄에서 읽은 글자와 찾을 문자열에서 읽을 글자가 서로 일치하면
+            //8.6.5 줄에서 읽은 글자와 찾을 문자열에서 읽을 글자가 서로 일치하면
             if (letterContentOfRow == partContentOfKeyword)
             {
-                //8.4.5.1 일치하는 문자열의 길이를 세준다.
+                //8.6.5.1 일치하는 문자열의 길이를 세준다.
                 matchedLength += contentLength;
-                //8.4.5.2 일치하는 문자열의 글자 개수를 세준다.
+                //8.6.5.2 일치하는 문자열의 글자 개수를 세준다.
                 matchedLettersCount++;
-                //8.4.5.3 찾을 문자열에서 읽을 글자위치를 이전으로 이동시킨다.
+                //8.6.5.3 찾을 문자열에서 읽을 글자위치를 이전으로 이동시킨다.
                 j--;
             }
-            //8.4.6 줄에서 읽은 글자와 찾을 문자열에서 읽을 글자가 서로 다르면
+            //8.6.6 줄에서 읽은 글자와 찾을 문자열에서 읽을 글자가 서로 다르면
             else
             {
-                //8.4.6.1 일치하는 문자열의 길이를 0으로 초기화해준다.
+                //8.6.6.1 일치하는 문자열의 길이를 0으로 초기화해준다.
                 matchedLength = 0;
-                //8.4.6.2 일치하는 문자열의 글자 개수를 0으로 초기화해준다.
+                //8.6.6.2 일치하는 문자열의 글자 개수를 0으로 초기화해준다.
                 matchedLettersCount = 0;
-                //8.4.6.3 찾을 문자열에서 읽을 글자위치를 마지막으로 이동시킨다.
+                //8.6.6.3 찾을 문자열에서 읽을 글자위치를 마지막으로 이동시킨다.
                 j = keywordLength - 1;
             }
-            //8.4.7 메모장의 현재 줄에서 현재 위치의 글자를 읽었고 같은지 비교를 했기 때문에
+            //8.6.7 메모장의 현재 줄에서 현재 위치의 글자를 읽었고 같은지 비교를 했기 때문에
             //현재 글자의 위치를 이전으로 이동시켜야 이전 글자를 읽고 찾을 문자열의 이전 글자와 비교할 수 있다.
             currentLetterIndex--;
-            //8.4.8 찾을 문자열을 row의 content에서 찾았으면
+            //8.6.8 찾을 문자열을 row의 content에서 찾았으면
            //일치하는 문자열의 길이와 찾을 문자열의 길이가 일치하면
             if (matchedLength == keywordLength)
             {
-                //8.4.8.1 해당 문자열을 줄에서 찾았다고 표시한다.
+                //8.6.8.1 해당 문자열을 줄에서 찾았다고 표시한다.
                 isMatched = true;
-                //8.4.8.2 메모장에서 현재 줄을 구한다.(진짜 줄)
+                //8.6.8.2 메모장에서 현재 줄을 구한다.(진짜 줄)
                 currentRow = this->note->GetAt(currentRowIndex);
-                //8.4.8.3 현재 줄의 content를 구한다.
-                currentRowContent = currentRow->GetContent();
-                //8.4.8.4 현재 줄의 length를 구한다.
+                //8.6.8.3 현재 줄의 content를 구한다.
+                k = 0;
+                currentRowContent = "";
+                while (k < currentRow->GetLength())
+                {
+                    //8.6.8.3.1 글자를 구한다.
+                    letter = currentRow->GetAt(k);
+                    letterContent = letter->GetContent();
+                    //8.6.8.3.2 줄의 content에 더해준다.
+                    currentRowContent += letterContent;
+                    k++;
+                }
+                //8.6.8.4 현재 줄의 length를 구한다.
                 currentRowContentLength = currentRowContent.length();
-                //8.4.8.5 i가 현재 줄의 length보다 크거나 같은동안 반복한다.
+                //8.6.8.5 i가 현재 줄의 length보다 크거나 같은동안 반복한다.
                 while (i >= currentRowContentLength)
                 {
-                    //8.4.8.5.1 현재 줄의 길이를 뺀다.
+                    //8.6.8.5.1 현재 줄의 길이를 뺀다.
                     i -= currentRowContentLength;
-                    //8.4.8.5.2 현재 줄의 개수를 뺀다.
+                    //8.6.8.5.2 현재 줄의 개수를 뺀다.
                     currentLetterIndex -= currentRow->GetLength();
-                    //8.4.8.5.3 다음 줄로 이동한다.
+                    //8.6.8.5.3 다음 줄로 이동한다.
                     currentRowIndex++;
-                    //8.4.8.5.4 다음 줄을 구한다.
+                    //8.6.8.5.4 다음 줄을 구한다.
                     currentRow = this->note->GetAt(currentRowIndex);
-                    //8.4.8.5.5 다음 줄의 content를 구한다.
-                    currentRowContent = currentRow->GetContent();
-                    //8.4.8.5.6 다음 줄의 content의 length를 구한다.
+                    //8.6.8.5.5 다음 줄의 content를 구한다.
+                    k = 0;
+                    currentRowContent = "";
+                    while (k < currentRow->GetLength())
+                    {
+                        //8.6.8.5.5.1 글자를 구한다.
+                        letter = currentRow->GetAt(k);
+                        letterContent = letter->GetContent();
+                        //8.6.8.5.5.2 줄의 content에 더해준다.
+                        currentRowContent += letterContent;
+                        k++;
+                    }
+                    //8.6.8.5.6 다음 줄의 content의 length를 구한다.
                     currentRowContentLength = currentRowContent.length(); 
                 }
                 //8.6.8.6 찾은 줄의 시작 위치와 찾은 글자 시작 위치를 출력한다.
                 *findingStartRowIndex = currentRowIndex;
                 *findingStartLetterIndex = currentLetterIndex;
-                //8.6.8.6 찾은 글자의 시작위치에서 일치하는 문자열의 글자개수를 더해준다.
+                //8.6.8.7 찾은 글자의 시작위치에서 일치하는 문자열의 글자개수를 더해준다.
                 sum = currentLetterIndex + matchedLettersCount;
-                //8.6.8.7 더한값이 찾은 줄의 시작위치에 해당하는 줄의 글자개수보다 작거나 같으면
+                //8.6.8.8 더한값이 찾은 줄의 시작위치에 해당하는 줄의 글자개수보다 작거나 같으면
                 if (sum <= this->note->GetAt(currentRowIndex)->GetLength())
                 {
-                    //8.6.8.7.1 찾은 줄의 끝위치를 찾을 줄의 시작 위치와 동일한 값으로 출력한다.
+                    //8.6.8.8.1 찾은 줄의 끝위치를 찾을 줄의 시작 위치와 동일한 값으로 출력한다.
                     *findingEndRowIndex = currentRowIndex;
-                    //8.6.8.7.2 찾은 글자의 끝위치를 더한값으로 출력한다.
+                    //8.6.8.8.2 찾은 글자의 끝위치를 더한값으로 출력한다.
                     *findingEndLetterIndex = sum;
                 }
-                //8.6.8.8 더한 값이 줄의 글자개수보다 크면
+                //8.6.8.9 더한 값이 줄의 글자개수보다 크면
                 else
                 {
-                    //8.6.8.8.1 현재 줄을 구한다.
+                    //8.6.8.9.1 현재 줄을 구한다.
                     currentRow = this->note->GetAt(currentRowIndex);
-                    //8.6.8.8.2 현재 줄의 다음 줄을 구한다.
+                    //8.6.8.9.2 현재 줄의 다음 줄을 구한다.
                     nextRowIndex = currentRowIndex + 1;
                     nextRow = this->note->GetAt(nextRowIndex);
-                    //8.6.8.8.3 현재 줄에서 다음 줄로 이동했기 때문에 더한 값에서 현재 줄의 개수만큼 빼준다.
+                    //8.6.8.9.3 현재 줄에서 다음 줄로 이동했기 때문에 더한 값에서 현재 줄의 개수만큼 빼준다.
                     sum -= currentRow->GetLength();
-                    //8.6.8.8.4 더한 값이 다음 줄의 글자개수보다 큰 동안 반복한다.
+                    //8.6.8.9.4 더한 값이 다음 줄의 글자개수보다 큰 동안 반복한다.
                     while (sum > nextRow->GetLength())
                     {
-                        //8.6.8.8.4.1 더한 값에서 다음 줄의 글자개수를 빼준다.
+                        //8.6.8.9.4.1 더한 값에서 다음 줄의 글자개수를 빼준다.
                         sum -= nextRow->GetLength();
-                        //8.6.8.8.4.2 다음 줄을 구한다.
+                        //8.6.8.9.4.2 다음 줄을 구한다.
                         nextRowIndex--;
                         nextRow = this->note->GetAt(nextRowIndex);
                     }
-                    //8.6.8.8.5 찾은 줄의 끝위치를 다음 줄로 정한다.
+                    //8.6.8.9.5 찾은 줄의 끝위치를 다음 줄로 정한다.
                     *findingEndRowIndex = nextRowIndex;
-                    //8.6.8.8.6 찾은 글자의 끝위치를 더한 값으로 정한다.
+                    //8.6.8.9.6 찾은 글자의 끝위치를 더한 값으로 정한다.
                     *findingEndLetterIndex = sum;
                 }
             }
-            //8.6.8.9 줄의 content에서 이전 글자로 이동한다.
+            //8.6.9 줄의 content에서 이전 글자로 이동한다.
             i--;
         }
-        //8.8 찾을 문자열을 row의 content에서 못찾았으면
+        //8.7 찾을 문자열을 row의 content에서 못찾았으면
         if (isMatched == false)
         {
-            //8.8.1 현재 줄의 위치를 진짜줄 이전의 가짜줄까지로 다시 재조정한다.
+            //8.7.1 현재 줄의 위치를 진짜줄 이전의 가짜줄까지로 다시 재조정한다.
             currentRowIndex = realRowIndex;
         }
         //8.8 이전 줄로 이동한다.
         currentRowIndex--;
         if (currentRowIndex >= 0)
         {
-            //8.9 이전 줄을 구한다.
+            //8.8.1 이전 줄을 구한다.
             previousRow = this->note->GetAt(currentRowIndex);
-            //8.10 이전 줄로 이동했기 때문에 줄에서 읽을 글자위치를 이전 줄의 content 길이로 설정한다.
-            previousRowContent = previousRow->GetContent();
+            //8.8.2 이전 줄로 이동했기 때문에 줄에서 읽을 글자위치를 이전 줄의 content 길이로 설정한다.
+            k = 0;
+            previousRowContent = "";
+            while (k < previousRow->GetLength())
+            {
+                //8.8.1 글자를 구한다.
+                letter = previousRow->GetAt(k);
+                letterContent = letter->GetContent();
+                //8.8.2 줄의 content에 더해준다.
+                previousRowContent += letterContent;
+                k++;
+            }
             previousRowContentLength = previousRowContent.length();
             currentLettersLength = previousRowContentLength;
-            //8.11 현재 글자 위치를 이전 줄의 글자 개수로 설정한다.
+            //8.8.3 현재 글자 위치를 이전 줄의 글자 개수로 설정한다.
             currentLetterIndex = previousRow->GetLength();
         }
-        //8.11 일치하는 문자열의 길이를 0으로 초기화해준다.
+        //8.9 일치하는 문자열의 길이를 0으로 초기화해준다.
         matchedLength = 0;
-        //8.12 일치하는 문자열의 글자 개수를 0으로 초기화해준다.
+        //8.10 일치하는 문자열의 글자 개수를 0으로 초기화해준다.
         matchedLettersCount = 0;
-        //8.13 찾을 문자열에서 읽을 글자위치를 마지막으로 이동시킨다.
+        //8.11 찾을 문자열에서 읽을 글자위치를 마지막으로 이동시킨다.
         j = keywordLength - 1;
         //여기서 초기화를 안해주면 누적이 되기 때문에 제대로 된 탐색이 안됨 줄이 바뀌면(진짜 줄이 바뀌므로)
         //그 줄에서 일치하는 문자열을 찾지 못했다는 뜻으로 다음 줄에서 다시 일치하는 문자열을 찾겠다는 의미!
@@ -595,7 +665,7 @@ void GlyphFinder::FindUp(string keyword, Long* findingStartRowIndex, Long* findi
     //9. 못찾았으면
     if (isMatched == false)
     {
-        //4.1 원래 캐럿이 있던 곳에 그대로 있는다.
+        //9.1 원래 캐럿이 있던 곳에 그대로 있는다.
         *findingEndRowIndex = this->note->GetCurrent();
         *findingEndLetterIndex = this->note->GetAt(*findingEndRowIndex)->GetCurrent();
         *findingStartRowIndex = this->note->GetCurrent();
@@ -611,13 +681,25 @@ void GlyphFinder::FindDownWithMatchCase(string keyword, Long* findingStartRowInd
     Long* findingStartLetterIndex, Long* findingEndRowIndex, Long* findingEndLetterIndex)
 {
     //1. 찾을 문자열을 입력받는다.
-   //2. 메모장에서 현재 줄의 위치를 구한다.
+    //2. 메모장에서 현재 줄의 위치를 구한다.
     Long currentRowIndex = this->note->GetCurrent();
     //3. 메모장에서 현재 글자의 위치를 구한다.
     Long currentLetterIndex = this->note->GetAt(currentRowIndex)->GetCurrent();
-    //4. 메모장의 현재 줄에서 현재 글자까지의 content를 구한다.
-    string currentLetters = this->note->GetAt(currentRowIndex)
-        ->GetPartOfContent(currentLetterIndex);
+    //4. 메모장의 현재 줄에서 처음 글자부터 현재 글자까지의 content를 구한다.
+    Long i = 0;
+    Glyph* currentRow = this->note->GetAt(currentRowIndex);
+    Glyph* letter = 0;
+    string letterContent = "";
+    string currentLetters = "";
+    while (i < currentLetterIndex)
+    {
+        //4.1 글자를 구한다.
+        letter = currentRow->GetAt(i);
+        letterContent = letter->GetContent();
+        //4.2 줄의 content에 더해준다.
+        currentLetters += letterContent;
+        i++;
+    }
     //5. 메모장의 현재 줄에서 현재 글자까지의 content의 길이를 구한다.
     Long currentLettersLength = currentLetters.length();
     //6. 찾을 문자열을 찾았는지 여부를 일단 못찾았기 때문에 false로 초기화한다.
@@ -635,21 +717,30 @@ void GlyphFinder::FindDownWithMatchCase(string keyword, Long* findingStartRowInd
     string dummyRowContent;//가짜 줄의 content를 담을 공감
     Long rowContentLength = 0;//줄의 content의 길이
     Long contentLength = 0;//찾을 문자열의 한글자의 길이
-    Glyph* currentRow = 0;
     string currentRowContent;
     Long currentRowContentLength = 0;
     string nextRowContent;
     Long startLetterIndex = 0;
     Long previousRowIndex = 0;
-    Long i = 0;//줄의 content에서 글자를 읽을 배열요소 및 반복제변수
     Long j = 0;//찾을 문자열의 content에서 글자를 읽을 배열요소 및 반복제어변수
+    Long k = 0;
     //8. 현재 줄의 위치가 note의 줄의 개수보다 작은동안 그리고 해당문자열을 찾을 때까지 반복한다.
     while (currentRowIndex < this->note->GetLength() && isMatched == false)
     {
         //8.1 줄을 구한다.
         row = this->note->GetAt(currentRowIndex);
         //8.2 줄의 content를 구한다.
-        realRowContent = row->GetContent();
+        k = 0;
+        realRowContent = "";
+        while (k < row->GetLength())
+        {
+            //8.2.1 글자를 구한다.
+            letter = row->GetAt(k);
+            letterContent = letter->GetContent();
+            //8.2.2 줄의 content에 더해준다.
+            realRowContent += letterContent;
+            k++;
+        }
         //8.3 다음 줄을 구한다.
         nextRowIndex = currentRowIndex + 1;
         nextRow = this->note->GetAt(nextRowIndex);
@@ -660,8 +751,18 @@ void GlyphFinder::FindDownWithMatchCase(string keyword, Long* findingStartRowInd
         while (nextRowIndex < this->note->GetLength() &&
             dynamic_cast<DummyRow*>(nextRow))
         {
-            //8.4.1 가짜줄의 content를 구한다.
-            dummyRowContent = nextRow->GetContent();
+            //8.4.1 가짜 줄의 content를 구한다.
+            k = 0;
+            dummyRowContent = "";
+            while (k < nextRow->GetLength())
+            {
+                //5.6.1.1 글자를 구한다.
+                letter = nextRow->GetAt(k);
+                letterContent = letter->GetContent();
+                //5.6.1.2 줄의 content에 더해준다.
+                dummyRowContent += letterContent;
+                k++;
+            }
             //8.4.2 가짜줄의 content를 진짜 줄의 content에 더해준다.
             realRowContent += dummyRowContent;
             //8.4.3 다음 줄로 이동한다.
@@ -769,7 +870,17 @@ void GlyphFinder::FindDownWithMatchCase(string keyword, Long* findingStartRowInd
                 //8.7.8.2 현재 줄을 구한다.
                 currentRow = this->note->GetAt(currentRowIndex);
                 //8.7.8.3 현재 줄의 content를 구한다.
-                currentRowContent = currentRow->GetContent();
+                k = 0;
+                currentRowContent = "";
+                while (k < currentRow->GetLength())
+                {
+                    //5.11.1 글자를 구한다.
+                    letter = currentRow->GetAt(k);
+                    letterContent = letter->GetContent();
+                    //5.11.2 줄의 content에 더해준다.
+                    currentRowContent += letterContent;
+                    k++;
+                }
                 //8.7.8.4 현재 줄의 content의 length를 구한다.
                 currentRowContentLength = currentRowContent.length();
                 //8.7.8.5 i가 현재 줄의 content의 length보다 크거나 같은동안 반복한다.
@@ -791,7 +902,17 @@ void GlyphFinder::FindDownWithMatchCase(string keyword, Long* findingStartRowInd
                     //8.7.8.5.3 현재 줄의 다음줄을 구한다.
                     currentRow = this->note->GetAt(currentRowIndex);
                     //8.7.8.5.4 다음 줄의 content를 저장한다.
-                    nextRowContent = currentRow->GetContent();
+                    k = 0;
+                    nextRowContent = "";
+                    while (k < currentRow->GetLength())
+                    {
+                        //8.7.8.5.4.1 글자를 구한다.
+                        letter = currentRow->GetAt(k);
+                        letterContent = letter->GetContent();
+                        //8.7.8.5.4.2 줄의 content에 더해준다.
+                        nextRowContent += letterContent;
+                        k++;
+                    }
                     //8.7.8.5.5 다음 줄의 content를 현재 줄의 content에 더해준다.(누적)
                     currentRowContent += nextRowContent;
                     //8.7.8.5.6 누적된 줄의 content의 길이를 구한다.
@@ -880,13 +1001,25 @@ void GlyphFinder::FindUpWithMatchCase(string keyword, Long* findingStartRowIndex
     Long* findingStartLetterIndex, Long* findingEndRowIndex, Long* findingEndLetterIndex)
 {
     //1. 찾을 문자열을 입력받는다.
-   //2. 메모장에서 현재 줄의 위치를 구한다.
+    //2. 메모장에서 현재 줄의 위치를 구한다.
     Long currentRowIndex = this->note->GetCurrent();
     //3. 메모장에서 현재 글자의 위치를 구한다.
     Long currentLetterIndex = this->note->GetAt(currentRowIndex)->GetCurrent();
-    //4. 메모장의 현재 줄에서 현재 글자까지의 content를 구한다.
-    string currentLetters = this->note->GetAt(currentRowIndex)
-        ->GetPartOfContent(currentLetterIndex);
+    //4. 메모장의 현재 줄에서 처음 글자부터 현재 글자까지의 content를 구한다.
+    Long i = 0;
+    Glyph* currentRow = this->note->GetAt(currentRowIndex);
+    Glyph* letter = 0;
+    string letterContent = "";
+    string currentLetters = "";
+    while (i < currentLetterIndex)
+    {
+        //4.1 글자를 구한다.
+        letter = currentRow->GetAt(i);
+        letterContent = letter->GetContent();
+        //4.2 줄의 content에 더해준다.
+        currentLetters += letterContent;
+        i++;
+    }
     //5. 메모장의 현재 줄에서 현재 글자까지의 content의 길이를 구한다.
     Long currentLettersLength = currentLetters.length();
     //6. 찾을 문자열을 찾았는지 여부를 일단 못찾았기 때문에 false로 초기화한다.
@@ -904,7 +1037,6 @@ void GlyphFinder::FindUpWithMatchCase(string keyword, Long* findingStartRowIndex
     string rowContent;//줄의 content를 담을 공간
     string previousRowContent;//이전 줄의 content를 담을 공감
     Long contentLength = 0;//찾을 문자열의 한글자의 길이
-    Glyph* currentRow = 0;
     string currentRowContent;
     Long currentRowContentLength = 0;
     Long previousRowContentLength = 0;
@@ -913,53 +1045,82 @@ void GlyphFinder::FindUpWithMatchCase(string keyword, Long* findingStartRowIndex
     Long nextRowIndex = 0;
     string koreanCompositionTemp;//역순으로 거슬러 올라가기 때문에 역순으로 한글을 조립하면 한글이 제대로
     //조립되지 않기 때문에 한글을 임시로 저장하고 원래 순서대로 조립할 임시 저장소가 필요함.
-    Long i = 0;//줄의 content에서 글자를 읽을 배열요소 및 반복제변수
     Long j = keywordLength - 1;//찾을 문자열의 content에서 글자를 읽을 배열요소 및 반복제어변수
+    Long k = 0;
     //8. 현재 줄의 위치가 0보다 크거나 같은 동안 그리고 해당문자열을 찾을 때까지 반복한다.
     while (currentRowIndex >= 0 && isMatched == false)
     {
         //8.1 현재 줄을 구한다.
         row = this->note->GetAt(currentRowIndex);
-        //8.2 현재 줄의 content를 구한다.
-        rowContent = row->GetPartOfContent(currentLetterIndex);
-        //8.2 현재 줄이 가짜 줄이면(현재 줄의 위치가 0이면 가짜 줄일 수 X)
+        //8.2 줄의 content를 구한다.
+        k = 0;
+        rowContent = "";
+        while (k < currentLetterIndex)
+        {
+            //8.2.1 글자를 구한다.
+            letter = row->GetAt(k);
+            letterContent = letter->GetContent();
+            //8.2.2 줄의 content에 더해준다.
+            rowContent += letterContent;
+            k++;
+        }
+        //8.3 현재 줄이 가짜 줄이면(현재 줄의 위치가 0이면 가짜 줄일 수 X)
         if (dynamic_cast<DummyRow*>(row))
         {
-
-            //8.2.2 이전 줄로 이동한다.
+            //8.3.1 이전 줄로 이동한다.
             previousRowIndex = currentRowIndex - 1;
-            //8.2.3 이전 줄을 구한다
+            //8.3.2 이전 줄을 구한다
             previousRow = this->note->GetAt(previousRowIndex);
-            //8.2.4 이전 줄이 가짜줄인동안 반복한다.
+            //8.3.3 이전 줄이 가짜줄인동안 반복한다.
             while (dynamic_cast<DummyRow*>(previousRow))
             {
-                //8.2.4.1 이전 줄의 content를 구한다.
-                previousRowContent = previousRow->GetContent();
-                //8.2.4.2 이전 줄의 content에 현재 줄의 cotent를 더해준다.(누적)
+                //8.3.3.1 이전 줄의 content를 구한다.
+                k = 0;
+                previousRowContent = "";
+                while (k < previousRow->GetLength())
+                {
+                    //8.3.3.1.1 글자를 구한다.
+                    letter = previousRow->GetAt(k);
+                    letterContent = letter->GetContent();
+                    //8.3.3.1.2 줄의 content에 더해준다.
+                    previousRowContent += letterContent;
+                    k++;
+                }
+                //8.3.3.2 이전 줄의 content에 현재 줄의 cotent를 더해준다.(누적)
                 previousRowContent += rowContent;
-                //8.2.4.3 더해준 값을 옮겨 저장한다.(반복 구조에서 제대로 누적시키기 위해서)
+                //8.3.3.3 더해준 값을 옮겨 저장한다.(반복 구조에서 제대로 누적시키기 위해서)
                 rowContent = previousRowContent;
-                //8.2.4.4 메모장의 현재 글자위치에 이전 줄의 글자개수를 더해준다.
+                //8.3.3.4 메모장의 현재 글자위치에 이전 줄의 글자개수를 더해준다.
                 currentLetterIndex += previousRow->GetLength();
-                //8.2.4.5 이전으로 이동한다.
+                //8.3.3.5 이전으로 이동한다.
                 previousRowIndex--;
-                //8.2.4.6 이전 줄을 구한다.
+                //8.3.3.6 이전 줄을 구한다.
                 previousRow = this->note->GetAt(previousRowIndex);
             }
             //이전으로 이동했을 때 진짜 줄이 나와서 반복구조를 나왔기 때문에 진짜 줄에 반복구조에서
             //합친 content를 합쳐준다.
-            //8.2.5 자동개행을 부분취소하고 진짜 줄의 위치를 찾아서
+            //8.3.4 자동개행을 부분취소하고 진짜 줄의 위치를 찾아서
             //진짜 줄의 위치를 현재 줄의 위치로 설정한다.
             currentRowIndex = previousRowIndex;
-            //8.2.6 진짜 줄의 content를 구한다.
-            previousRowContent = previousRow->GetContent();
-            //8.2.7 진짜 줄의 content를 누적시킨다.
+            //8.3.5 진짜 줄의 content를 구한다.
+            k = 0;
+            previousRowContent = "";
+            while (k < previousRow->GetLength())
+            {
+                //8.3.5.1 글자를 구한다.
+                letter = previousRow->GetAt(k);
+                letterContent = letter->GetContent();
+                //8.3.5.2 줄의 content에 더해준다.
+                previousRowContent += letterContent;
+                k++;
+            }
+            //8.3.6 진짜 줄의 content를 누적시킨다.
             previousRowContent += rowContent;
-            //8.2.8 더해준 값을 옮겨 저장한다.(반복 구조에서 제대로 누적시키기 위해서)
+            //8.3.7 더해준 값을 옮겨 저장한다.(반복 구조에서 제대로 누적시키기 위해서)
             rowContent = previousRowContent;
-            //8.2.9 메모장의 현재 글자위치에 이전 줄의 글자개수를 더해준다.
+            //8.3.8 메모장의 현재 글자위치에 이전 줄의 글자개수를 더해준다.
             currentLetterIndex += previousRow->GetLength();
-            //8.2.10 현재 줄의 길이를 구한다.(자동개행 취소된 마지막 글자위치에서 시작)
+            //8.3.9 현재 줄의 길이를 구한다.(자동개행 취소된 마지막 글자위치에서 시작)
             currentLettersLength = rowContent.length();
         }
 
@@ -1069,7 +1230,17 @@ void GlyphFinder::FindUpWithMatchCase(string keyword, Long* findingStartRowIndex
                 //8.4.8.2 메모장에서 현재 줄을 구한다.(진짜 줄)
                 currentRow = this->note->GetAt(currentRowIndex);
                 //8.4.8.3 현재 줄의 content를 구한다.
-                currentRowContent = currentRow->GetContent();
+                k = 0;
+                currentRowContent = "";
+                while (k < currentRow->GetLength())
+                {
+                    //8.4.8.3.1 글자를 구한다.
+                    letter = currentRow->GetAt(k);
+                    letterContent = letter->GetContent();
+                    //8.4.8.3.2 줄의 content에 더해준다.
+                    currentRowContent += letterContent;
+                    k++;
+                }
                 //8.4.8.4 현재 줄의 length를 구한다.
                 currentRowContentLength = currentRowContent.length();
                 //8.4.8.5 i가 현재 줄의 length보다 크거나 같은동안 반복한다.
@@ -1084,7 +1255,17 @@ void GlyphFinder::FindUpWithMatchCase(string keyword, Long* findingStartRowIndex
                     //8.4.8.5.4 다음 줄을 구한다.
                     currentRow = this->note->GetAt(currentRowIndex);
                     //8.4.8.5.5 다음 줄의 content를 구한다.
-                    currentRowContent = currentRow->GetContent();
+                    k = 0;
+                    currentRowContent = "";
+                    while (k < currentRow->GetLength())
+                    {
+                        //8.4.8.3.1 글자를 구한다.
+                        letter = currentRow->GetAt(k);
+                        letterContent = letter->GetContent();
+                        //8.4.8.3.2 줄의 content에 더해준다.
+                        currentRowContent += letterContent;
+                        k++;
+                    }
                     //8.4.8.5.6 다음 줄의 content의 length를 구한다.
                     currentRowContentLength = currentRowContent.length();
                 }
@@ -1142,7 +1323,17 @@ void GlyphFinder::FindUpWithMatchCase(string keyword, Long* findingStartRowIndex
             //8.9 이전 줄을 구한다.
             previousRow = this->note->GetAt(currentRowIndex);
             //8.10 이전 줄로 이동했기 때문에 줄에서 읽을 글자위치를 이전 줄의 content 길이로 설정한다.
-            previousRowContent = previousRow->GetContent();
+            k = 0;
+            previousRowContent = "";
+            while (k < previousRow->GetLength())
+            {
+                //8.10.1 글자를 구한다.
+                letter = previousRow->GetAt(k);
+                letterContent = letter->GetContent();
+                //8.10.2 줄의 content에 더해준다.
+                previousRowContent += letterContent;
+                k++;
+            }
             previousRowContentLength = previousRowContent.length();
             currentLettersLength = previousRowContentLength;
             //8.11 현재 글자 위치를 이전 줄의 글자 개수로 설정한다.

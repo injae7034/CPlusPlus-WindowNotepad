@@ -250,15 +250,17 @@ Long Note::PreviousWord()
 		{
 			//2.2.1 현재 줄의 제일 첫번째 글자를 읽는다.
 			letter = this->GetAt(this->current)->GetAt(index)->GetContent();
-			//2.2.2 현재 줄의 첫번째 글자가 스페이스와 탭문자가 아니면
-			//(한글이나 영문, 특숨문자, 숫자이면)
-			if (letter != "\t" && letter != " ")
-			{
+			//필요없음
+			//2.2.2 현재 줄의 첫번째 글자가 스페이스와 탭문자가 아니면(이미 위치가 0이므로 이동안하면됨)
+			//(한글이나 영문, 특수문자, 숫자이면)
+			//if (letter != "\t" && letter != " ")
+			//{
 				//2.2.2.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
-				index = this->GetAt(this->current)->First();
-			}
+			//	index = this->GetAt(this->current)->First();
+			//}
 			//2.2.3 현재 줄의 첫번째 글자가 스페이스 또는 탭문자이면
-			else
+			//else
+			if (letter == "\t" || letter == " ")
 			{
 				//2.2.3.1 현재 줄의 위치를 1만큼 감소시킨다.(이전 줄로 이동시킨다.)
 				this->current--;
