@@ -48,12 +48,6 @@ void Command::SetRedone()
 	
 }
 
-//다시 실행인지 아닌지 여부 확인
-bool Command::IsRedone()
-{
-	return -1;
-}
-
 //줄의 위치구하기
 Long Command::GetRowIndex()
 {

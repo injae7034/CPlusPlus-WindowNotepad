@@ -31,8 +31,6 @@
 #include "ShiftCtrlDeleteKeyAction.h"
 #include "CtrlBackSpaceKeyAction.h"
 #include "CtrlDeleteKeyAction.h"
-#include "CtrlZKeyAction.h"
-#include "CtrlYKeyAction.h"
 
 //디폴트생성자
 KeyActionCreator::KeyActionCreator(NotepadForm* notepadForm)
@@ -146,18 +144,6 @@ KeyAction* KeyActionCreator::Create(UINT nChar)
 		ctrlPressedCheck & 0x8000 && nChar == 'A')
 	{
 		keyAction = new CtrlAKeyAction(this->notepadForm);
-	}
-	//Ctrl키를 누른 채 알파벳 'z'를 누르면(실행취소)
-	else if (ctrlPressedCheck & 0x8000 && nChar == 'z' ||
-		ctrlPressedCheck & 0x8000 && nChar == 'Z')
-	{
-		keyAction = new CtrlZKeyAction(this->notepadForm);
-	}
-	//Ctrl키를 누른 채 알파벳 'y'를 누르면(다시실행)
-	else if (ctrlPressedCheck & 0x8000 && nChar == 'y' ||
-	ctrlPressedCheck & 0x8000 && nChar == 'Y')
-	{
-	keyAction = new CtrlYKeyAction(this->notepadForm);
 	}
 	//Ctrl키를 누른 채 BackSpace키를 눌렀으면
 	//(캐럿이 있는 곳에서 왼쪽으로 단어단위로 글자들을 지워버림)

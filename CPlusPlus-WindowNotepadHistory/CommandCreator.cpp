@@ -18,8 +18,6 @@
 #include "OnImeCharCommand.h"
 #include "BackSpaceKeyActionCommand.h"
 #include "DeleteKeyActionCommand.h"
-#include "CtrlBackSpaceKeyActionCommand.h"
-#include "CtrlDeleteKeyActionCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -103,14 +101,6 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == ID_DELETEKEYACTIONCOMMAND)
 	{
 		command = new DeleteKeyActionCommand(this->notepadForm);
-	}
-	else if (nId == ID_CTRLBACKSPACEKEYACTIONCOMMAND)
-	{
-		command = new CtrlBackSpaceKeyActionCommand(this->notepadForm);
-	}
-	else if (nId == ID_CTRLDELETEKEYACTIONCOMMAND)
-	{
-		command = new CtrlDeleteKeyActionCommand(this->notepadForm);
 	}
 
 	return command;
