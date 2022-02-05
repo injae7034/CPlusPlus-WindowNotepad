@@ -1,11 +1,12 @@
-#include "BackSpaceKeyActionCommand.h"
+#include "CtrlBackSpaceKeyActionCommand.h"
 #include "NotepadForm.h"
 #include "GlyphCreator.h"
 #include "CommandHistory.h"
 #include "Row.h"
+#include "DummyRow.h"
 
 //디폴트생성자 정의
-BackSpaceKeyActionCommand::BackSpaceKeyActionCommand(NotepadForm* notepadForm)
+CtrlBackSpaceKeyActionCommand::CtrlBackSpaceKeyActionCommand(NotepadForm* notepadForm)
 	:Command(notepadForm)
 {
 	this->rowIndex = notepadForm->note->GetCurrent();
@@ -17,7 +18,7 @@ BackSpaceKeyActionCommand::BackSpaceKeyActionCommand(NotepadForm* notepadForm)
 }
 
 //실행
-void BackSpaceKeyActionCommand::Execute()
+void CtrlBackSpaceKeyActionCommand::Execute()
 {
 	//1. 현재 줄의 위치와 글자 위치를 구한다.
 	Long currentRowPos = this->notepadForm->note->GetCurrent();
@@ -59,18 +60,31 @@ void BackSpaceKeyActionCommand::Execute()
 			//2.1.8 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
 			//이전 줄의 마지막 현재 줄의 처음 사이에 위치하도록 조정한다.
 			Long index = this->notepadForm->current->Move(letterPos);
-			
+
 		}
 		// 현재 글자 위치가 처음이 아닐 때(현재 줄이 처음이든 아니든 상관없음) 현재 글자를 지운다.
 		//2.2 현재 글자 위치가 처음이 아니면
 		else if (currentLetterPos > 0)
 		{
-			//2.2.1 현재 글자를 지우기 전에 지울 글자를 구한다.
-			Glyph* letter = this->notepadForm->current->GetAt(currentLetterPos - 1);
-			//2.2.2 현재 글자를 깊은 복사해서 저장한다.
-			this->glyph = letter->Clone();
-			//2.2.3 현재 글자를 지운다.
-			this->notepadForm->current->Remove(currentLetterPos - 1);
+			//DummyRow를 생성해서 글자를 담고 그걸 복사해서 this->glyph에 주소를 옮기고,
+			//글자들을 단어단위로 지우기전에 옮겨서 저장한다.
+			//2.2.1 DummyRow를 생성한다.
+			this->glyph = new DummyRow();
+			//2.2.2 왼쪽 방향으로 단어단위로 이동한 뒤의 글자위치를 구한다.
+			Long letterPosAfterMoving = this->notepadForm->current->PreviousWord();
+			//2.2.3 현재 글자위치가 0보다 큰동안 반복한다.
+			Glyph* letter = 0;
+			//while (currentLetterPos > letterPosAfterMoving)
+			while (letterPosAfterMoving < currentLetterPos)
+			{
+				//2.2.3.1 글자를 지우기 전에 글자를 구한다.
+				letter = this->notepadForm->current->GetAt(letterPosAfterMoving);
+				//2.2.3.2 글자를 깊은 복사해서 DummyRow에 저장한다.
+				this->glyph->Add(letter->Clone());
+				//2.2.3.3 글자를 지운다.
+				this->notepadForm->current->Remove(letterPosAfterMoving);
+				currentLetterPos--;
+			}
 			//2.2.4 자동 줄 바꿈 메뉴가 체크되어 있으면
 			if (this->notepadForm->isRowAutoChanging == true)
 			{
@@ -100,7 +114,7 @@ void BackSpaceKeyActionCommand::Execute()
 }
 
 //실행취소
-void BackSpaceKeyActionCommand::Unexecute()
+void CtrlBackSpaceKeyActionCommand::Unexecute()
 {
 	//1. 현재 줄의 위치를 이동시킨다.(캐럿이 다른 곳에 있으면 그 곳에 글자가 지워지기 때문에)
 	Long currentRowPos = this->notepadForm->note->Move(this->rowIndex);
@@ -108,28 +122,41 @@ void BackSpaceKeyActionCommand::Unexecute()
 	//2. 현재 글자의 위치를 이동시킨다.
 	Long currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
 	//3. 지울 때 저장한 glyph가 줄(개행문자)이 아니면
-	if (!dynamic_cast<Row*>(this->glyph))
+	if (dynamic_cast<DummyRow*>(this->glyph))
 	{
 		//3.1 현재 줄의 글자 위치가 현재 줄의 글자개수와 같으면
 		if (currentLetterPos == this->notepadForm->current->GetLength())
 		{
-			//3.1.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
-			//여기서 command가 가지고 있는 glyph를 깊은 복사해서 줄에 추가해준다.
-			//Command의 glyph는 note와는 따로 가지고 있어야 나중에 에러가 안나고 할당해제하기 편하다.
-			//그리고 glyph의 원래 주인은 command이기 때문에 note가 깊은 복사를 해서 가져가는게 논리상 맞다.
-			//그럼 이제 note가 할당해제될 때 자기가 깊은 복사를 한 glyph를 할당해제하고,
-			//command가 할당해제될 때 자기가 가지고 있는 glyph를 할당해제 하기 때문에 어디서 할당해제할지
-			//말지 머리 아플 일이 없고, 여러모로 command의 glyph를 관리하기 편하기 때문에 
-			//command는 note와는 별도로 자기만의 glyph를 가지고 있어야한다.
-			//아니면 나중에 Backspace를 다지우고 다시 글자를 입력할 때 PushUndo에서 에러가 난다.!
-			currentLetterPos = this->notepadForm->current->Add(this->glyph->Clone());
+			//3.1.1 현재 줄을 구한다.
+			Glyph* currentRow = this->notepadForm->current;
+			//3.1.2 dummyRow를 깊은 복사한다.
+			Glyph* dummyRow = this->glyph->Clone();
+			//3.1.3 dummyRow를 현재 줄에 합친다.
+			dummyRow->Join(currentRow);
+			//3.1.4 dummyRow를 할당해제한다.
+			if (dummyRow != 0)
+			{
+				delete dummyRow;
+			}
+			//3.1.5 글자 위치를 현재 줄에서 제일 마지막으로 보낸다.
+			currentLetterPos = currentRow->Last();
 		}
 		//3.2 현재 줄의 글자 위치가 현재 줄의 글자개수와 다르면
 		else
 		{
-			//3.2.1 현재 줄의 글자 위치에 글자를 끼워서 추가한다.
-			currentLetterPos = this->notepadForm->current->
-				Add(currentLetterPos, this->glyph->Clone());
+			//3.2.1 dummyRow의 개수만큼 반복한다.
+			Glyph* letter = 0;
+			Long i = 0;
+			while (i < this->glyph->GetLength())
+			{
+				//3.2.1.1 글자를 구한다.
+				letter = this->glyph->GetAt(i);
+				//3.2.1.2 현재 줄의 글자 위치에 dummyRow에서 깊은 복사를 한 letter를 끼워 넣는다.
+				currentLetterPos = this->notepadForm->current->
+					Add(currentLetterPos, letter->Clone());
+				//3.2.1.3 i를 증가시킨다.
+				i++;
+			}
 		}
 	}
 	//4. 지울 때 저장한 glyph가 줄(개행문자)이면
@@ -183,50 +210,50 @@ void BackSpaceKeyActionCommand::Unexecute()
 }
 
 //SetMacroEnd(실행취소 및 다시실행 매크로출력 종료지점 설정)
-void BackSpaceKeyActionCommand::SetUndoMacroEnd()
+void CtrlBackSpaceKeyActionCommand::SetUndoMacroEnd()
 {
 	this->isUndoMacroEnd = true;
 }
-void BackSpaceKeyActionCommand::SetRedoMacroEnd()
+void CtrlBackSpaceKeyActionCommand::SetRedoMacroEnd()
 {
 	this->isRedoMacroEnd = true;
 }
 
 
 //SetRedone(다시 실행이라고 설정함)
-void BackSpaceKeyActionCommand::SetRedone()
+void CtrlBackSpaceKeyActionCommand::SetRedone()
 {
 	this->isRedone = true;
 }
 
 //줄의 위치 구하기
-Long BackSpaceKeyActionCommand::GetRowIndex()
+Long CtrlBackSpaceKeyActionCommand::GetRowIndex()
 {
 	return this->rowIndex;
 }
 //글자 위치 구하기
-Long BackSpaceKeyActionCommand::GetLetterIndex()
+Long CtrlBackSpaceKeyActionCommand::GetLetterIndex()
 {
 	return this->letterIndex;
 }
 //실행취소 종료지점여부 구하기
-bool BackSpaceKeyActionCommand::IsUndoMacroEnd()
+bool CtrlBackSpaceKeyActionCommand::IsUndoMacroEnd()
 {
 	return this->isUndoMacroEnd;
 }
 //다시실행 종료지점여부 구하기 
-bool BackSpaceKeyActionCommand::IsRedoMacroEnd()
+bool CtrlBackSpaceKeyActionCommand::IsRedoMacroEnd()
 {
 	return this->isRedoMacroEnd;
 }
 //다시실행인지 여부 구하기
-bool BackSpaceKeyActionCommand::IsRedone()
+bool CtrlBackSpaceKeyActionCommand::IsRedone()
 {
 	return this->isRedone;
 }
 
 //소멸자 정의
-BackSpaceKeyActionCommand::~BackSpaceKeyActionCommand()
+CtrlBackSpaceKeyActionCommand::~CtrlBackSpaceKeyActionCommand()
 {
 
 }

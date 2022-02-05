@@ -3,6 +3,9 @@
 #include "Command.h"
 #include "OnCharCommand.h"
 #include "Row.h"
+#include "BackSpaceKeyActionCommand.h"
+#include "DeleteKeyActionCommand.h"
+#include "CtrlBackSpaceKeyActionCommand.h"
 
 //디폴트 생성자 정의
 CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
@@ -147,7 +150,7 @@ Long CommandHistory::PushUndoList(Command* command)
 	Long lastCommandLetterIndex = 0;
 	//1. 현재 undoList에서 마지막 값을 구한다.
 	Command* lastCommand = this->undoList.GetTop();
-	bool isEnterKey = false;
+	bool isDone = false;
 	//2. undoList에서 lastCommand가 있으면(undoList에 저장된 command가 한 개라도 있으면)
 	if (lastCommand != 0)
 	{
@@ -160,15 +163,25 @@ Long CommandHistory::PushUndoList(Command* command)
 			{
 				//2.1.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 				lastCommand->SetUndoMacroEnd();
-				//2.1.1.2 enterKey로 표시한다.
-				isEnterKey = true;
+				//2.1.1.2  표시가 끝났음을 나타낸다.
+				isDone = true;
 			}
 		}
-		//2.2 enterKey가 아니면
-		if (isEnterKey == false)
+		//2.2 lastCommand가 지우기 관련 Command이면
+		else if (dynamic_cast<BackSpaceKeyActionCommand*>(lastCommand) ||
+			dynamic_cast<DeleteKeyActionCommand*>(lastCommand) ||
+			dynamic_cast<CtrlBackSpaceKeyActionCommand*>(lastCommand))
+		{
+			//2.2.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+			lastCommand->SetUndoMacroEnd();
+			//2.2.2 표시가 끝났음을 나타낸다.
+			isDone = true;
+		}
+		//2.3 표시가 아직 안되었으면
+		if (isDone == false)
 		{
 			//2.2.1 lastCommand와 command의 줄의 위치가 같으면
-			if (isEnterKey == false && lastCommand->GetRowIndex() == command->GetRowIndex())
+			if (isDone == false && lastCommand->GetRowIndex() == command->GetRowIndex())
 			{
 				//2.2.1.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
 				lastCommandLetterIndex = lastCommand->GetLetterIndex() + 1;
