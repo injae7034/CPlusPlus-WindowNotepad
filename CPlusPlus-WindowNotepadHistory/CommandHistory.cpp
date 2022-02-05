@@ -96,13 +96,7 @@ void CommandHistory::Redo()
 		Long index = this->undoList.Push(command);
 		//1.4 undoList의 사용량을 증가시킨다.
 		this->undoListLength++;
-		//1.5 꺼낸 command가 OnCharCommand이면
-		if (dynamic_cast<OnCharCommand*>(command))
-		{
-			//1.5.1 꺼낸 command가 Execute 되기 전에 다시 실행이라는 표시를 한다.
-			dynamic_cast<OnCharCommand*>(command)->SetRedone();
-		}
-		//1.6 꺼낸 command를 execute한다.
+		//1.5 꺼낸 command를 execute한다.
 		command->Execute();
 		bool isStop = true;
 		//1.7 command가 OnCharCommand이면
@@ -135,11 +129,9 @@ void CommandHistory::Redo()
 					this->undoList.Push(previousCommand);
 					//1.7.2.1.5 undoList의 사용량을 증가시킨다.
 					this->undoListLength++;
-					//1.7.2.1.6 previousCommand가 Execute되기 전에 다시 실행이라는 표시를 한다.
-					dynamic_cast<OnCharCommand*>(previousCommand)->SetRedone();
-					//1.7.2.1.7 previousCommand를 Execute한다.
+					//1.7.2.1.6 previousCommand를 Execute한다.
 					previousCommand->Execute();
-					//1.7.2.1.8 redoList에서 마지막 배열 요소를 꺼낸다.
+					//1.7.2.1.7 redoList에서 마지막 배열 요소를 꺼낸다.
 					previousCommand = this->redoList.Pop();
 					if (previousCommand == 0)
 					{

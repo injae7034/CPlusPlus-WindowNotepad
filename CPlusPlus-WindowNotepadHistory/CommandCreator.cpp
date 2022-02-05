@@ -78,7 +78,8 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == ID_ONCHARCOMMAND)
 	{
 		command = new OnCharCommand(this->notepadForm, this->notepadForm->GetNChar(),
-			this->notepadForm->note->GetCurrent(), this->notepadForm->current->GetCurrent());
+			this->notepadForm->note->GetCurrent(), this->notepadForm->current->GetCurrent(),
+			this->notepadForm->GetStartSplitIndex());
 	}
 	else if (nId == IDM_NOTE_UNDO)
 	{

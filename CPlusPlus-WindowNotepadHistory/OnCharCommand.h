@@ -8,12 +8,11 @@ class OnCharCommand :public Command
 {
 public:
 	OnCharCommand(NotepadForm* notepadForm, UINT nChar,
-		Long rowIndex = 0, Long letterIndex = 0);//디폴트생성자
+		Long rowIndex = 0, Long letterIndex = 0, Long startSplitIndex = 0);//디폴트생성자
 	virtual void Execute();//실행
 	virtual void Unexecute();//실행취소
 	void SetUndoMacroEnd();//실행취소출력 종료지점 설정
 	void SetRedoMacroEnd();//다시실행출력 종료지점 설정
-	void SetRedone();//다시실행이라는 표시를 해줌
 	virtual ~OnCharCommand();//소멸자
 	//인라인함수 선언
 	UINT GetNChar() const;//멤버로 저장된 글자 구하기
@@ -22,7 +21,6 @@ public:
 	Long GetStartSplitIndex() const;//멤버로 저장된 글자가 개행문자일 경우 split되는 칸의 위치구하기
 	bool IsUndoMacroEnd() const;//실행취소출력 종료지점 구하기
 	bool IsRedoMacroEnd() const;//다시실행출력 종료지점 구하기
-	bool IsRedone() const;//다시실행인지 아닌지 구하기
 private:
 	UINT nChar;//OnCharCommand를 실행할 때 입력된 글자
 	Long rowIndex;//입력된 글자의 줄위치
@@ -30,7 +28,6 @@ private:
 	Long startSplitIndex;//개행문자이면 split되는 칸의 위치
 	bool isUndoMacroEnd;//실행취소출력 종료지점
 	bool isRedoMacroEnd;//다시실행출력 종료지점
-	bool isRedone;//다시실행인지 아닌지 여부
 };
 
 //인라인함수 정의
@@ -57,10 +54,6 @@ inline bool OnCharCommand::IsUndoMacroEnd() const
 inline bool OnCharCommand::IsRedoMacroEnd() const
 {
 	return this->isRedoMacroEnd;
-}
-inline bool OnCharCommand::IsRedone() const
-{
-	return this->isRedone;
 }
 
 #endif // !_ONCHARCOMMAND_H
