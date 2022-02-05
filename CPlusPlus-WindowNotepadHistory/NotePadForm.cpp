@@ -66,8 +66,6 @@ NotepadForm::NotepadForm()
 	this->previousPageWidth = 0;//처음생성될때는 현재 화면 너비를 0으로 초기화해줌
 	this->selectedStartXPos = 0;//처음생성될때는 선택된 texts가 없기 때문에 0으로 초기화해줌
 	this->selectedStartYPos = 0;//처음생성될때는 선택된 texts가 없기 때문에 0으로 초기화해줌
-	this->rowPosBeforeUndo = 0;//처음생성될때는 실행취소가 아직 실행안되었기 때문에 0으로 초기화해줌
-	this->letterPosBeforeUndo = 0;//처음생성될때는 실행취소가 아직 실행안되었기 때문에 0으로 초기화해줌
 	//CFont에서 사용하고자 하는 글자크기와 글자체로 초기화시킴.
 	//기본생성자로 생성된 this->font에 매개변수 5개생성자로 치환(=)시킴
 	LOGFONT logFont;
@@ -366,9 +364,10 @@ void NotepadForm::OnCommand(UINT nId)
 				}
 			}
 		}
-		//3.2 ConcreteCommand의 execute 함수를 실행한다.
+		//4.3 ConcreteCommand의 execute 함수를 실행한다.
 		command->Execute();
 	}
+
 	//4. 변화를 메모장에 갱신한다.
 	this->Notify();
 	this->Invalidate();

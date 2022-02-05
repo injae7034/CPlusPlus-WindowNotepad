@@ -47,10 +47,6 @@ public:
 	string filePath;//현재 열려있는 메모장의 파일경로
 	Long selectedStartXPos;//선택이 시작되는 x좌표
 	Long selectedStartYPos;//선택이 시작되는 y좌표
-	//rowPosBeforeUndo, letterPosBeforeUndo는 필요없음.
-
-	Long rowPosBeforeUndo;//실행취소하기 전에 줄의 위치
-	Long letterPosBeforeUndo;//실행취소하기 전에 글자위치
 	Long previousPageWidth;
 	//인라인함수 정의
 	UINT GetNChar() const;

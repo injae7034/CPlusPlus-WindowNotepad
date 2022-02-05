@@ -461,6 +461,10 @@ void FindingDialog::OnClose()
 #endif
 	this->notepadForm->findReplaceDialog = 0;
 	//1. 찾기 다이얼로그를 닫는다.
+	//this->DestroyWindow();
+	//delete this;
 	CFindReplaceDialog::OnClose();
+	//this->DestroyWindow();
+	//delete this;
 }
 

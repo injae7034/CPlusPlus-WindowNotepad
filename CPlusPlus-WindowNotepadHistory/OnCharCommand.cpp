@@ -4,9 +4,13 @@
 #include "CommandHistory.h"
 
 //디폴트생성자 정의
-OnCharCommand::OnCharCommand(NotepadForm* notepadForm)
+OnCharCommand::OnCharCommand(NotepadForm* notepadForm, UINT nChar,
+	Long rowIndex, Long letterIndex)
+	:Command(notepadForm)
 {
-	this->notepadForm = notepadForm;
+	this->nChar = nChar;
+	this->rowIndex = rowIndex;
+	this->letterIndex = letterIndex;
 }
 
 //Execute 정의
@@ -18,15 +22,21 @@ void OnCharCommand::Execute()
 		//1.1 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
 		this->notepadForm->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
 	}
+
+	//현재 줄의 위치와 글자위치를 이동시킨다.
+	Long currentRowPos = this->notepadForm->note->Move(this->rowIndex);
+	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+	this->notepadForm->current->Move(this->letterIndex);
+
 	//2. glyphCreator를 생성한다.
 	GlyphCreator glyphCreator;
-	UINT nChar = this->notepadForm->GetNChar();
+	//this->nChar = this->notepadForm->GetNChar();
 	//3. glyph를 생성한다.
-	Glyph* glyph = glyphCreator.Create((char*)&nChar);
+	Glyph* glyph = glyphCreator.Create((char*)&this->nChar);
 	Long letterIndex;
 	Long rowIndex;
 	//4. 입력받은 문자가 개행문자가 아니면
-	if (nChar != '\n' && nChar != '\r')
+	if (this->nChar != '\n' && this->nChar != '\r')
 	{
 		//4.1 현재 줄의 캐럿의 가로 위치를 구한다.
 		letterIndex = this->notepadForm->current->GetCurrent();
@@ -42,10 +52,9 @@ void OnCharCommand::Execute()
 			//4.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
 			letterIndex = this->notepadForm->current->Add(letterIndex, glyph);
 		}
-
 	}
 	//5. 입력받은 문자가 개행문자이면
-	else if (nChar == '\n' || nChar == '\r')
+	else if (this->nChar == '\n' || this->nChar == '\r')
 	{
 		//5.1 현재 줄의 위치를 구한다.
 		rowIndex = this->notepadForm->note->GetCurrent();
@@ -88,25 +97,21 @@ void OnCharCommand::Execute()
 	this->notepadForm->SetWindowText(CString(name.c_str()));
 	//9. 메모장에 변경사항이 있음을 저장한다.
 	this->notepadForm->isDirty = true;
-	//10. undo하기 전에 현재 singleByteLetter가 적힌 위치를 저장한다.
-	this->notepadForm->rowPosBeforeUndo = this->notepadForm->note->GetCurrent();
-	this->notepadForm->letterPosBeforeUndo = this->notepadForm->current->GetCurrent();
-	//11. 갱신한다.
+	//10. 갱신한다.
 	this->notepadForm->Invalidate(TRUE);
+	//11. 현재 글자 위치를 저장한다.
+	this->rowIndex = this->notepadForm->note->GetCurrent();
+	this->letterIndex = this->notepadForm->current->GetCurrent() - 1;
 }
 
 //Unexcute
 void OnCharCommand::Unexecute()
 {
-	//1. undo하기 전에 singleByte가 적힌 줄의 위치를 구한다.
-	Long rowPosBeforeUndo = this->notepadForm->rowPosBeforeUndo;
-	//2. undo하기 전에 singleByte가 적힌 줄의 위치를 구한다.
-	Long letterPosBeforeUndo = this->notepadForm->letterPosBeforeUndo;
-	//3. 현재 줄의 위치를 변경한다.
-	Long currentRowPos = this->notepadForm->note->Move(rowPosBeforeUndo);
+	//1. 현재 줄의 위치를 이동시킨다.
+	Long currentRowPos = this->notepadForm->note->Move(this->rowIndex);
 	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-	//4. 현재 글자의 위치를 변경한다.
-	Long currentLetterPos = this->notepadForm->current->Move(letterPosBeforeUndo);
+	//2. 현재 글자의 위치를 이동시킨다.
+	Long currentLetterPos = this->notepadForm->current->Move(this->letterIndex + 1);
 	//3. 메모장에서 선택된 texts가 없으면
 	if (this->notepadForm->isSelecting == false)
 	{
