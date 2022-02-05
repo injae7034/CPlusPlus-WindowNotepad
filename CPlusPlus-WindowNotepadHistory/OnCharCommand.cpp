@@ -88,17 +88,25 @@ void OnCharCommand::Execute()
 	this->notepadForm->SetWindowText(CString(name.c_str()));
 	//9. 메모장에 변경사항이 있음을 저장한다.
 	this->notepadForm->isDirty = true;
-	//10. 갱신한다.
+	//10. undo하기 전에 현재 singleByteLetter가 적힌 위치를 저장한다.
+	this->notepadForm->rowPosBeforeUndo = this->notepadForm->note->GetCurrent();
+	this->notepadForm->letterPosBeforeUndo = this->notepadForm->current->GetCurrent();
+	//11. 갱신한다.
 	this->notepadForm->Invalidate(TRUE);
 }
 
 //Unexcute
 void OnCharCommand::Unexecute()
 {
-	//1. 현재 줄의 위치를 구한다.
-	Long currentRowPos = this->notepadForm->note->GetCurrent();
-	//2. 현재 글자의 위치를 구한다.
-	Long currentLetterPos = this->notepadForm->current->GetCurrent();
+	//1. undo하기 전에 singleByte가 적힌 줄의 위치를 구한다.
+	Long rowPosBeforeUndo = this->notepadForm->rowPosBeforeUndo;
+	//2. undo하기 전에 singleByte가 적힌 줄의 위치를 구한다.
+	Long letterPosBeforeUndo = this->notepadForm->letterPosBeforeUndo;
+	//3. 현재 줄의 위치를 변경한다.
+	Long currentRowPos = this->notepadForm->note->Move(rowPosBeforeUndo);
+	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+	//4. 현재 글자의 위치를 변경한다.
+	Long currentLetterPos = this->notepadForm->current->Move(letterPosBeforeUndo);
 	//3. 메모장에서 선택된 texts가 없으면
 	if (this->notepadForm->isSelecting == false)
 	{
@@ -120,7 +128,7 @@ void OnCharCommand::Unexecute()
 			currentRow->Join(previousRow);
 			//3.1.5 Note에서 현재 줄의 주소를 지운다.
 			this->notepadForm->note->Remove(currentRowPos);
-			//3.1.6 현재 줄이 지워졌기 때문에 현재 줄을 변경한다.
+			//3.1.6 줄이 지워졌기 때문에 rowPosBeforeUndo를 한 줄 앞당긴다.
 			currentRowPos = this->notepadForm->note->GetCurrent();
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 			//3.1.7 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
