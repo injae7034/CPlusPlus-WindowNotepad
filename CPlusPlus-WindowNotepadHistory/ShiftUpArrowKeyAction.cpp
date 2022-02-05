@@ -21,7 +21,7 @@ void ShiftUpArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	Long currentRowIndex = this->notepadForm->note->Previous();
 	Long currentLetterIndex = this->notepadForm->current->GetCurrent();
 	//4. 이동하기전 줄의 위치와 이동 후 줄의 위치가 다르면(실질적으로 이동을 했으면)
-	if (previousRowIndex != currentRowIndex)
+	if (previousRowIndex > currentRowIndex)
 	{
 		//4.1 현재 줄을 이전으로 이동한 후의 줄로 변경한다.
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);

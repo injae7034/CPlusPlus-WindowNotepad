@@ -7,6 +7,8 @@
 #include "DeleteKeyActionCommand.h"
 #include "CtrlBackSpaceKeyActionCommand.h"
 #include "CtrlDeleteKeyActionCommand.h"
+#include "ShiftCtrlBackSpaceKeyActionCommand.h"
+#include "ShiftCtrlDeleteKeyActionCommand.h"
 
 //디폴트 생성자 정의
 CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
@@ -180,7 +182,9 @@ Long CommandHistory::PushUndoList(Command* command)
 		else if (dynamic_cast<BackSpaceKeyActionCommand*>(lastCommand) ||
 			dynamic_cast<DeleteKeyActionCommand*>(lastCommand) ||
 			dynamic_cast<CtrlBackSpaceKeyActionCommand*>(lastCommand) ||
-			dynamic_cast<CtrlDeleteKeyActionCommand*>(lastCommand))
+			dynamic_cast<CtrlDeleteKeyActionCommand*>(lastCommand) ||
+			dynamic_cast<ShiftCtrlBackSpaceKeyActionCommand*>(lastCommand) ||
+			dynamic_cast<ShiftCtrlDeleteKeyActionCommand*>(lastCommand))
 		{
 			//2.3.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 			lastCommand->SetUndoMacroEnd();

@@ -1,6 +1,7 @@
 #include "LeftArrowKeyAction.h"
 #include "Glyph.h"
 #include "SelectingTexts.h"
+#include "DummyRow.h"
 
 //디폴트생성자
 LeftArrowKeyAction::LeftArrowKeyAction(NotepadForm* notepadForm)
@@ -37,12 +38,34 @@ void LeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//5.1 이전 줄로 이동시킨다.
 		currentRowIndex = this->notepadForm->note->Previous();
 		//5.2 줄의 이동이 있었으면(이동하기 전의 줄이 노트의 처음 줄이 아니면)
-		if (previousRowIndex != currentRowIndex)
+		if (previousRowIndex > currentRowIndex)
 		{
 			//5.2.1 현재 줄을 이전으로 이동한 줄로 변경한다.
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
-			//5.2.2 줄이 이전으로 이동했기 때문에 캐럿의 현재 위치를 마지막으로 변경한다.
-			currentLetterIndex = this->notepadForm->current->Last();
+			//5.2.2 현재 줄을 구한다.
+			Glyph* currentRow = this->notepadForm->current;
+			//5.2.3 다음 줄을 구한다.
+			Glyph* nextRow = this->notepadForm->note->GetAt(currentRowIndex + 1);
+			//5.2.4 다음 줄이 진짜 줄이고 현재 줄이 가짜 줄이면
+			if (!dynamic_cast<DummyRow*>(nextRow) && dynamic_cast<DummyRow*>(currentRow))
+			{
+				//5.2.4.1 줄이 이전으로 이동했기 때문에 캐럿의 현재 위치를 마지막으로 변경한다.
+				currentLetterIndex = this->notepadForm->current->Last();
+			}
+			//5.2.5 다음 줄이 진짜 줄이고 현재 줄이 진짜 줄이면
+			else if (!dynamic_cast<DummyRow*>(nextRow) && !dynamic_cast<DummyRow*>(currentRow))
+			{
+				//5.2.5.1 줄이 이전으로 이동했기 때문에 캐럿의 현재 위치를 마지막으로 변경한다.
+				currentLetterIndex = this->notepadForm->current->Last();
+			}
+			//5.2.6 그 이외에는
+			else
+			{
+				//5.2.6.1 줄이 이전으로 이동했기 때문에 캐럿의 현재 위치를 마지막으로 변경한다.
+				currentLetterIndex = this->notepadForm->current->Last();
+				//5.2.6.2 이전으로 이동한 줄이 가짜 줄이기 때문에 마지막 글자위치 이전으로 이동한다.
+				currentLetterIndex = this->notepadForm->current->Previous();
+			}
 		}
 	}
 }
