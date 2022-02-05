@@ -41,93 +41,96 @@ void OnCharCommand::Execute()
 		//3.1 OnCharCommand의 글자가 개행문자이면
 		if (this->nChar == '\n' || this->nChar == '\r')
 		{
-			//3.1 OnCharCommand의 줄의 위치를 한 줄 이전으로 이동한다.
+			//3.1.1 OnCharCommand의 줄의 위치를 한 줄 이전으로 이동한다.(개행이 될 때 줄의 위치가
+			//한 줄 증가되었고, 취소되었기 때문에 다시 실행하기 전에 한 줄 이전으로 이동시켜야함)
 			this->rowIndex--;
 			currentRowPos = this->notepadForm->note->Move(this->rowIndex);
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+			//3.1.2 개행이 취소되었기 때문에 다시 개행이 되기 전에 칸의 원래 위치로 이동시킨다.
 			this->letterIndex = this->notepadForm->current->Move(this->startSplitIndex);
 		}
-		//3.2 개행문자가 아니면
+		//3.2 OnCharCommand의 글자가 개행문자가 아니면
 		else
 		{
 			currentRowPos = this->notepadForm->note->Move(this->rowIndex);
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+			//3.2.1 글자가 써지면 한 칸 이동이 되는데, 글자가 취소되었기 때문에 한 칸 이전으로 이동시킨다.
 			this->letterIndex--;
 			this->notepadForm->current->Move(this->letterIndex);
 		}
 	}
-	//3. glyphCreator를 생성한다.
+	//4. glyphCreator를 생성한다.
 	GlyphCreator glyphCreator;
-	//4. glyph를 생성한다.
+	//5. glyph를 생성한다.
 	Glyph* glyph = glyphCreator.Create((char*)&this->nChar);
 	Long letterIndex;
 	Long rowIndex;
-	//5. 입력받은 문자가 개행문자가 아니면
+	//6. 입력받은 문자가 개행문자가 아니면
 	if (this->nChar != '\n' && this->nChar != '\r')
 	{
-		//5.1 현재 줄의 캐럿의 가로 위치를 구한다.
+		//6.1 현재 줄의 글자 위치를 구한다.
 		letterIndex = this->notepadForm->current->GetCurrent();
-		//5.2 FileSaveCommand가 현재 줄의 length와 같으면
+		//6.2 현재 줄의 글자 위치가 현재 줄의 글자개수와 같으면
 		if (letterIndex == this->notepadForm->current->GetLength())
 		{
-			//5.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
+			//6.2.1 현재 줄의 마지막 글자 뒤에 새로운 글자를 추가한다.
 			letterIndex = this->notepadForm->current->Add(glyph);
 		}
-		//5.3 index가 현재 줄의 length와 다르면
+		//6.3 현재 줄의 글자 위치가 현재 줄의 글자개수와 다르면
 		else
 		{
-			//5.3.1 현재 줄의 index번째에 새로운 글자를 끼워 쓴다.
+			//6.3.1 현재 줄의 글자 위치에 글자를 끼워서 추가한다.
 			letterIndex = this->notepadForm->current->Add(letterIndex, glyph);
 		}
 	}
-	//6. 입력받은 문자가 개행문자이면
+	//7. 입력받은 문자가 개행문자이면
 	else if (this->nChar == '\n' || this->nChar == '\r')
 	{
-		//6.1 현재 줄의 위치를 구한다.
+		//7.1 현재 줄의 위치를 구한다.
 		rowIndex = this->notepadForm->note->GetCurrent();
-		//6.2 현재 줄의 캐럿의 위치를 구한다.
+		//7.2 현재 줄의 캐럿의 위치를 구한다.
 		letterIndex = this->notepadForm->current->GetCurrent();
 		this->startSplitIndex = letterIndex;
-		//6.3. 현재 줄에서 현재 캐럿 다음 위치에 있는 글자들을 떼어낸다.
+		//7.3. 현재 줄에서 현재 글자 다음 위치에 있는 글자들을 떼어내 새로운 줄을 만든다.
 		glyph = this->notepadForm->current->Split(letterIndex);
-		//6.4 rowIndex가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
+		//7.4 현재 줄의 위치가 노트의 줄의 개수-1 과 같고(현재 줄의 위치가 마지막 줄이면)
 		if (rowIndex == this->notepadForm->note->GetLength() - 1)
 		{
-			//6.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
+			//7.4.1 새로운 줄을 마지막 줄 다음에 추가한다.
 			rowIndex = this->notepadForm->note->Add(glyph);
 		}
-		//6.5 그게 아니면
+		//7.5 그게 아니면
 		else
 		{
-			//6.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워넣는다.
+			//7.5.1 새로운 줄을 현재 줄의 다음 위치에 끼워 넣는다.
 			rowIndex = this->notepadForm->note->Add(rowIndex + 1, glyph);
 		}
-		//6.4 현재 줄의 위치를 새로 저장한다.
+		//7.6 현재 줄을 새로 저장한다.
 		this->notepadForm->current = this->notepadForm->note->GetAt(rowIndex);
-		//6.5 현재 줄의 캐럿의 위치를 처음으로 이동시킨다.
+		//7.7 현재 줄의 글자 위치를 처음으로 이동시킨다.
 		this->notepadForm->current->First();
-		//6.6 자동 줄 바꿈이 진행중이면
+		//7.8 자동 줄 바꿈이 진행중이면
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//6.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//7.8.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
 		}
 	}
-	//7. 캐럿의 위치와 크기가 변경되었음을 알린다.
+	//8. 캐럿의 위치와 크기가 변경되었음을 알린다.
 	this->notepadForm->Notify();
-	//8. isComposing을 false로 바꾼다.
+	//9. isComposing을 false로 바꾼다.
 	this->notepadForm->isComposing = false;
-	//9. 메모장 제목에 *를 추가한다.
+	//10. 메모장 제목에 *를 추가한다.
 	string name = this->notepadForm->fileName;
 	name.insert(0, "*");
 	name += " - 메모장";
 	this->notepadForm->SetWindowText(CString(name.c_str()));
-	//10. 메모장에 변경사항이 있음을 저장한다.
+	//11. 메모장에 변경사항이 있음을 저장한다.
 	this->notepadForm->isDirty = true;
-	//11. 갱신한다.
+	//12. 갱신한다.
 	this->notepadForm->Invalidate(TRUE);
-	//12. 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+	//13. 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
 	this->rowIndex = this->notepadForm->note->GetCurrent();
 	this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
 	this->letterIndex = this->notepadForm->current->GetCurrent();
@@ -136,11 +139,10 @@ void OnCharCommand::Execute()
 //Unexcute
 void OnCharCommand::Unexecute()
 {
-	//1. 현재 줄의 위치를 이동시킨다.
+	//1. 현재 줄의 위치를 이동시킨다.(캐럿이 다른 곳에 있으면 그 곳에 글자가 지워지기 때문에)
 	Long currentRowPos = this->notepadForm->note->Move(this->rowIndex);
 	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 	//2. 현재 글자의 위치를 이동시킨다.
-	//지우려면 현재 글자위치보다 캐럿이 뒤에 있어야 지울수있기 때문에 letterIndex + 1을 해준다.
 	Long currentLetterPos = this->notepadForm->current->Move(this->letterIndex);
 	//3. 메모장에서 선택된 texts가 없으면
 	if (this->notepadForm->isSelecting == false)
@@ -161,22 +163,14 @@ void OnCharCommand::Unexecute()
 			Long letterPos = previousRow->GetLength();
 			//3.1.4 현재 줄을 이전 줄에 합친다.
 			currentRow->Join(previousRow);
-			//3.1.5 Note에서 현재 줄의 주소를 지운다.
+			//3.1.5 Note에서 현재 줄의 주소를 지운다.(내용은 지우면 안됨)
 			this->notepadForm->note->Remove(currentRowPos);
-			//3.1.6 줄이 지워졌기 때문에 rowPosBeforeUndo를 한 줄 앞당긴다.
+			//3.1.6 줄이 지워졌기 때문에 줄의 위치를 다시 구한다.
 			currentRowPos = this->notepadForm->note->GetCurrent();
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 			//3.1.7 현재 줄의 글자 위치가 지금은 마지막이기 때문에 변경해준다.
-			//이전 줄의 마지막 현재 줄의 처음 사이에 위치하도록 조정한다.
-			Long index = this->notepadForm->current->First();
-			while (index < letterPos)
-			{
-				this->notepadForm->current->Next();
-				index++;
-				//이렇게하면 index는 절대 overflow가 되지 않기 때문에 반복문을 벗어날 수 없게되고,
-				//그럼 결국에 무한반복이 된다.!!
-				//index = this->current->Next();
-			}
+			//이전 줄의 마지막 위치로 이동시킨다.
+			Long index = this->notepadForm->current->Move(letterPos);
 			//3.1.8 메모장 제목에 *를 추가한다.
 			string name = this->notepadForm->fileName;
 			name.insert(0, "*");
@@ -212,7 +206,7 @@ void OnCharCommand::Unexecute()
 	}
 }
 
-//SetMacroEnd
+//SetMacroEnd(실행취소 및 다시실행 매크로출력 종료지점 설정)
 void OnCharCommand::SetUndoMacroEnd()
 {
 	this->isUndoMacroEnd = true;
@@ -223,7 +217,7 @@ void OnCharCommand::SetRedoMacroEnd()
 }
 
 
-//SetRedone
+//SetRedone(다시 실행이라고 설정함)
 void OnCharCommand::SetRedone()
 {
 	this->isRedone = true;

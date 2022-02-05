@@ -19,367 +19,151 @@ CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
 //실행취소 정의
 void CommandHistory::Undo()
 {
-	//UndoList가 비어있지 않으면
+	//1. UndoList가 비어있지 않으면
 	if (this->notepadForm->commandHistory->IsUndoListEmpty() == false)
 	{
-		//마지막 배열 요소를 꺼낸다.
+		//1.1 undoList에서 마지막 배열 요소(command)를 꺼낸다.
 		Command* command = this->PopUndoList();
-		
+		//1.2 꺼낸 command를 redoList의 마지막에 추가한다.
 		Long index = this->PushRedoList(command);
-		
-		//4. 꺼낸 command를 Unexecute한다.
+		//1.3 꺼낸 command를 Unexecute한다.(실행취소)
 		command->Unexecute();
 		bool isStop = true;
-		//5. command가 OnCharCommand이면
+		//1.4 command가 OnCharCommand이면
 		if (dynamic_cast<OnCharCommand*>(command))
 		{
-			//command의 이전 command를 구한다.(command를 뺐기 때문에 previousCommand가 마지막이됨)
+			//1.4.1 이전 command를 구한다.(command를 뺐기 때문에 previousCommand가 마지막이됨)
 			Command* previousCommand = this->undoList.Pop();
 			if (previousCommand != 0)
 			{
 				isStop = false;
 			}
-			//5. previousCommand가 OnCharCommand이면
+			//1.4.2 previousCommand가 null이 아니고  previousCommand가 OnCharCommand이면
 			if (isStop == false && dynamic_cast<OnCharCommand*>(previousCommand))
 			{
-				//5.1 false인동안 반복한다.
+				//1.4.2.1 previousCommand가 undoMacroEnd가 아닌동안 반복한다.
 				while (isStop == false && dynamic_cast<OnCharCommand*>(previousCommand)
 					->IsUndoMacroEnd() == false)
 				{
-					//할당량을 감소시킨다.
+					//1.4.2.1.1 undoList의 할당량을 감소시킨다.
 					this->undoListCapacity--;
-					//사용량을 감소시킨다.
+					//1.4.2.1.2 undoList의 사용량을 감소시킨다.
 					this->undoListLength--;
-					
-					//2. 마지막 배열 요소 다음에 추가한다.
+					//1.4.2.1.3 pushRedoList의 마지막 배열 요소 다음에 추가한다.
 					Long index = this->PushRedoList(previousCommand);
-				
+					//1.4.2.1.4 꺼낸 previousCommand를 Unexecute한다.(실행취소)
 					previousCommand->Unexecute();
-					//4. command에 nextCommand를 저장한다.
-					//command = previousCommand;
+					//1.4.2.1.5 undoList에서 마지막 배열 요소를 꺼낸다.
 					previousCommand = this->undoList.Pop();
 					if (previousCommand == 0)
 					{
 						isStop = true;
 					}
 				}
+				//1.4.2.2 previousCommand가 undoMacroEnd이면
 				if (isStop == false)
 				{
+					//1.4.2.2.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
 					this->undoList.Push(previousCommand);
 				}
 
 			}
-			//6. previousCommand가 OnCharCommand가 아니면
+			//1.4.3 previousCommand가 null이 아니고  previousCommand가 OnCharCommand가 아니면
 			else if (isStop == false && !dynamic_cast<OnCharCommand*>(previousCommand))
 			{
-				//다시 넣어준다.
+				//1.4.3.1 undoList에 다시 넣어준다.
 				this->undoList.Push(previousCommand);
 			}
 		}
-#if 0
-		//5. command가 OnCharCommand이면
-		if (dynamic_cast<OnCharCommand*>(command))
-		{
-			bool areCharactersInARow = false;
-
-			//5.1 OnCharCommand의 nChar가 개행문자가 아니면
-			if (dynamic_cast<OnCharCommand*>(command)->GetNChar() != '\n'
-				&& dynamic_cast<OnCharCommand*>(command)->GetNChar() != '\r')
-			{
-				areCharactersInARow = true;
-			}
-
-			//5.2 true인동안 반복한다.
-			Command* nextCommand = 0;
-			Long currentRowIndex = 0;
-			Long currentLetterIndex = 0;
-			Long nextRowIndex = 0;
-			Long nextLetterIndex = 0;
-			Long compareIndex = 0;
-			while (areCharactersInARow == true && 
-				this->notepadForm->commandHistory->IsUndoListEmpty() == false)
-			{
-				//5.2.1 undoList에서 마지막 Command를 꺼낸다.
-				nextCommand = this->undoList.Pop();
-				//5. command가 OnCharCommand이면
-				if (dynamic_cast<OnCharCommand*>(nextCommand))
-				{
-					//5.1 OnCharCommand의 nChar가 개행문자가 아니면
-					if (dynamic_cast<OnCharCommand*>(nextCommand)->GetNChar() != '\n'
-						&& dynamic_cast<OnCharCommand*>(nextCommand)->GetNChar() != '\r')
-					{
-						//5.1.1 nextCommand의 줄의 위치와 command의 줄의 위치를 비교해서 같으면
-						nextRowIndex = dynamic_cast<OnCharCommand*>(nextCommand)
-							->GetRowIndex();
-						currentRowIndex = dynamic_cast<OnCharCommand*>(command)->GetRowIndex();
-						if (nextRowIndex == currentRowIndex)
-						{
-#if 0
-							//5.1.1.1 nextCommand의 글자 위치와 command의 글자 위치를 비교해서
-							//nextCommand의 글자위치가 command글자위치에서 1뺀값과 같으면
-							nextLetterIndex = dynamic_cast<OnCharCommand*>(nextCommand)
-								->GetLetterIndex();
-							currentLetterIndex = dynamic_cast<OnCharCommand*>(command)
-								->GetLetterIndex();
-							compareIndex = currentLetterIndex - 1;
-							if (nextLetterIndex == compareIndex)
-#endif
-							if (dynamic_cast<OnCharCommand*>(nextCommand)
-								->IsSameTurn() == true)
-							{
-								areCharactersInARow = true;
-								//할당량을 감소시킨다.
-								this->undoListCapacity--;
-								//사용량을 감소시킨다.
-								this->undoListLength--;
-								//RedoList에 꺼낸 배열요소를 추가한다.
-								//1. 사용량이 할당량보다 크거나 같으면
-								if (this->redoListLength >= this->redoListCapacity)
-								{
-									//1.1 할당량을 증가시킨다.
-									this->redoListCapacity++;
-								}
-								//2. 마지막 배열 요소 다음에 추가한다.
-								Long index = this->redoList.Push(nextCommand);
-								//3. 사용량을 증가시킨다.
-								this->redoListLength++;
-								nextCommand->Unexecute();
-								//4. command에 nextCommand를 저장한다.
-								command = nextCommand;
-							}
-							// command의 글자 위치가 더크면
-							else
-							{
-								if (dynamic_cast<OnCharCommand*>(command)
-									->IsSameTurn() == true)
-								{
-									//할당량을 감소시킨다.
-									this->undoListCapacity--;
-									//사용량을 감소시킨다.
-									this->undoListLength--;
-									//RedoList에 꺼낸 배열요소를 추가한다.
-									//1. 사용량이 할당량보다 크거나 같으면
-									if (this->redoListLength >= this->redoListCapacity)
-									{
-										//1.1 할당량을 증가시킨다.
-										this->redoListCapacity++;
-									}
-									//2. 마지막 배열 요소 다음에 추가한다.
-									Long index = this->redoList.Push(nextCommand);
-									//3. 사용량을 증가시킨다.
-									this->redoListLength++;
-									nextCommand->Unexecute();
-									//4. command에 nextCommand를 저장한다.
-									//command = nextCommand;
-								}
-								//this->undoList.Push(nextCommand);
-								areCharactersInARow = false;
-							}
-						}
-						//5.1.2 줄의 위치가 서로 다르면
-						else
-						{
-							this->undoList.Push(nextCommand);
-							areCharactersInARow = false;
-						}
-					}
-					//개행문자이면
-					else
-					{
-						this->undoList.Push(nextCommand);
-						areCharactersInARow = false;
-					}
-				}
-				//OnCharCommand가 아니면
-				else
-				{
-					this->undoList.Push(nextCommand);
-					areCharactersInARow = false;
-				}
-			}
-		}
-#endif
 	}
 }
 
 //다시실행 정의
 void CommandHistory::Redo()
 {
-	//RedoList가 비어있지 않으면
+	//1. RedoList가 비어있지 않으면
 	if (this->notepadForm->commandHistory->IsRedoListEmpty() == false)
 	{
-		//마지막 배열 요소를 꺼낸다.
+		//1.1 redoList의 마지막 배열 요소를 꺼낸다.
 		Command* command = this->PopRedoList();
-		//2. 사용량이 할당량보다 크거나 같으면
+		//1.2 undoList의 사용량이 할당량보다 크거나 같으면
 		if (this->undoListLength >= this->undoListCapacity)
 		{
-			//1.1 할당량을 증가시킨다.
+			//1.2.1 undoList의 할당량을 증가시킨다.
 			this->undoListCapacity++;
 		}
-		//3. 마지막 배열 요소 다음에 추가한다.
+		//1.3 undoList의 마지막 배열 요소 다음에 추가한다.
 		Long index = this->undoList.Push(command);
-		//4. 사용량을 증가시킨다.
+		//1.4 undoList의 사용량을 증가시킨다.
 		this->undoListLength++;
-		//꺼낸 command가 OnCharCommand이면
+		//1.5 꺼낸 command가 OnCharCommand이면
 		if (dynamic_cast<OnCharCommand*>(command))
 		{
+			//1.5.1 꺼낸 command가 Execute 되기 전에 다시 실행이라는 표시를 한다.
 			dynamic_cast<OnCharCommand*>(command)->SetRedone();
 		}
-		//꺼낸 command를 execute한다.
+		//1.6 꺼낸 command를 execute한다.
 		command->Execute();
 		bool isStop = true;
-		//5. command가 OnCharCommand이면
+		//1.7 command가 OnCharCommand이면
 		if (dynamic_cast<OnCharCommand*>(command))
 		{
-			//command의 이전 command를 구한다.(command를 뺐기 때문에 previousCommand가 마지막이됨)
+			//1.7.1 previousCommand를 구한다.(command를 뺐기 때문에 previousCommand가 마지막이됨)
 			Command* previousCommand = this->redoList.Pop();
 			if (previousCommand != 0)
 			{
 				isStop = false;
 			}
-			//5. nextCommand가 OnCharCommand이면
+			//1.7.2 previousCommand가 null이 아니고, OnCharCommand이면
 			if (isStop == false && dynamic_cast<OnCharCommand*>(previousCommand))
 			{
-				//5.1 false인동안 반복한다.
+				//1.7.2.1 previousCommand가 RedoMacroEnd인동안 반복한다.
 				while (isStop == false && dynamic_cast<OnCharCommand*>(previousCommand)
 					->IsRedoMacroEnd() == false)
 				{
-					//할당량을 감소시킨다.
+					//1.7.2.1.1 redoList의 할당량을 감소시킨다.
 					this->redoListCapacity--;
-					//사용량을 감소시킨다.
+					//1.7.2.1.2 redoList의 사용량을 감소시킨다.
 					this->redoListLength--;
-					//2. 사용량이 할당량보다 크거나 같으면
+					//1.7.2.1.3 undoList의 사용량이 할당량보다 크거나 같으면
 					if (this->undoListLength >= this->undoListCapacity)
 					{
-						//1.1 할당량을 증가시킨다.
+						//1.7.2.1.3.1 undoList의 할당량을 증가시킨다.
 						this->undoListCapacity++;
 					}
-					//3. 마지막 배열 요소 다음에 추가한다.
+					//1.7.2.1.4 undoList의 마지막 배열 요소 다음에 추가한다.
 					this->undoList.Push(previousCommand);
-					//4. 사용량을 증가시킨다.
+					//1.7.2.1.5 undoList의 사용량을 증가시킨다.
 					this->undoListLength++;
+					//1.7.2.1.6 previousCommand가 Execute되기 전에 다시 실행이라는 표시를 한다.
 					dynamic_cast<OnCharCommand*>(previousCommand)->SetRedone();
+					//1.7.2.1.7 previousCommand를 Execute한다.
 					previousCommand->Execute();
-					//4. command에 nextCommand를 저장한다.
+					//1.7.2.1.8 redoList에서 마지막 배열 요소를 꺼낸다.
 					previousCommand = this->redoList.Pop();
 					if (previousCommand == 0)
 					{
 						isStop = true;
 					}
 				}
+				//1.7.2.2 previousCommand가 RedoMacroEnd이면
 				if (isStop == false)
 				{
+					//1.7.2.2.1 꺼냈던 previousCommand를 redoList에 다시 넣어준다.
 					this->redoList.Push(previousCommand);
 				}
 			}
-			//6. previousCommand가 OnCharCommand가 아니면
+			//1.7.3 previousCommand가 null이 아니고 OnCharCommand가 아니면
 			else if (isStop == false &&
 				!dynamic_cast<OnCharCommand*>(previousCommand))
 			{
-				//다시 넣어준다.
+				//1.7.3.1 꺼낸 command를 redoList에 다시 넣어준다.
 				this->redoList.Push(previousCommand);
 			}
 		}
-
-#if 0
-		//5. command가 OnCharCommand이면
-		if (dynamic_cast<OnCharCommand*>(command))
-		{
-			bool areCharactersInARow = false;
-			//5.1 OnCharCommand의 nChar가 개행문자가 아니면
-			if (dynamic_cast<OnCharCommand*>(command)->GetNChar() != '\n'
-				&& dynamic_cast<OnCharCommand*>(command)->GetNChar() != '\r')
-			{
-				areCharactersInARow = true;
-			}
-			
-			//5.2 true인동안 반복한다.
-			Command* nextCommand = 0;
-			Long currentRowIndex = 0;
-			Long currentLetterIndex = 0;
-			Long nextRowIndex = 0;
-			Long nextLetterIndex = 0;
-			Long compareIndex = 0;
-			while (areCharactersInARow == true &&
-				this->notepadForm->commandHistory->IsRedoListEmpty() == false)
-			{
-				//5.2.1 redoList에서 마지막 Command를 꺼낸다.
-				nextCommand = this->redoList.Pop();
-				//5. command가 OnCharCommand이면
-				if (dynamic_cast<OnCharCommand*>(nextCommand))
-				{
-					//5.1 OnCharCommand의 nChar가 개행문자가 아니면
-					if (dynamic_cast<OnCharCommand*>(nextCommand)->GetNChar() != '\n'
-						&& dynamic_cast<OnCharCommand*>(nextCommand)->GetNChar() != '\r')
-					{
-						//5.1.1 nextCommand의 줄의 위치와 command의 줄의 위치를 비교해서 같으면
-						nextRowIndex = dynamic_cast<OnCharCommand*>(nextCommand)
-							->GetRowIndex();
-						currentRowIndex = dynamic_cast<OnCharCommand*>(command)->GetRowIndex();
-						if (nextRowIndex == currentRowIndex)
-						{
-							//5.1.1.1 nextCommand의 글자 위치와 command의 글자 위치를 비교해서
-							//nextCommand의 글자위치가 command글자위치에서 1더한값과 같으면
-							nextLetterIndex = dynamic_cast<OnCharCommand*>(nextCommand)
-								->GetLetterIndex();
-							currentLetterIndex = dynamic_cast<OnCharCommand*>(command)
-								->GetLetterIndex();
-							compareIndex = currentLetterIndex + 1;
-							if (nextLetterIndex == compareIndex)
-							{
-								areCharactersInARow = true;
-								//할당량을 감소시킨다.
-								this->redoListCapacity--;
-								//사용량을 감소시킨다.
-								this->redoListLength--;
-								//UNdoList에 꺼낸 배열요소를 추가한다.
-								//1. 사용량이 할당량보다 크거나 같으면
-								if (this->undoListLength >= this->undoListCapacity)
-								{
-									//1.1 할당량을 증가시킨다.
-									this->undoListCapacity++;
-								}
-								//2. 마지막 배열 요소 다음에 추가한다.
-								Long index = this->undoList.Push(nextCommand);
-								//3. 사용량을 증가시킨다.
-								this->undoListLength++;
-								//꺼낸 command를 Unexecute한다.
-								nextCommand->Execute();
-								//4. command에 nextCommand를 저장한다.
-								command = nextCommand;
-							}
-							// command의 글자 위치가 더크면
-							else
-							{
-								this->redoList.Push(nextCommand);
-								areCharactersInARow = false;
-							}
-						}
-						//5.1.2 줄의 위치가 서로 다르면
-						else
-						{
-							this->redoList.Push(nextCommand);
-							areCharactersInARow = false;
-						}
-					}
-					//개행문자이면
-					else
-					{
-						this->redoList.Push(nextCommand);
-						areCharactersInARow = false;
-					}
-				}
-				//OnCharCommand가 아니면
-				else
-				{
-					this->redoList.Push(nextCommand);
-					areCharactersInARow = false;
-				}
-			}
-		}
-#endif
 	}
 }
+
 //UndoList의 제일 마지막 배열 요소 구하기
 Command* CommandHistory::GetUndoListTop()
 {
@@ -392,12 +176,12 @@ Command* CommandHistory::GetRedoListTop()
 	return this->redoList.GetTop();
 }
 
-//UndoList의 제일 마지막 배열 요소 다음에 추가하기
+//UndoList의 제일 마지막 배열 요소 다음에 추가하기(OnCharCommand가 실행될 때 OnCharCommand들이 추가됨)
 Long CommandHistory::PushUndoList(Command* command)
 {
 	Command* lastCommand = 0;
 	Long lastCommandLetterIndex = 0;
-	//1. command가 OnCharCommand이면
+	//1. 매개변수로 입력받은 command가 OnCharCommand이면
 	if (dynamic_cast<OnCharCommand*>(command))
 	{
 		//1.1 현재 undoList에서 마지막 값을 구한다.
@@ -408,184 +192,143 @@ Long CommandHistory::PushUndoList(Command* command)
 			//1.2.1 lastCommand가 OnCharCommand이면
 			if (dynamic_cast<OnCharCommand*>(lastCommand))
 			{
-				//1.2.1.3 꺼낸 command가 개행문자이면
+				//1.2.1.1 lastCommand가 개행문자이면
 				if (dynamic_cast<OnCharCommand*>(lastCommand)->GetNChar() == '\n'
 					|| dynamic_cast<OnCharCommand*>(lastCommand)->GetNChar() == '\r')
 				{
-					//1.2.1.1.1.1 이전 command를 끝지점으로 표시한다.
+					//1.2.1.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 					dynamic_cast<OnCharCommand*>(lastCommand)->SetUndoMacroEnd();
 				}
-				//1.2.1.1 lastCommand와 command의 줄의 위치가 같으면
+				//1.2.1.2 lastCommand와 command의 줄의 위치가 같으면
 				else if (dynamic_cast<OnCharCommand*>(lastCommand)->GetRowIndex()
 					== dynamic_cast<OnCharCommand*>(command)->GetRowIndex())
 				{
-					//1.2.1.1.1 lastCommand와 command의 글자 위치를 비교한다.
+					//1.2.1.2.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
 					lastCommandLetterIndex = dynamic_cast<OnCharCommand*>(lastCommand)
 						->GetLetterIndex() + 1;
 					if (lastCommandLetterIndex !=
 						dynamic_cast<OnCharCommand*>(command)->GetLetterIndex())
 					{
-						//1.2.1.1.1.1 이전 command를 끝지점으로 표시한다.
+						//1.2.1.2.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 						dynamic_cast<OnCharCommand*>(lastCommand)->SetUndoMacroEnd();
 					}
 				}
-				//1.2.1.2 줄의 위치가 서로 다르면
+				//1.2.1.3 lastCommand와 command의 줄의 위치가 서로 다르면
 				else if(dynamic_cast<OnCharCommand*>(lastCommand)->GetRowIndex()
 					!= dynamic_cast<OnCharCommand*>(command)->GetRowIndex())
 				{
-					//1.2.1.1.1.1 이전 command를 끝지점으로 표시한다.
+					//1.2.1.3.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 					dynamic_cast<OnCharCommand*>(lastCommand)->SetUndoMacroEnd();
 				}
 			}
 		}
 	}
-	//2. 사용량이 할당량보다 크거나 같으면
+	//2. undoList의 사용량이 할당량보다 크거나 같으면
 	if (this->undoListLength >= this->undoListCapacity)
 	{
-		//1.1 할당량을 증가시킨다.
+		//2.1 undoList의 할당량을 증가시킨다.
 		this->undoListCapacity++;
 	}
-	//3. 마지막 배열 요소 다음에 추가한다.
+	//3. undoList의 마지막 배열 요소 다음에 추가한다.
 	Long index = this->undoList.Push(command);
-	//4. 사용량을 증가시킨다.
+	//4. undoList의 사용량을 증가시킨다.
 	this->undoListLength++;
-	//5. 위치를 반환한다.
+	//5. undoList에 추가한 배열요소의 위치를 반환한다.
 	return index;
 }
 
-//RedoList의 제일 마지막 배열 요소 다음에 추가하기
+//RedoList의 제일 마지막 배열 요소 다음에 추가하기(Undo(실행취소)가 될 때, OnCharCommand들이 추가됨)
 Long CommandHistory::PushRedoList(Command* command)
 {
 	Command* lastCommand = 0;
 	Long lastCommandLetterIndex = 0;
-	//1. command가 OnCharCommand이면
+	//1. 매개변수로 입력받은 command가 OnCharCommand이면
 	if (dynamic_cast<OnCharCommand*>(command))
 	{
+		//1.1 매개변수로 입력박은 command가 개행문자이면
 		if (dynamic_cast<OnCharCommand*>(command)->GetNChar() == '\n'
 			|| dynamic_cast<OnCharCommand*>(command)->GetNChar() == '\r')
 		{
+			//1.1.1 command를 redoMacro출력이 끝나는 지점으로 표시한다.
 			dynamic_cast<OnCharCommand*>(command)->SetRedoMacroEnd();
 		}
-		//1.1 현재 redoList에서 마지막 값을 구한다.
+		//1.2 현재 redoList에서 마지막 배열요소를 구한다.
 		lastCommand = this->redoList.GetTop();
+		//1.3 redoList의 마지막 배열요소가 있으면(redoList에 저장된 command가 한 개라도 있으면)
 		if (lastCommand != 0)
 		{
-			//if (dynamic_cast<OnCharCommand*>(lastCommand)->GetNChar() == '\n'
-			//	|| dynamic_cast<OnCharCommand*>(lastCommand)->GetNChar() == '\r')
-			//{
-			//	dynamic_cast<OnCharCommand*>(command)->SetRedoMacroEnd();
-			//}
+			//1.3.1 매개변수로 입력받은 command가 undoMacro출력의 끝나는 지점이면
 			if (dynamic_cast<OnCharCommand*>(command)->IsUndoMacroEnd() == true)
 			{
+				//1.3.1.1  redoList에서 마지막 배열요소(lastCommand)를
+				//redoMacro출력이 끝나는 지점으로 표시한다.
 				dynamic_cast<OnCharCommand*>(lastCommand)->SetRedoMacroEnd();
 			}
-			//1.2.1.1 lastCommand와 command의 줄의 위치가 같으면
+			//1.3.2 lastCommand와 command의 줄의 위치가 같으면
 			else if (dynamic_cast<OnCharCommand*>(lastCommand)->GetRowIndex()
 				== dynamic_cast<OnCharCommand*>(command)->GetRowIndex())
 			{
-				//1.2.1.1.1 lastCommand와 command의 글자 위치를 비교한다.
+				//1.3.2.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
 				lastCommandLetterIndex = dynamic_cast<OnCharCommand*>(lastCommand)
 					->GetLetterIndex() - 1;
 				if (lastCommandLetterIndex !=
 					dynamic_cast<OnCharCommand*>(command)->GetLetterIndex())
 				{
-					//1.2.1.1.1.1 이전 command를 끝지점으로 표시한다.
+					//1.3.2.1.1 매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
 					dynamic_cast<OnCharCommand*>(command)->SetRedoMacroEnd();
 				}
 			}
-			//1.2.1.2 줄의 위치가 서로 다르면
+			//1.3.2.1 lastCommand와 command의 줄의 위치가 서로 다르면
 			else if (dynamic_cast<OnCharCommand*>(lastCommand)->GetRowIndex()
 				!= dynamic_cast<OnCharCommand*>(command)->GetRowIndex())
 			{
-				//1.2.1.1.1.1 이전 command를 끝지점으로 표시한다.
+				//1.3.2.1.1  매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
 				dynamic_cast<OnCharCommand*>(command)->SetRedoMacroEnd();
 			}
 			
 		}
-
-
-#if 0
-		//1.1 현재 redoList에서 마지막 값을 구한다.
-		lastCommand = this->redoList.GetTop();
-		//1.2 redoList에서 lastCommand가 있으면(redoList에 저장된 command가 한 개라도 있으면)
-		if (lastCommand != 0)
-		{
-			//1.2.1 lastCommand가 OnCharCommand이면
-			if (dynamic_cast<OnCharCommand*>(lastCommand))
-			{
-				//1.2.1.3 꺼낸 command가 개행문자이면
-				if (dynamic_cast<OnCharCommand*>(lastCommand)->GetNChar() == '\n'
-					|| dynamic_cast<OnCharCommand*>(lastCommand)->GetNChar() == '\r')
-				{
-					//1.2.1.1.1.1 이전 command를 끝지점으로 표시한다.
-					dynamic_cast<OnCharCommand*>(lastCommand)->SetRedoMacroEnd();
-				}
-				//1.2.1.1 lastCommand와 command의 줄의 위치가 같으면
-				else if (dynamic_cast<OnCharCommand*>(lastCommand)->GetRowIndex()
-					== dynamic_cast<OnCharCommand*>(command)->GetRowIndex())
-				{
-					//1.2.1.1.1 lastCommand와 command의 글자 위치를 비교한다.
-					lastCommandLetterIndex = dynamic_cast<OnCharCommand*>(lastCommand)
-						->GetLetterIndex() - 1;
-					if (lastCommandLetterIndex !=
-						dynamic_cast<OnCharCommand*>(command)->GetLetterIndex())
-					{
-						//1.2.1.1.1.1 이전 command를 끝지점으로 표시한다.
-						dynamic_cast<OnCharCommand*>(lastCommand)->SetRedoMacroEnd();
-					}
-				}
-				//1.2.1.2 줄의 위치가 서로 다르면
-				else if (dynamic_cast<OnCharCommand*>(lastCommand)->GetRowIndex()
-					!= dynamic_cast<OnCharCommand*>(command)->GetRowIndex())
-				{
-					//1.2.1.1.1.1 이전 command를 끝지점으로 표시한다.
-					dynamic_cast<OnCharCommand*>(lastCommand)->SetRedoMacroEnd();
-				}
-			}
-		}
-#endif
 	}
-	//1. 사용량이 할당량보다 크거나 같으면
+	//2. redoList의 사용량이 할당량보다 크거나 같으면
 	if (this->redoListLength >= this->redoListCapacity)
 	{
-		//1.1 할당량을 증가시킨다.
+		//2.1 redoList의 할당량을 증가시킨다.
 		this->redoListCapacity++;
 	}
-	//2. 마지막 배열 요소 다음에 추가한다.
+	//3. redoList의 마지막 배열 요소 다음에 매개변수로 입력받은 command를 추가한다.
 	Long index = this->redoList.Push(command);
-	//3. 사용량을 증가시킨다.
+	//4. redoList의 사용량을 증가시킨다.
 	this->redoListLength++;
-	//4. 위치를 반환한다.
+	//5. redoList에 추가한 마지막 배열요소의 위치를 반환한다.
 	return index;
 }
 
 //UndoList의 제일 마지막 배열 요소를 꺼내기
 Command* CommandHistory::PopUndoList()
 {
-	//마지막 배열 요소를 꺼낸다.
+	//1. 마지막 배열 요소를 꺼낸다.
 	Command* command = this->undoList.Pop();
-	//할당량을 감소시킨다.
+	//2. 할당량을 감소시킨다.
 	this->undoListCapacity--;
-	//사용량을 감소시킨다.
+	//3. 사용량을 감소시킨다.
 	this->undoListLength--;
-	//마지막 배열 요소를 반환한다.
+	//4. 꺼낸 마지막 배열 요소를 반환한다.
 	return command;
 }
 
 //RedoList의 제일 마지막 배열 요소를 꺼내기
 Command* CommandHistory::PopRedoList()
 {
-	//마지막 배열 요소를 꺼낸다.
+	//1. 마지막 배열 요소를 꺼낸다.
 	Command* command = this->redoList.Pop();
-	//할당량을 감소시킨다.
+	//2. 할당량을 감소시킨다.
 	this->redoListCapacity--;
-	//사용량을 감소시킨다.
+	//3. 사용량을 감소시킨다.
 	this->redoListLength--;
-	//마지막 배열 요소를 반환한다.
+	//4. 마지막 배열 요소를 반환한다.
 	return command;
 }
 
-//RedoList 초기화시키기
+//RedoList 초기화시키기(OnCharCommand가 처음 실행될 때 redoList는 무조건 다 초기화된다.)
 void CommandHistory::MakeRedoListEmpty()
 {
 	Command* redoCommand = 0;
@@ -604,32 +347,34 @@ void CommandHistory::MakeRedoListEmpty()
 CommandHistory::~CommandHistory()
 {
 	Command* command = 0;
-	//UndoList를 할당해제해준다.
+	//1. UndoList를 할당해제해준다.
 	while (this->undoList.IsEmpty() == false)
 	{
+		//1.1 undoList에 저장된 주소가 가르키는 힙에 할당된 내용들을 할당해제해준다.
 		command = this->undoList.Pop();
 		if (command != 0)
 		{
 			delete command;
 			command = 0;
 		}
-		//할당량을 감소시킨다.
+		//1.2 할당량을 감소시킨다.
 		this->undoListCapacity--;
-		//사용량을 감소시킨다.
+		//1.3 사용량을 감소시킨다.
 		this->undoListLength--;
 	}
-	//RedoList를 할당해제해준다.
+	//2. RedoList를 할당해제해준다.
 	while (this->redoList.IsEmpty() == false)
 	{
+		//2.1 redoList에 저장된 주소가 가르키는 힙에 할당된 내용들을 할당해제해준다.
 		command = this->redoList.Pop();
 		if (command != 0)
 		{
 			delete command;
 			command = 0;
 		}
-		//할당량을 감소시킨다.
+		//2.2 할당량을 감소시킨다.
 		this->redoListCapacity--;
-		//사용량을 감소시킨다.
+		//2.3 사용량을 감소시킨다.
 		this->redoListLength--;
 	}
 }

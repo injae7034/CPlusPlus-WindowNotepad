@@ -11,8 +11,8 @@ public:
 	Stack(const Stack& source);//복사생성자
 	~Stack();//소멸자
 	Long Push(T object);//현재 마지막 배열요소의 다음에 삽입하고 그 위치를 반환함
-	T& Pop();//마지막 배열 요소를 삭제하고 반환함
-	T& GetTop();//스택에서 제일 마지막 위치를 반환함
+	T& Pop();//마지막 배열 요소를 삭제하고 반환함(꺼내기O)
+	T& GetTop();//스택에서 제일 마지막 위치를 반환함(꺼내기X)
 	Stack<T>& operator=(const Stack& source);//치환연산자
 	T& operator[](Long index);//첨자연산자
 	T* operator+(Long index);//포인터연산자
@@ -53,18 +53,18 @@ inline bool Stack<T>::IsEmpty() const
 //디폴트생성자 정의
 template <typename T>
 Stack<T>::Stack(Long capacity)//Create
-	:objects(capacity)
+	:objects(capacity)//Array디폴트생성자를 호출함
 {
-	//3. 할당량을 정한다.
+	//1. 할당량을 정한다.
 	this->capacity = capacity;
-	//4. 사용량을 정한다.
+	//2. 사용량을 정한다.
 	this->length = 0;
-	//5. 끝내다.
+	//3. 끝내다.
 }
 //복사생성자 정의
 template <typename T>
 Stack<T>::Stack(const Stack& source)
-	:objects(source.objects)
+	:objects(source.objects)//Array의 복사생성자를 호출함
 {
 	this->capacity = source.capacity;
 	this->length = source.length;
@@ -77,7 +77,7 @@ Stack<T>::~Stack()//Destroy
 	//Array<T> objects는 Stack의 멤버이기 때문에 같이 소멸되는데 이때 Array라이브러리의 소멸자가 호출되서
 	//Array가 다 할당해제가 되기 때문에 Stack소멸자에는 아무 내용이 없어도 된다.
 	//주소록(AddressBook)의 소멸자가 호출되면 그 멤버인 Array<Personal> personals가 소멸되면서
-	//자동으로 Array라이브러리 소멸자가 호출되어서 persoanl들을 다 할당해제 해주는 것과  동일한 원리다!
+	//자동으로 Array라이브러리 소멸자가 호출되어서 persoanl들을 다 할당해제 해주는 것과 동일한 원리다!
 }
 //제일 마지막 배열요소 다음에 새로운 배열 요소 추가하고 그 위치를 출력하기
 template <typename T>
