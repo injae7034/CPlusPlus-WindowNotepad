@@ -453,6 +453,7 @@ void FindingDialog::OnCancelButtonClicked()
 	//ReplacingDialog는 할당해제가 되서 사라지기 때문에 다시 돌아올 곳이 없다.
 	//그래서 여기서는 메세지를 보내고 보낸 주체로 다시 돌아오지 않고 거기서 행위를 하고 그대로 끝나는
 	//PostMessage를 사용해야한다.
+	this->PostMessage(WM_CLOSE);
 }
 
 //5.닫기버튼을 클릭했을 때
