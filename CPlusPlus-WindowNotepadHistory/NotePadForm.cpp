@@ -25,6 +25,7 @@
 #include "SelectingVisitor.h"
 #include "SelectingTexts.h"
 #include "PreviewForm.h"
+#include "GlyphFinder.h"
 
 HHOOK hSaveMessageBoxHook;//전역변수 선언
 
@@ -151,20 +152,20 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	this->font = Font(logFont, size, RGB(0, 0, 0));
 	//13. textExtent를 힙에 할당한다.
 	this->textExtent = new TextExtent(this);
-	//14. 선택한 메모장의 노트(내용)를 불러온다.
-	File file;
-	string path = "test.txt";
-	file.Load(this, path);
+	////14. 선택한 메모장의 노트(내용)를 불러온다.
+	//File file;
+	//string path = "test.txt";
+	//file.Load(this, path);
 	//15. 처음 만들어지는 메모장 이름을 정한다.
 	string name = this->fileName;
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	//16. 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
-	rowIndex = this->note->First();
-	//17. 현재 줄의 위치를 다시 저장한다.
-	this->current = this->note->GetAt(rowIndex);
-	//18. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
-	Long letterIndex = this->current->First();
+	////16. 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
+	//rowIndex = this->note->First();
+	////17. 현재 줄의 위치를 다시 저장한다.
+	//this->current = this->note->GetAt(rowIndex);
+	////18. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
+	//Long letterIndex = this->current->First();
 	//19. scrollController를 생성한다.
 	this->scrollController = new ScrollController(this);
 	//21. pageMoveController를 생성한다.
@@ -207,10 +208,46 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			GlyphCreator glyphCreator;
 			//1.1.2 glyph를 생성해서 저장한다.
 			this->glyph = glyphCreator.Create((char*)&nChar);
-			//1.1.3 OnCommand로 메세지를 보낸다.
+			//1.1.3 자동줄바꿈이 진행중이면
+			if (this->isRowAutoChanging == true)
+			{
+				//1.1.3.1 현재 글자의 내용을 구한다.
+				string content;
+				content = CString(this->glyph->GetContent().c_str());
+				//1.1.3.2 현재 글자의 너비를 구한다.
+				Long letterWidth = this->textExtent->GetTextWidth((string)content);
+				//1.1.3.3 현재 화면의 너비를 구한다.
+				CRect rect;
+				this->GetClientRect(&rect);
+				//1.1.3.4 현재 글자의 너비가 현재 화면의 너비보다 같거나 크면
+				if (letterWidth >= rect.Width())
+				{
+					//1.1.3.4.1 RowAutoChange를 생성한다.
+					RowAutoChange rowAutoChange(this);
+					//1.1.3.4.2 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
+					Long changedRowPos = this->note->GetCurrent();
+					Long changedLetterPos = this->current->GetCurrent();
+					Long originRowPos = 0;
+					Long originLetterPos = 0;
+					rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+						&originRowPos);
+					//1.1.3.4.3 자동 줄 바꿈 메뉴에 있는 체크를 없앤다.	
+					this->GetMenu()->
+						CheckMenuItem(IDM_ROW_AUTOCHANGE, MF_UNCHECKED | MF_BYCOMMAND);
+					//1.1.3.4.4 자동개행을 취소한다.
+					rowAutoChange.UndoAllRows();
+					this->isRowAutoChanging = false;
+					//1.1.3.4.5 메모장의 현재 화면의 가로 길이가 바뀌었기 때문에 이를 갱신해준다.
+					this->previousPageWidth = rect.Width();
+					//1.1.3.4.6 현재 줄의 위치와 글자의 위치를 자동개행 전의 위치로 조정한다.
+					Long currentRowIndex = this->note->Move(originRowPos);
+					this->current = this->note->GetAt(currentRowIndex);
+					Long currentLetterIndex = this->current->Move(originLetterPos);
+				}
+			}
+			//1.1.4 OnCommand로 메세지를 보낸다.
 			this->SendMessage(WM_COMMAND, ID_ONCHARCOMMAND);
 		}
-
 	}
 }
 
@@ -290,6 +327,43 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 		}
 		//6.4 한글을 현재 위치에 추가했기때문에 한글이 조립중인 상태로 변경한다.
 		this->isComposing = true;
+		//6.5 자동줄바꿈이 진행중이면
+		if (this->isRowAutoChanging == true)
+		{
+			//6.5.1 현재 글자의 내용을 구한다.
+			string content;
+			content = CString(doubleByteLetter->GetContent().c_str());
+			//6.5.2 현재 글자의 너비를 구한다.
+			Long letterWidth = this->textExtent->GetTextWidth((string)content);
+			//6.5.3 현재 화면의 너비를 구한다.
+			CRect rect;
+			this->GetClientRect(&rect);
+			//6.5.4 현재 글자의 너비가 현재 화면의 너비보다 같거나 크면
+			if (letterWidth >= rect.Width())
+			{
+				//6.5.4.1 RowAutoChange를 생성한다.
+				RowAutoChange rowAutoChange(this);
+				//6.5.4.2 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
+				Long changedRowPos = this->note->GetCurrent();
+				Long changedLetterPos = this->current->GetCurrent();
+				Long originRowPos = 0;
+				Long originLetterPos = 0;
+				rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+					&originRowPos);
+				//6.5.4.3 자동 줄 바꿈 메뉴에 있는 체크를 없앤다.	
+				this->GetMenu()->
+					CheckMenuItem(IDM_ROW_AUTOCHANGE, MF_UNCHECKED | MF_BYCOMMAND);
+				//6.5.4.4 자동개행을 취소한다.
+				rowAutoChange.UndoAllRows();
+				this->isRowAutoChanging = false;
+				//6.5.4.5 메모장의 현재 화면의 가로 길이가 바뀌었기 때문에 이를 갱신해준다.
+				this->previousPageWidth = rect.Width();
+				//6.5.4.6 현재 줄의 위치와 글자의 위치를 자동개행 전의 위치로 조정한다.
+				Long currentRowIndex = this->note->Move(originRowPos);
+				this->current = this->note->GetAt(currentRowIndex);
+				Long currentLetterIndex = this->current->Move(originLetterPos);
+			}
+		}
 	}
 	//7. 한글 조립중에 백스페이스키룰 눌러서 조립 중인 한글을 지워버리면
 	else
@@ -1096,9 +1170,6 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 	CRect rect;
 	this->GetClientRect(&rect);
 	cx = rect.Width();
-
-	//Long letterWidth = this->
-
 	//2. 현재 메모장의 상태가 최소화가 아니면(최소화이면 cx와 cy 값이 둘다 0이 되고, 
 	//cx가 0이면 아래에서 cx크기로 반복을 돌리는데 무한반복이 발생해서 최소화버튼을 누르면 뻑이남!) 
 	if (nType != SIZE_MINIMIZED)
@@ -1106,49 +1177,103 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 		//2.1 자동줄바꿈이 진행중이면
 		if (this->isRowAutoChanging == true)
 		{
-			//2.1.1 RowAutoChange를 생성한다.(힙에 할당하면 나중에 따로 할당해제를 해줘야함
+			Long letterWidth = 0;
+			string content;
+			//5.1 GlyphFinder를 생성한다.
+			GlyphFinder glyphFinder(this->note);
+			//5.2 이동하기 전에 줄과 글자의 위치를 구한다.
+			Long previousRowIndex = this->note->GetCurrent();
+			Long previousLetterIndex = this->current->GetCurrent();
+			//5.3 탭문자를 아래로 찾기로 찾는다.
+			this->note->First();
+			this->current = this->note->
+				GetAt(this->note->GetCurrent());
+			this->current->First();
+			Long findingStartRowIndex = 0;
+			Long findingStartLetterIndex = 0;
+			Long findingEndRowIndex = 0;
+			Long findingEndLetterIndex = 0;
+			glyphFinder.FindDown("\t", &findingStartRowIndex, &findingStartLetterIndex,
+				&findingEndRowIndex, &findingEndLetterIndex);
+			//5.4 찾은 게 있으면
+			if (findingStartRowIndex != findingEndRowIndex ||
+				findingStartLetterIndex != findingEndLetterIndex)
+			{
+				//5.5.1 탭문자의 너비를 구한다.
+				letterWidth = this->textExtent->GetTextWidth("\t");
+			}
+			//5.5 찾은 게 없으면
+			else
+			{
+				//5.5.1 한글의 너비를 구한다.
+				letterWidth = this->textExtent->GetTextWidth("가");
+			}
+			//5.6 원래 위치로 이동시킨다.
+			previousRowIndex = this->note->Move(previousRowIndex);
+			this->current = this->note->GetAt(previousRowIndex);
+			this->current->Move(previousLetterIndex);
+			//5.7 RowAutoChange를 생성한다.(힙에 할당하면 나중에 따로 할당해제를 해줘야함
 			//그러나 주소없이 스택에 할당하면 이 함수 스택이 종료되면 자동으로 같이 사라짐.)
 			//여기서는 스택에서만 RowAutoChange의 연산을 쓰기 위한것이기 때문에 스택에 할당하는게 효율적임!
 			RowAutoChange rowAutoChange(this);
-			//2.1.2. 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
+			//5.8 자동개행 전의 원래 줄과 캐럿의 위치를 구한다.
 			Long changedRowPos = this->note->GetCurrent();
 			Long changedLetterPos = this->current->GetCurrent();
 			Long originRowPos = 0;
 			Long originLetterPos = 0;
 			rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
 				&originRowPos);
-			//2.1.3 메모장의 현재 화면 크기가 바뀌었으면
-			if (this->previousPageWidth != cx)
+			//5.9 글자의 너비가 화면의 크기보다 작으면
+			if (letterWidth < rect.Width())
 			{
-				//2.1.3.1 자동개행을 취소한다.
-				rowAutoChange.UndoAllRows();
-				//2.1.3.2 화면크기 변경에 따라 다시 자동개행을 해준다.
-				rowAutoChange.DoAllRows();
-				//2.1.3.3 메모장의 현재 화면의 가로 길이가 바뀌었기 때문에 이를 갱신해준다.
-				this->previousPageWidth = cx;
+				//5.9.1 메모장의 현재 화면 크기가 바뀌었으면
+				if (this->previousPageWidth != cx)
+				{
+					//5.9.1.1 자동개행을 취소한다.
+					rowAutoChange.UndoAllRows();
+					//5.9.1.2 화면크기 변경에 따라 다시 자동개행을 해준다.
+					rowAutoChange.DoAllRows();
+					//5.9.1.3 메모장의 현재 화면의 가로 길이가 바뀌었기 때문에 이를 갱신해준다.
+					this->previousPageWidth = cx;
+				}
+				//5.9.2 메모장의 현재 화면 크기가 바뀌지 않았으면
+				else
+				{
+					//5.9.2.1 자동개행을 취소한다.
+					rowAutoChange.UndoRow();
+					//5.9.2.2 화면크기 변경에 따라 다시 자동개행을 해준다.
+					rowAutoChange.DoRow();
+				}
+				//5.9.3 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+				rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
+					&changedRowPos);
+				//5.9.4 현재 줄의 위치와 글자의 위치를 조정한다.
+				Long currentRowIndex = this->note->Move(changedRowPos);
+				this->current = this->note->GetAt(currentRowIndex);
+				Long currentLetterIndex = this->current->Move(changedLetterPos);
 			}
-			//2.1.4 메모장의 현재 화면 크기가 바뀌지 않았으면
+			//5.10 글자의 너비가 화면의 크기보다 크거나 같으면
 			else
 			{
-				//2.1.4.1 자동개행을 취소한다.
-				rowAutoChange.UndoRow();
-				//2.1.4.2 화면크기 변경에 따라 다시 자동개행을 해준다.
-				rowAutoChange.DoRow();
-			}
-			//2.1.5 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
-			rowAutoChange.GetChangedPos(originLetterPos, originRowPos, &changedLetterPos,
-				&changedRowPos);
-			//2.1.6 현재 줄의 위치와 글자의 위치를 조정한다.
-			Long currentRowIndex = this->note->Move(changedRowPos);
-			this->current = this->note->GetAt(currentRowIndex);
-			Long currentLetterIndex = this->current->Move(changedLetterPos);
-			//2.1.8 캐럿의 위치가 변경되었음을 알린다.
-			this->Notify();
-			//2.1.9 변경사항을 갱신한다.
-			this->Invalidate(TRUE);
+				//5.10.1 자동 줄 바꿈 메뉴에 있는 체크를 없앤다.	
+				this->GetMenu()->
+					CheckMenuItem(IDM_ROW_AUTOCHANGE, MF_UNCHECKED | MF_BYCOMMAND);
+				//5.10.2 자동개행을 취소한다.
+				rowAutoChange.UndoAllRows();
+				this->isRowAutoChanging = false;
+				//5.10.3 메모장의 현재 화면의 가로 길이가 바뀌었기 때문에 이를 갱신해준다.
+				this->previousPageWidth = rect.Width();
+				//5.10.4 현재 줄의 위치와 글자의 위치를 자동개행 전의 위치로 조정한다.
+				Long currentRowIndex = this->note->Move(originRowPos);
+				this->current = this->note->GetAt(currentRowIndex);
+				Long currentLetterIndex = this->current->Move(originLetterPos);
+			}	
 		}
+		//2.2 캐럿의 위치가 변경되었음을 알린다.
+		this->Notify();
+		//2.3 변경사항을 갱신한다.
+		this->Invalidate(TRUE);
 	}
-	
 }
 
 //메뉴버튼을 클릭했을 때

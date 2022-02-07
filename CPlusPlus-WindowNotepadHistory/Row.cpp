@@ -49,12 +49,13 @@ string Row::GetContent()
 	{
 		//1.1 letter에 한글자(Row의 배열요소 1개)를 저장한다.
 		letter = this->glyphs.GetAt(index)->GetContent();
-		//1.2 letter가 탭문자이면
-		if (letter == "\t")
-		{
-			//1.2.1 공란을 8개로 바꾼다.
-			letter = "        ";
-		}
+		//비지터패턴으로 인해 글자단위로 출력하기 떄문에 더이상 줄에서 탭문자를 공백8개로 바꿀 필요 없음! 
+		////1.2 letter가 탭문자이면
+		//if (letter == "\t")
+		//{
+		//	//1.2.1 공란을 8개로 바꾼다.
+		//	letter = "        ";
+		//} 
 		//1.3 줄에 글자를 추가한다.
 		content += letter;
 		index++;
@@ -75,6 +76,7 @@ string Row::GetPartOfContent(Long current)
 	{
 		//1.1 letter에 한글자(Row의 배열요소 1개)를 저장한다.
 		letter = this->glyphs.GetAt(index)->GetContent();
+		//printInformation에서 자동개행할 때 탭문자를 공백 8개로 인식하게 하기 위해 필요함!
 		//1.2 letter가 탭문자이면
 		if (letter == "\t")
 		{

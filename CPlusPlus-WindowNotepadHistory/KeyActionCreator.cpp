@@ -36,6 +36,12 @@
 #include "CtrlXKeyAction.h"
 #include "CtrlCKeyAction.h"
 #include "CtrlVKeyAction.h"
+#include "CtrlOKeyAction.h"
+#include "CtrlSKeyAction.h"
+#include "CtrlShiftSKeyAction.h"
+#include "CtrlPKeyAction.h"
+#include "CtrlFKeyAction.h"
+#include "CtrlHKeyAction.h"
 
 //디폴트생성자
 KeyActionCreator::KeyActionCreator(NotepadForm* notepadForm)
@@ -83,6 +89,12 @@ KeyAction* KeyActionCreator::Create(UINT nChar)
 	else if (shiftPressedCheck & 0x8000 && ctrlPressedCheck & 0x8000 && nChar == VK_DELETE)
 	{
 		keyAction = new ShiftCtrlDeleteKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누르고, Shift키를 누른 채 알파벳 's'를 누르면(다른 이름으로 파일 저장)
+	else if (shiftPressedCheck & 0x8000 && ctrlPressedCheck & 0x8000 && nChar == 's' ||
+		shiftPressedCheck & 0x8000 && ctrlPressedCheck & 0x8000 && nChar == 'S')
+	{
+		keyAction = new CtrlShiftSKeyAction(this->notepadForm);
 	}
 	//7. Shift키를 누른 채 오른쪽 방향키를 눌렀으면(오른쪽으로 한 글자 이동하면서 글자선택)
 	else if (shiftPressedCheck & 0x8000 && nChar == VK_RIGHT)
@@ -160,25 +172,55 @@ KeyAction* KeyActionCreator::Create(UINT nChar)
 	else if (ctrlPressedCheck & 0x8000 && nChar == 'y' ||
 	ctrlPressedCheck & 0x8000 && nChar == 'Y')
 	{
-	keyAction = new CtrlYKeyAction(this->notepadForm);
+		keyAction = new CtrlYKeyAction(this->notepadForm);
 	}
 	//Ctrl키를 누른 채 알파벳 'x'를 누르면(잘라내기)
 	else if (ctrlPressedCheck & 0x8000 && nChar == 'x' ||
 	ctrlPressedCheck & 0x8000 && nChar == 'X')
 	{
-	keyAction = new CtrlXKeyAction(this->notepadForm);
+		keyAction = new CtrlXKeyAction(this->notepadForm);
 	}
 	//Ctrl키를 누른 채 알파벳 'c'를 누르면(복사하기)
 	else if (ctrlPressedCheck & 0x8000 && nChar == 'c' ||
 	ctrlPressedCheck & 0x8000 && nChar == 'C')
 	{
-	keyAction = new CtrlCKeyAction(this->notepadForm);
+		keyAction = new CtrlCKeyAction(this->notepadForm);
 	}
 	//Ctrl키를 누른 채 알파벳 'v'를 누르면(붙여넣기)
 	else if (ctrlPressedCheck & 0x8000 && nChar == 'v' ||
 	ctrlPressedCheck & 0x8000 && nChar == 'V')
 	{
-	keyAction = new CtrlVKeyAction(this->notepadForm);
+		keyAction = new CtrlVKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 알파벳 'o'를 누르면(파일열기)
+	else if (ctrlPressedCheck & 0x8000 && nChar == 'o' ||
+	ctrlPressedCheck & 0x8000 && nChar == 'O')
+	{
+		keyAction = new CtrlOKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 알파벳's'를 누르면(파일저장)
+	else if (ctrlPressedCheck & 0x8000 && nChar == 's' ||
+	ctrlPressedCheck & 0x8000 && nChar == 'S')
+	{
+		keyAction = new CtrlSKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 알파벳'p'를 누르면(파일저장)
+	else if (ctrlPressedCheck & 0x8000 && nChar == 'p' ||
+	ctrlPressedCheck & 0x8000 && nChar == 'P')
+	{
+		keyAction = new CtrlPKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 알파벳'f'를 누르면(파일저장)
+	else if (ctrlPressedCheck & 0x8000 && nChar == 'f' ||
+	ctrlPressedCheck & 0x8000 && nChar == 'F')
+	{
+		keyAction = new CtrlFKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 알파벳'h'를 누르면(파일저장)
+	else if (ctrlPressedCheck & 0x8000 && nChar == 'h' ||
+	ctrlPressedCheck & 0x8000 && nChar == 'H')
+	{
+		keyAction = new CtrlHKeyAction(this->notepadForm);
 	}
 	//Ctrl키를 누른 채 BackSpace키를 눌렀으면
 	//(캐럿이 있는 곳에서 왼쪽으로 단어단위로 글자들을 지워버림)

@@ -22,20 +22,6 @@ PageSetupDialog::PageSetupDialog(CWnd* pParentWnd)
 	this->footer = new char[512];
 }
 
-//FileSetUpCommand함수 스택에서 PageSetupDialog가 생성되어 호출되기 때문에 FileSetUpCommand함수 스택이
-//종료될 때 자동으로 PageSetupDialog의 소멸자가 호출된다.
-PageSetupDialog::~PageSetupDialog()
-{
-	//힙에 할당한 문자배열을 할당해제해줌.
-	if (this->header != 0)
-	{
-		delete[] this->header;
-	}
-	if (this->footer != 0)
-	{
-		delete[] this->footer;
-	}
-}
 
 BOOL PageSetupDialog::OnInitDialog() 
 {
@@ -136,6 +122,15 @@ void PageSetupDialog::OnOK()
 	if (pageWidth > letterMaxWidth && pageRowCount > 0
 		&& pageWidth > headerWidth && pageWidth > footerWidth)
 	{
+		//힙에 할당한 문자배열을 할당해제해줌.
+		if (this->header != 0)
+		{
+			delete[] this->header;
+		}
+		if (this->footer != 0)
+		{
+			delete[] this->footer;
+		}
 		//13.1 페이지 설정 대화상자에서 페이지 설정 정보를 반영하고 페이지 대화상자를 닫는다.
 		CPageSetupDialog::OnOK();
 	}

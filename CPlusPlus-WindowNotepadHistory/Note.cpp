@@ -575,7 +575,7 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 	}
 	//2. 메모장의 현재 줄에서 처음글자부터 현재 글자까지의 content의 길이를 구한다.
 	Long currentLettersLength = currentLetters.length();
-	//3. 줄의 content를 구한다.
+	//3. 현재 줄의 전체 content를 구한다.
 	i = 0;
 	string rowContent = "";
 	while (i < currentLetterIndex)
@@ -653,7 +653,10 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 	//6. 현재 글자 위치가 0보다 크면(현재 글자 위치가 0이면 단어단위로 이동할 수 X)
 	if (currentLetterIndex > 0)
 	{
+		//한글이나 영어, 특수문자 전에 탭이나 스페이스가 있는지 여부
 		bool isThereTabOrSpaceBeforeChar = false;
+		//한글이나 영어, 특수문자에서 이동이 있었는지 여부
+		bool isThereMovingOnChar = false;
 		//6.1 줄에서 읽어야 할 글자 한 칸 만큼 감소시킨다.
 		i = currentLettersLength - 1;
 		currentLetterIndex--;
@@ -687,6 +690,7 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 		//6.5 현재 글자 위치가 1이고 읽은 글자가 스페이스(공백)문자이면
 		if (currentLetterIndex == 1 && letterContent == " ")
 		{
+			isThereTabOrSpaceBeforeChar = true;
 			//6.5.1 현재 글자위치를 감소시킨다.
 			currentLetterIndex--;
 			i--;
@@ -704,6 +708,7 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 		//6.7 현재 글자 위치가 1이고 읽은 글자가 탭문자이면
 		if (currentLetterIndex == 1 && letterContent == "\t")
 		{
+			isThereTabOrSpaceBeforeChar = true;
 			//6.7.1 현재 글자위치를 감소시킨다.
 			currentLetterIndex--;
 			i--;
@@ -734,10 +739,11 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 				//6.8.2.1 1byte로 저장한다
 				letterContent = rowContent[i];
 			}
+			isThereMovingOnChar = true;
 		}
-		//6.9 현재 글자 위치가 1보다 크고 읽은 글자가 스페이스(공백)문자 그리고
+		//6.9 현재 글자 위치가 0보다 크고 읽은 글자가 스페이스(공백)문자 그리고
 		//탭문자가 아닌동안 반복한다.
-		while (currentLetterIndex > 1 && letterContent != " " && letterContent != "\t")
+		while (currentLetterIndex > 0 && letterContent != " " && letterContent != "\t")
 		{
 			//6.9.1 현재 글자 위치를 감소시킨다.
 			currentLetterIndex--;
@@ -759,62 +765,147 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 				//6.9.3.1 1byte로 저장한다
 				letterContent = rowContent[i];
 			}
+			isThereMovingOnChar = true;
 		}
-		//6.10 현재 캐럿의 가로 위치가 1이고 읽은 글자가 스페이스(공백) 문자와 탭문자가 아니면
-		if (currentLetterIndex == 1 && letterContent != " " && letterContent != "\t")
+		//6.10 현재 letterContent를 읽는다
+		letterContent = rowContent[i];
+		//6.11 현재 글자 위치가 0보다 크면(탭이나 공백 문자가 나왔으면)
+		if (currentLetterIndex > 0)
 		{
-			//6.10.1 현재 읽은 글자가 한글이면
-			if ((rowContent[i] & 0x80))//한글이면(2byte문자)
-			{
-				//6.10.1.1 2byte로 저장한다.
-				letterContent = rowContent[i];
-				//역순으로 거슬러 가기 때문에 제대로 한글을 조립하기 위해서 임시저장을 해야함.
-				koreanCompositionTemp = letterContent;
-				i--;
-				letterContent = rowContent[i];
-				letterContent += koreanCompositionTemp;
-			}
-			//6.10.2 한글이 아니면
-			else
-			{
-				//6.10.2.1 1byte로 저장한다
-				letterContent = rowContent[i];
-			}
-			//6.10.3 현재 글자 위치를 감소시킨다.
-			currentLetterIndex--;
-			i--;
+			//6.11.1 탭이나 공백문자 뒤로 글자위치를 다시 옮겨준다.
+			currentLetterIndex++;
+			i++;
 		}
-		//6.11 현재 글자 위치가 0이면
-		if (currentLetterIndex == 0)
+		//6.12 letterContent가 탭이나 공백이면
+		else if (letterContent == "\t" || letterContent == " ")
 		{
-			//6.11.1 글자를 저장한다.
-			//letterContent = rowContent[i];
-			//6.11.2 현재 줄의 첫번째 글자가 스페이스 또는 탭문자이면
-			if (letterContent == "\t" || letterContent == " ")
+			//6.12.1 텍스트 이동 전에 탭이나 스페이스 이동이 있었으면
+			if (isThereTabOrSpaceBeforeChar == true)
 			{
-				//6.11.2.1 현재 줄의 위치를 1만큼 감소시킨다.(이전 줄로 이동시킨다.)
-				currentRowIndex--;
-				//6.11.2.2 현재 줄의 위치가 underflow이면
-				if (currentRowIndex < 0)
+				//6.12.1.1 텍스트 이동이 있었으면
+				if (isThereMovingOnChar == true)
 				{
-					//6.11.2.2.1 현재 줄의 위치를 최소값으로 변경한다.
-					currentRowIndex = 0;
+					//6.12.1.1.1 탭이나 공백문자 뒤로 글자위치를 다시 옮겨준다.
+					currentLetterIndex++;
+					i++;
 				}
-				//6.11.2.3 현재 줄의 위치가 underflow가 아니면(this->current >=0)
+				//6.12.1.2 텍스트 이동이 없었으면
 				else
 				{
-					//6.11.2.3.1 현재 캐럿의 가로 위치를 마지막으로 이동시킨다.
-					currentRowIndex = this->Move(currentRowIndex);
-					row = this->GetAt(currentRowIndex);
-					currentLetterIndex = row->Last();
+					//6.12.1.2.1 currentLetterIndex가 0이면
+					if (currentLetterIndex == 0)
+					{
+						//6.12.1.2.1.1 currentRowIndex가 0보다 크면
+						if (currentRowIndex > 0)
+						{
+							//6.12.1.2.1.1.1 현재 캐럿의 가로 위치를 마지막으로 이동시킨다.
+							currentRowIndex = this->Move(currentRowIndex - 1);
+							row = this->GetAt(currentRowIndex);
+							currentLetterIndex = row->Last();
+						}
+					}
 				}
 			}
-		}
+			//6.12.2 텍스트 이동 전에 탭이나 스페이스 이동이 없었으면
+			else if (isThereTabOrSpaceBeforeChar == false)
+			{
+				//6.12.2.1 텍스트 이동이 있었으면
+				if (isThereMovingOnChar == true)
+				{
+					currentLetterIndex++;
+					i++;
+				}
+				//6.12.2.2 텍스트 이동이 없었으면
+				else
+				{
 
-		if (letterContent == " " || letterContent == "\t")
+					if (currentRowIndex > 0)
+					{
+						//7.3.1 현재 캐럿의 가로 위치를 마지막으로 이동시킨다.
+						currentRowIndex = this->Move(currentRowIndex - 1);
+						row = this->GetAt(currentRowIndex);
+						currentLetterIndex = row->Last();
+					}
+				}
+				
+			}
+		}
+		//6.11 탭이나 공백문자가 안나왔으면
+		
+		////6.11 현재 캐럿의 가로 위치가 1이고 읽은 글자가 스페이스(공백) 문자와 탭문자가 아니면
+		//if (currentLetterIndex == 1 && letterContent != " " && letterContent != "\t")
+		//{
+		//	//6.10.1 현재 읽은 글자가 한글이면
+		//	if ((rowContent[i] & 0x80))//한글이면(2byte문자)
+		//	{
+		//		//6.10.1.1 2byte로 저장한다.
+		//		letterContent = rowContent[i];
+		//		//역순으로 거슬러 가기 때문에 제대로 한글을 조립하기 위해서 임시저장을 해야함.
+		//		koreanCompositionTemp = letterContent;
+		//		i--;
+		//		letterContent = rowContent[i];
+		//		letterContent += koreanCompositionTemp;
+		//	}
+		//	//6.10.2 한글이 아니면
+		//	else
+		//	{
+		//		//6.10.2.1 1byte로 저장한다
+		//		letterContent = rowContent[i];
+		//	}
+		//	//6.10.3 현재 글자 위치를 감소시킨다.
+		//	currentLetterIndex--;
+		//	i--;
+		//	letterContent = rowContent[i];
+		//	lastMovingIsChar = true;
+		//}
+		////6.11 현재 글자 위치가 0이면
+		//if (lastMovingIsChar == false && currentLetterIndex == 0)
+		//{
+		//	//6.11.1 글자를 저장한다.
+		//	//letterContent = rowContent[i];
+		//	//6.11.2 현재 줄의 첫번째 글자가 스페이스 또는 탭문자이면
+		//	if (letterContent == "\t" || letterContent == " ")
+		//	{
+		//		//6.11.2.1 현재 줄의 위치를 1만큼 감소시킨다.(이전 줄로 이동시킨다.)
+		//		currentRowIndex--;
+		//		//6.11.2.2 현재 줄의 위치가 underflow이면
+		//		if (currentRowIndex < 0)
+		//		{
+		//			//6.11.2.2.1 현재 줄의 위치를 최소값으로 변경한다.
+		//			currentRowIndex = 0;
+		//			currentRowIndex = this->Move(currentRowIndex);
+		//			row = this->GetAt(currentRowIndex);
+		//			currentLetterIndex = row->First();
+		//		}
+		//		//6.11.2.3 현재 줄의 위치가 underflow가 아니면(this->current >=0)
+		//		else
+		//		{
+		//			//6.11.2.3.1 현재 캐럿의 가로 위치를 마지막으로 이동시킨다.
+		//			currentRowIndex = this->Move(currentRowIndex);
+		//			row = this->GetAt(currentRowIndex);
+		//			currentLetterIndex = row->Last();
+		//		}
+		//	}
+		//}
+		//else if (lastMovingIsChar == false && currentLetterIndex > 0)
+		//{
+		//	currentLetterIndex++;
+		//	i++;
+		//}
+		//else if (lastMovingIsChar == true && currentLetterIndex == 0)
+		//{
+		//	if (letterContent == "\t" || letterContent == " ")
+		//	{
+		//		currentLetterIndex++;
+		//		i++;
+		//	}
+		//}
+		
+
+		/*if (letterContent == " " || letterContent == "\t")
 		{
 			currentLetterIndex++;
-		}
+		}*/
 
 	}
 	//7. 현재 글자 위치가 제일 처음이면(0이면)
@@ -854,7 +945,7 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 	//10. 현재 줄의 length를 구한다.
 	Long currentRowContentLength = currentRowContent.length();
 	//11. i가 현재 줄의 length보다 크거나 같은동안 반복한다.
-	while (i > currentRowContentLength)
+	while (currentRowContentLength > 0 && i >= currentRowContentLength)
 	{
 		//11.1 현재 줄의 길이를 뺀다.
 		i -= currentRowContentLength;
@@ -927,30 +1018,22 @@ Long Note::PreviousWord()
 		{
 			//2.2.1 현재 줄의 제일 첫번째 글자를 읽는다.
 			letter = this->GetAt(this->current)->GetAt(index)->GetContent();
-			//필요없음
-			//2.2.2 현재 줄의 첫번째 글자가 스페이스와 탭문자가 아니면(이미 위치가 0이므로 이동안하면됨)
-			//(한글이나 영문, 특수문자, 숫자이면)
-			//if (letter != "\t" && letter != " ")
-			//{
-				//2.2.2.1 현재 캐럿의 가로 위치를 0으로 이동시킨다.
-			//	index = this->GetAt(this->current)->First();
-			//}
-			//2.2.3 현재 줄의 첫번째 글자가 스페이스 또는 탭문자이면
+			//2.2.2 현재 줄의 첫번째 글자가 스페이스 또는 탭문자이면
 			//else
 			if (letter == "\t" || letter == " ")
 			{
-				//2.2.3.1 현재 줄의 위치를 1만큼 감소시킨다.(이전 줄로 이동시킨다.)
+				//2.2.2.1 현재 줄의 위치를 1만큼 감소시킨다.(이전 줄로 이동시킨다.)
 				this->current--;
-				//2.2.3.2 현재 줄의 위치가 underflow이면
+				//2.2.2.2 현재 줄의 위치가 underflow이면
 				if (this->current < 0)
 				{
-					//2.2.3.2.1 현재 줄의 위치를 최소값으로 변경한다.
+					//2.2.2.2.1 현재 줄의 위치를 최소값으로 변경한다.
 					this->current = 0;
 				}
-				//2.2.3.3 현재 줄의 위치가 underflow가 아니면(this->current >=0)
+				//2.2.2.3 현재 줄의 위치가 underflow가 아니면(this->current >=0)
 				else
 				{
-					//2.2.3.3.1 현재 캐럿의 가로 위치를 마지막으로 이동시킨다.
+					//2.2.2.3.1 현재 캐럿의 가로 위치를 마지막으로 이동시킨다.
 					index = this->GetAt(this->current)->Last();
 				}
 			}

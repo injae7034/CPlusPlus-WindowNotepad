@@ -1,6 +1,7 @@
 #include "File.h"
 #include "NotepadForm.h"
 #include "GlyphCreator.h"
+#include "RowAutoChange.h"
 #include<cstdio>
 #pragma warning(disable:4996)
 
@@ -113,32 +114,46 @@ void File::Load(NotepadForm* notepadForm, string path)
 //보관하기
 void File::Save(NotepadForm* notepadForm, string path)
 {
-    //반복제어변수
-    Long i;
+    RowAutoChange rowAutoChage(notepadForm);
+    bool isUndoAllRows = false;
+    Long currentRowIndex = 0;
+    Long currentLetterIndex = 0;
+    //1. 자동개행이 되어 있으면
+    if (notepadForm->isRowAutoChanging == true)
+    {
+        //1.1 현재 줄과 글자의 위치를 저장한다.
+        currentRowIndex = notepadForm->note->GetCurrent();
+        currentLetterIndex = notepadForm->current->GetCurrent();
+        //자동개행이 되어 있을 때 자동개행을 안풀어주고 저장을 하면 자동개행에서 DummyRow도 모두
+        //진짜 줄로 되어 저장되기 때문에 나중에 다시 불러올 떄 DummyRow도 Row로 인식되기 때문에
+        //자동개행이 되어 있으면 모두 자동개행을 풀어준뒤에 저장해야한다!!!
+        //1.2 자동개행을 풀어준다.
+        rowAutoChage.UndoAllRows();
+        //1.3 자동개행을 다풀었다는 표시를 해준다.
+        isUndoAllRows = true;
+    }
     FILE* file;
-    //입력받은 경로의 파일을 열어줌
+    //2. 입력받은 경로의 파일을 열어준다.
     file = fopen((char*)path.c_str(), "wt");
+    //3. 파일이 열렸으면
     if (file != NULL)
     {
-        string content;
-        i = 0;
-        //줄이 바뀐 경우 개행문자를 입력해서 출력해줌
-        while (i < notepadForm->note->GetLength() - 1)
-        {
-            content = notepadForm->note->GetAt(i)->GetContent();
-            fputs((char*)content.c_str(), file);
-            //출력후 개행해줌
-            fputs((char*)"\n", file);
-            i++;
-        }
-        //개행문자없이(줄이 바뀌지 않고) 문장이 끝나는 경우(개행없는 문장이 마지막인 경우)
-        if (i < notepadForm->note->GetLength())
-        {
-            content = notepadForm->note->GetAt(i)->GetContent();
-            //개행없이 출력함
-            fputs((char*)content.c_str(), file);
-        }
-        //파일을 닫아줌
+        //3.1 note의 content를 구한다.
+        string content = notepadForm->note->GetContent();
+        //3.2 파일에 note의 content를 저장한다.
+        fputs((char*)content.c_str(), file);
+        //3.3 파일을 닫는다.
         fclose(file);
+    }
+    //4. 자동개행을 풀었으면
+    if (isUndoAllRows == true)
+    {
+        //4.1 다시 자동개행을 해준다.
+        //아니면 파일을 저장하고 메모장 화면에서 자동개행이 풀리는 상태가 된다.
+        rowAutoChage.DoAllRows();
+        //4.2 아까 저장했던 현재 줄과 글자 위치로 이동한다.
+        notepadForm->note->Move(currentRowIndex);
+        notepadForm->current = notepadForm->note->GetAt(currentRowIndex);
+        notepadForm->current->Move(currentLetterIndex);
     }
 }

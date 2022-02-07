@@ -152,10 +152,8 @@ void TextingOutVisitor::VisitSingleByteLetter(Glyph* singleByteLetter)
 		//7.3 글자를 출력한다.
 		this->dc->TextOut(this->glyphXPos - currentXPos, this->glyphYPos * text.tmHeight
 			- currentYPos, content);
-
 	}
-
-	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음.
+	//8. font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음.
 	this->dc->SelectObject(oldFont);
 	font.DeleteObject();
 }
@@ -177,25 +175,18 @@ void TextingOutVisitor::VisitDoubleByteLetter(Glyph* doubleByteLetter)
 	Long currentYPos = this->notepadForm->GetScrollPos(SB_VERT);
 	//5. 글자의 내용을 구한다.
 	CString content = CString(doubleByteLetter->GetContent().c_str());
-	//6. 만약에 글자가 탭문자이면 내용을 띄어쓰기 8개로 바꿔준다.
-	if (content == "\t")
-	{
-		content = "        ";
-	}
-	//7. 현재 글자가 선택이 안되어있으면
+	//6. 현재 글자가 선택이 안되어있으면
 	if (doubleByteLetter->IsSelected() == false)
 	{
-		//7.1 배경색을 흰색으로 설정한다.
+		//6.1 배경색을 흰색으로 설정한다.
 		this->dc->SetBkColor(RGB(255, 255, 255));
-		//7.2 글꼴정보를 받아 글자색을 정한다.
+		//6.2 글꼴정보를 받아 글자색을 정한다.
 		this->dc->SetTextColor(this->notepadForm->font.GetColor());
-		//7.3 글자를 출력한다.
+		//6.3 글자를 출력한다.
 		this->dc->TextOut(this->glyphXPos - currentXPos, this->glyphYPos * text.tmHeight
 			- currentYPos, content);
-
 	}
-
-	//font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음.
+	//7. font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음.
 	this->dc->SelectObject(oldFont);
 	font.DeleteObject();
 }

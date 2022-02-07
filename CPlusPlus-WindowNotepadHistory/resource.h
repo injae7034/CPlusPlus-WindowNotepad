@@ -87,6 +87,19 @@
 #define ID_40064                        40064
 #define ID_40065                        40065
 #define ID_40066                        40066
+#define ID_40067                        40067
+#define ID_40068                        40068
+#define ID_40069                        40069
+#define ID_40070                        40070
+#define ID_40071                        40071
+#define ID_40072                        40072
+#define IDM_FINE_CREATENEW              40073
+#define IDM_FILE_NEW                    40074
+#define IDM_FILE_CREATENEW              40075
+#define IDM_FILE_EXIT                   40076
+#define IDM_FILE_OPENNEW                40077
+#define IDM_FILE_CLOSEN                 40078
+#define IDM_FILE_CLOSEANDOPENNEW        40079
 #define ID_ONREPLACEALLBUTTONCLICKEDCOMMAND 40991
 #define ID_ONREPLACEBUTTONCLICKEDCOMMAND 40992
 #define ID_SHIFTCTRLDELETEKEYACTIONCOMMAND 40993
@@ -105,7 +118,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
-#define _APS_NEXT_COMMAND_VALUE         40067
+#define _APS_NEXT_COMMAND_VALUE         40080
 #define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           111
 #endif

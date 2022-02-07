@@ -52,31 +52,43 @@ END
 
 IDR_MENU1 MENU
 BEGIN
-    POPUP "파일"
+    POPUP "파일(&F)"
     BEGIN
-        MENUITEM "불러오기",                        IDM_FILE_OPEN
-        MENUITEM "저장하기",                        IDM_FILE_SAVE
-        MENUITEM "다른 이름으로 저장하기",                IDM_FILE_SAVEDIFFERENTNAME
-        MENUITEM "인쇄하기",                        IDM_FILE_PRINT
-        MENUITEM "페이지 설정하기",                    IDM_FILE_SETUP
-        MENUITEM "미리보기",                        IDM_FILE_PREVIEW
+        MENUITEM "새로 만들기(&N)\t\t\tCtrl + N",    IDM_FILE_CLOSEANDOPENNEW
+        MENUITEM "불러오기(&O)\t\t\tCtrl + O",      IDM_FILE_OPEN
+        MENUITEM "저장하기(&S)\t\t\tCtrl + S",      IDM_FILE_SAVE
+        MENUITEM "다른 이름으로 저장하기(&A)\t\t\tCtrl + Shift + S", IDM_FILE_SAVEDIFFERENTNAME
+        MENUITEM SEPARATOR
+        MENUITEM "페이지 설정하기(&U)",                IDM_FILE_SETUP
+        MENUITEM "인쇄하기(&P)",                    IDM_FILE_PRINT
+        MENUITEM "미리보기(&F)",                    IDM_FILE_PREVIEW
+        MENUITEM SEPARATOR
+        MENUITEM "끝내기(&X)",                     IDM_FILE_EXIT
     END
-    POPUP "서식"
+    POPUP "편집(&E)"
     BEGIN
-        MENUITEM "글꼴",                          IDM_FONT_CHANGE
-        MENUITEM "자동 줄 바꿈",                     IDM_ROW_AUTOCHANGE
+        MENUITEM "실행 취소(&U)\t\t\tCtrl + Z",     IDM_NOTE_UNDO
+        MENUITEM "다시 실행(&R)\t\t\tCtrl + Y",     IDM_NOTE_REDO
+        MENUITEM SEPARATOR
+        MENUITEM "잘라내기(&T)\t\t\tCtrl + X",      IDM_NOTE_CUT
+        MENUITEM "복사하기(&C)\t\t\tCtrl + C",      IDM_NOTE_COPY
+        MENUITEM "붙여넣기(&P)\t\t\tCtrl + V",      IDM_NOTE_PASTE
+        MENUITEM "삭제(&D)",                      IDM_NOTE_REMOVE
+        MENUITEM "모두 선택(&A)\t\t\tCtrl + A",     IDM_NOTE_SELECTALL
+        MENUITEM SEPARATOR
+        MENUITEM "찾기(&F)\t\t\tCtrl + F",        IDM_NOTE_FIND
+        MENUITEM "바꾸기(&H)\t\t\tCtrl + H",       IDM_NOTE_REPLACE
     END
-    POPUP "편집"
+    POPUP "서식(&O)"
     BEGIN
-        MENUITEM "복사하기",                        IDM_NOTE_COPY
-        MENUITEM "붙여넣기",                        IDM_NOTE_PASTE
-        MENUITEM "잘라내기",                        IDM_NOTE_CUT
-        MENUITEM "모두 선택",                       IDM_NOTE_SELECTALL
-        MENUITEM "삭제",                          IDM_NOTE_REMOVE
-        MENUITEM "찾기",                          IDM_NOTE_FIND
-        MENUITEM "바꾸기",                         IDM_NOTE_REPLACE
-        MENUITEM "실행 취소",                       IDM_NOTE_UNDO
-        MENUITEM "다시 실행",                       IDM_NOTE_REDO
+        MENUITEM "자동 줄 바꿈(&W)",                 IDM_ROW_AUTOCHANGE
+        MENUITEM "글꼴(&F)",                      IDM_FONT_CHANGE
+    END
+    POPUP "도움말(&H)"
+    BEGIN
+        MENUITEM "도움말 보기(&H)",                  ID_40070
+        MENUITEM "피드백 보내기(&F)",                 ID_40071
+        MENUITEM "메모장 정보(&A)",                  ID_40072
     END
 END
 
@@ -84,14 +96,14 @@ IDR_MENU3 MENU
 BEGIN
     POPUP "메뉴"
     BEGIN
-        MENUITEM "실행 취소",                       IDM_NOTE_UNDO
-        MENUITEM "다시 실행",                       IDM_NOTE_REDO
-        MENUITEM "잘라내기",                        IDM_NOTE_CUT
-        MENUITEM "복사하기",                        IDM_NOTE_COPY
-        MENUITEM "붙여넣기",                        IDM_NOTE_PASTE
-        MENUITEM "삭제",                          IDM_NOTE_REMOVE
+        MENUITEM "실행 취소(&U)\t\t\tCtrl + Z",     IDM_NOTE_UNDO
+        MENUITEM "다시 실행(&R)\t\t\tCtrl + Y",     IDM_NOTE_REDO
         MENUITEM SEPARATOR
-        MENUITEM "모두 선택\t\t\t(&A)",             IDM_NOTE_SELECTALL
+        MENUITEM "잘라내기(&T)\t\t\tCtrl + X",      IDM_NOTE_CUT
+        MENUITEM "복사하기(&C)\t\t\tCtrl + C",      IDM_NOTE_COPY
+        MENUITEM "붙여넣기(&P)\t\t\tCtrl + V",      IDM_NOTE_PASTE
+        MENUITEM "삭제(&D)",                      IDM_NOTE_REMOVE
+        MENUITEM "모두 선택(&A)\t\t\tCtrl + A",     IDM_NOTE_SELECTALL
     END
 END
 

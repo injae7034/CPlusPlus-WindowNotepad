@@ -17,7 +17,6 @@ public:
 	virtual INT_PTR DoModal();
 	CString GetHeader() const;
 	CString GetFooter() const;
-	~PageSetupDialog();
 protected:
 	afx_msg virtual BOOL OnInitDialog();
 	afx_msg virtual void OnOK();

@@ -4,6 +4,10 @@
 #include "Glyph.h"
 #include "File.h"
 #include "afxdlgs.h"//CCommonDialog헤더파일
+#include "PreviewForm.h"
+#include "CommandHistory.h"
+#include "PageSetUpInformation.h"
+#include "PrintInformation.h"
 
 //디폴트생성자
 FileOpenCommand::FileOpenCommand(NotepadForm* notepadForm) 
@@ -98,43 +102,110 @@ void FileOpenCommand::Execute()
 			if (this->notepadForm->note != NULL)
 			{
 				delete this->notepadForm->note;
-				//this->note를 소멸시키면 note에 있는 Row와 letter들도 다 소멸된다.
-				//this->current는 Row인데 이미 this->note를 소멸시키면서 Row들이 다 소멸되었는데
-				//또 Row를 소멸하라고 하면 소멸할게 없는데 소멸하라고 했기때문에 뻑이난다.!!!!!
-				//delete this->current;
+				this->notepadForm->note = NULL;
+			}
+			//3.2.4 클립보드를 지운다.
+			if (this->notepadForm->clipboard != NULL)
+			{
+				delete this->notepadForm->clipboard;
+				this->notepadForm->clipboard = NULL;
+			}
+			//3.2.5 CFindReplaceDialog를 지운다.
+			if (this->notepadForm->findReplaceDialog != 0)
+			{
+				this->notepadForm->findReplaceDialog->DestroyWindow();
+				this->notepadForm->findReplaceDialog = NULL;
+			}
+			//3.2.6 CommandHistory를 할당해제한다.
+			if (this->notepadForm->commandHistory != 0)
+			{
+				delete this->notepadForm->commandHistory;
+				this->notepadForm->commandHistory = NULL;
+			}
+			//3.2.7 CommandHistory를 생성한다.
+			this->notepadForm->commandHistory = new CommandHistory(this->notepadForm);
+			//3.2.8 PreviewForm을 지운다.
+			if (this->notepadForm->previewForm != 0)
+			{
+				this->notepadForm->previewForm->SendMessage(WM_CLOSE);
+				delete this->notepadForm->previewForm;
+				this->notepadForm->previewForm = NULL;
+			}
+			//3.2.9 프린트정보를 할당해제한다.
+			if (this->notepadForm->printInformation != 0)
+			{
+				delete this->notepadForm->printInformation;
+				this->notepadForm->printInformation = NULL;
+			}
+			//3.2.10 페이지셋업정보를 지운다.
+			if (this->notepadForm->pageSetUpInformation != 0)
+			{
+				delete this->notepadForm->pageSetUpInformation;
+				this->notepadForm->pageSetUpInformation = NULL;
 			}
 			//불러오는 메모장을 위해 새로운 note를 만듬.
-			//3.2.4 glyphCreator를 만든다.
+			//3.2.11 glyphCreator를 만든다.
 			GlyphCreator glyphCreator;
 			this->notepadForm->note = glyphCreator.Create((char*)"\0");
-			//3.2.6 줄을 만든다.
+			//3.2.12 줄을 만든다.
 			Glyph* row = glyphCreator.Create((char*)"\n");
-			//3.2.7 줄을 메모장에 추가한다.
+			//3.2.13 줄을 메모장에 추가한다.
 			Long rowIndex;
 			rowIndex = this->notepadForm->note->Add(row);
-			//3.2.8 현재 줄의 위치를 저장한다.
+			//3.2.14 현재 줄의 위치를 저장한다.
 			this->notepadForm->current = this->notepadForm->note->GetAt(rowIndex);
-			//3.2.9 선택한 메모장의 노트(내용)를 불러온다.
+			//3.2.15 선택한 메모장의 노트(내용)를 불러온다.
 			file.Load(this->notepadForm, this->notepadForm->filePath);
-			//3.2.10 메모장 제목을 바꾼다.
+			//3.2.16 메모장 제목을 바꾼다.
 			name = this->notepadForm->fileName;
 			name += " - 메모장";
 			this->notepadForm->SetWindowText(CString(name.c_str()));
-			//3.2.11 flag들을 초기화시킨다.
-			this->notepadForm->isSelecting = false;
+			//3.2.17 현재 화면의 가로 길이를 저장한다.
+			CRect rect;
+			this->notepadForm->GetClientRect(&rect);
+			this->notepadForm->previousPageWidth = rect.Width();
+			//3.2.18 메뉴의 복사하기, 잘라내기, 삭제, 실행취소, 다시 실행 메뉴를 비활성화시킨다.
+			this->notepadForm->GetMenu()->
+				EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->notepadForm->GetMenu()->
+				EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->notepadForm->GetMenu()->
+				EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->notepadForm->GetMenu()->
+				EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->notepadForm->GetMenu()->
+				EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->notepadForm->mouseRButtonMenu.
+				EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->notepadForm->mouseRButtonMenu.
+				EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->notepadForm->mouseRButtonMenu.
+				EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->notepadForm->mouseRButtonMenu.
+				EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->notepadForm->mouseRButtonMenu.
+				EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			//3.2.19 flag들을 초기화시킨다.
 			this->notepadForm->isComposing = false;//false로 초기화시킴
 			this->notepadForm->isDirty = false;//false로 초기화시킴
-			//3.3.12 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
+			this->notepadForm->isSelecting = false;//false로 초기화시킴
+			this->notepadForm->isMouseLButtonClicked = false;//false로 초기화 시킴.
+			this->notepadForm->selectedStartXPos = 0;//처음생성될때는 선택된 texts가 없기 때문에 0으로 초기화해줌
+			this->notepadForm->selectedStartYPos = 0;//처음생성될때는 선택된 texts가 없기 때문에 0으로 초기화해줌
+			//3.3.20 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
 			rowIndex = this->notepadForm->note->First();
-			//3.3.13 현재 줄의 위치를 다시 저장한다.
+			//3.3.21 현재 줄의 위치를 다시 저장한다.
 			this->notepadForm->current = this->notepadForm->note->GetAt(rowIndex);
-			//3.3.14 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
+			//3.3.22 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
 			this->notepadForm->current->First();
-			//4.5 자동 줄 바꿈 메뉴가 체크되어 있으면
+			//3.3.23 자동 줄 바꿈 메뉴가 체크되어 있으면
 			if (this->notepadForm->isRowAutoChanging == true)
 			{
-				//4.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+				//3.3.23.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 				//OnSize에서 부분자동개행을 하도록 한다. 
+				//사이즈 변경 없이 그냥 OnSize로 가면 한줄만 자동개행되기 때문에 글꼴을 바꿔도 
+				//사이즈 변경은 없기 때문에 인위적으로 사이즈변경을 해서 WM_SIZE로 보내야 전체 자동개행됨!
+				this->notepadForm->previousPageWidth = -1;
 				this->notepadForm->SendMessage(WM_SIZE);
 			}
 		}

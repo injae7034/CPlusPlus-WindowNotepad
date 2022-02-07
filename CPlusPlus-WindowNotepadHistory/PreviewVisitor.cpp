@@ -52,7 +52,7 @@ void PreviewVisitor::VisitNote(Glyph* note)
 	dcText.SetMapMode(MM_ANISOTROPIC);
 	dcText.SetWindowExt(12, 12);
 	dcText.SetViewportExt(5, 5);
-	//7. 미리보기 폼의 정중앙을 구한다.
+	//6. 미리보기 폼의 정중앙을 구한다.
 	CRect clientRect;
 	this->notepadForm->previewForm->GetClientRect(&clientRect);
 	CPoint centerPoint = clientRect.CenterPoint();
@@ -109,7 +109,7 @@ void PreviewVisitor::VisitNote(Glyph* note)
 				this->notepadForm->pageSetUpInformation->GetFooter());
 		}
 	}
-	//10. 미리보기 폼에서 한 페이지당 출력될 줄의 개수보다 작은동안 반복한다.
+	//10. 한 페이지당 인쇄할 줄의 개수보다 작은동안 반복한다.
 	Glyph* row = 0;
 	Long rowIndex = 0;
 	while (rowIndex < this->notepadForm->previewForm->GetNote()->GetLength())
@@ -193,12 +193,19 @@ void PreviewVisitor::VisitRow(Glyph* row)
 		letter = row->GetAt(letterIndex);
 		//3.2 현재 글자의 내용을 구한다.
 		content = CString(letter->GetContent().c_str());
-		//3.3 현재 글자의 너비를 기반으로 해서 메모장에서 글자의 X좌표 위치를 업데이트해준다.
+		//3.3 탭문자이면
+		if (content == "\t")
+		{
+			//3.3.1 스페이스문자 8개로 바꿔준다.
+			content = "        ";
+		}
+		//3.4 현재 글자의 너비를 기반으로 해서 메모장에서 글자의 X좌표 위치를 업데이트해준다.
 		this->glyphXPos += letterWidth;
+		//3.5 글자의 너비를 구한다.
 		letterWidth = this->tempDC->GetTextExtent(content.c_str()).cx;
-		//3.4 현재 글자를 출력한다.
+		//3.6 현재 글자를 출력한다.
 		letter->Accept(this);
-		//3.5 글자의 위치를 증가시킨다.
+		//3.7 글자의 위치를 증가시킨다.
 		letterIndex++;
 	}
 }
@@ -225,12 +232,19 @@ void PreviewVisitor::VisitDummyRow(Glyph* dummyRow)
 		letter = dummyRow->GetAt(letterIndex);
 		//3.2 현재 글자의 내용을 구한다.
 		content = CString(letter->GetContent().c_str());
-		//3.3 현재 글자의 너비를 기반으로 해서 메모장에서 글자의 X좌표 위치를 업데이트해준다.
+		//3.3 탭문자이면
+		if (content == "\t")
+		{
+			//3.3.1 스페이스문자 8개로 바꿔준다.
+			content = "        ";
+		}
+		//3.4 현재 글자의 너비를 기반으로 해서 메모장에서 글자의 X좌표 위치를 업데이트해준다.
 		this->glyphXPos += letterWidth;
+		//3.5 글자의 너비를 구한다.
 		letterWidth = this->tempDC->GetTextExtent(content.c_str()).cx;
-		//3.4 현재 글자를 출력한다.
+		//3.6 현재 글자를 출력한다.
 		letter->Accept(this);
-		//3.5 글자의 위치를 증가시킨다.
+		//3.7 글자의 위치를 증가시킨다.
 		letterIndex++;
 	}
 }
@@ -257,16 +271,16 @@ void PreviewVisitor::VisitSingleByteLetter(Glyph* singleByteLetter)
 	this->tempDC->SetBkColor(RGB(255, 255, 255));
 	//6. 글꼴정보를 받아 글자색을 정한다.
 	this->tempDC->SetTextColor(this->notepadForm->font.GetColor());
-	//7. 페이지설정 정보가 있으면
-	Long glyphYPos = 0;//텍스트가 출력될 y좌표
+	//7. 페이지 설정 정보가 있으면
+	Long glyphYPos = 0;
 	if (this->notepadForm->pageSetUpInformation != NULL)
 	{
-		//7.1 페이지 설정에서 위의 여백 설정 정보를 y좌표에 저장한다.
+		//7.1 페이지 설정 정보에서 위의 여백을 저장한다.
 		glyphYPos = this->notepadForm->pageSetUpInformation->GetPrintableRect().top;
-		//7.2 페이지 설정에서 머리글이 설정되어 있으면
+		//7.2 머리글이 있으면
 		if (this->notepadForm->pageSetUpInformation->GetHeader().Compare("") != 0)
 		{
-			//7.2.1 머리글 글자 길이만큼 추가로 y좌표를 증가시킨다.
+			//7.2.1 머리글의 길이를 더해준다.
 			glyphYPos += text.tmHeight;
 		}
 	}
@@ -291,26 +305,23 @@ void PreviewVisitor::VisitDoubleByteLetter(Glyph* doubleByteLetter)
 	this->tempDC->GetTextMetrics(&text);
 	//3. 글자의 내용을 구한다.
 	CString content = CString(doubleByteLetter->GetContent().c_str());
-	//4. 만약에 글자가 탭문자이면 내용을 띄어쓰기 8개로 바꿔준다.
-	if (content == "\t")
-	{
-		content = "        ";
-	}
-	//5. 배경색을 흰색으로 설정한다.
+	//4. 배경색을 흰색으로 설정한다.
 	this->tempDC->SetBkColor(RGB(255, 255, 255));
-	//6. 글꼴정보를 받아 글자색을 정한다.
+	//5. 글꼴정보를 받아 글자색을 정한다.
 	this->tempDC->SetTextColor(this->notepadForm->font.GetColor());
-
+	//6. 페이지 설정 정보가 있으면
 	Long glyphYPos = 0;
 	if (this->notepadForm->pageSetUpInformation != NULL)
 	{
+		//6.1 페이지 설정 정보에서 위의 여백을 저장한다.
 		glyphYPos = this->notepadForm->pageSetUpInformation->GetPrintableRect().top;
+		//6.2 머리글이 있으면
 		if (this->notepadForm->pageSetUpInformation->GetHeader().Compare("") != 0)
 		{
+			//6.2.1 머리글의 길이를 더해준다.
 			glyphYPos += text.tmHeight;
 		}
 	}
-
 	//7. 글자를 출력한다.
 	this->tempDC->TextOut(this->glyphXPos, this->glyphYPos * text.tmHeight + glyphYPos,
 		content);
