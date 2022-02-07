@@ -37,25 +37,9 @@ void CommandHistory::Undo()
 		this->PushRedoList(command);
 		//1.3 꺼낸 command를 Unexecute한다.(실행취소)
 		command->Unexecute();
-		Command* previousCommand = 0;
-
-		//여기 때문에 stack에서 멈춰야할 곳이 안멈추고 문제가 생김
-		//1.4 만약에 선택영역이 지워졌으면
-		if (command->IsSelectedTextsRemoved() == true)
-		{
-			//1.1 undoList에서 마지막 배열 요소(command)를 꺼낸다
-			previousCommand = this->PopUndoList();
-			if (previousCommand != 0)
-			{
-				//1.2 꺼낸 command를 redoList의 마지막에 추가한다.
-				this->PushRedoList(previousCommand);
-				//1.3 꺼낸 command를 Unexecute한다.(실행취소)
-				previousCommand->Unexecute();
-			}
-		}
 		bool isStop = true;
 		//1.4. 이전 command를 구한다.(command를 뺐기 때문에 previousCommand가 마지막이됨)
-		previousCommand = this->undoList.Pop();
+		Command* previousCommand = this->undoList.Pop();
 		if (previousCommand != 0)
 		{
 			isStop = false;
@@ -83,38 +67,8 @@ void CommandHistory::Undo()
 		//1.6 previousCommand가 undoMacroEnd이면
 		if (isStop == false)
 		{
-			//1.6.1 previousCommand가 RemoveCommand가 아니면
-			if (!dynamic_cast<RemoveCommand*>(previousCommand))
-			{
-				//1.6.1.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
-				this->undoList.Push(previousCommand);
-			}
-			//1.6.2 previousCommand가 RemoveCommand이면
-			else
-			{
-				//1.6.2.1 command가 OnCharCommand이면
-				if (dynamic_cast<OnCharCommand*>(command))
-				{
-					//1.6.2.1.1 만약에 선택영역이 지워졌으면
-					if (command->IsSelectedTextsRemoved() == true)
-					{
-						//1.6.2.1 undoList의 할당량을 감소시킨다.
-						this->undoListCapacity--;
-						//1.6.2.2 undoList의 사용량을 감소시킨다.
-						this->undoListLength--;
-						//1.6.2.3 pushRedoList의 마지막 배열 요소 다음에 추가한다.
-						this->PushRedoList(previousCommand);
-						//1.6.2.4 꺼낸 previousCommand를 Unexecute한다.(실행취소)
-						previousCommand->Unexecute();
-					}
-				}
-				//1.6.2.2 command가 OnCharCommand가 아니면
-				else
-				{
-					//1.6.1.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
-					this->undoList.Push(previousCommand);
-				}
-			}
+			//1.6.1.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
+			this->undoList.Push(previousCommand);
 		}
 	}
 }
@@ -141,50 +95,9 @@ void CommandHistory::Redo()
 		command->SetRedone();
 		//1.6 꺼낸 command를 execute한다.
 		command->Execute();
-		//1.7 command가 removeCommand이면
-		Command* previousCommand = 0;
-		if (dynamic_cast<RemoveCommand*>(command))
-		{
-			//1.7.1 redoList에서 가장 마지막을 뺀다.
-			previousCommand = this->PopRedoList();
-			//1.7.2 previousCommand가 OnCharCommand이거나 OnImeCharCommand이면
-			if (dynamic_cast<OnCharCommand*>(previousCommand)
-				|| dynamic_cast<OnImeCharCommand*>(previousCommand)
-				|| dynamic_cast<PasteCommand*>(previousCommand))
-			{
-				//1.7.2.1 꺼낸 previousCommand가 Execute 되기 전에 다시 실행이라는 표시를 한다.
-				previousCommand->SetRedone();
-				//1.7.2.2 꺼낸 previousCommand를 execute한다.
-				previousCommand->Execute();
-				//1.7.3 undoList의 사용량이 할당량보다 크거나 같으면
-				if (this->undoListLength >= this->undoListCapacity)
-				{
-					//1.7.3.1 undoList의 할당량을 증가시킨다.
-					this->undoListCapacity++;
-				}
-				//1.7.4 undoList의 마지막 배열 요소 다음에 추가한다.
-				this->undoList.Push(previousCommand);
-				//1.7.5 undoList의 사용량을 증가시킨다.
-				this->undoListLength++;
-			}
-			//1.7.3 previousCommand가 OnCharCommand이거나 OnImeCharCommand가 아니면
-			else
-			{
-				//1.7.3 undoList의 사용량이 할당량보다 크거나 같으면
-				if (this->undoListLength >= this->undoListCapacity)
-				{
-					//1.7.3.1 undoList의 할당량을 증가시킨다.
-					this->undoListCapacity++;
-				}
-				//1.7.4 undoList의 마지막 배열 요소 다음에 추가한다.
-				this->undoList.Push(previousCommand);
-				//1.7.5 undoList의 사용량을 증가시킨다.
-				this->undoListLength++;
-			}
-		}
 		bool isStop = true;
 		//1.8 previousCommand를 구한다.(command를 뺐기 때문에 previousCommand가 마지막이됨)
-		previousCommand = this->redoList.Pop();
+		Command* previousCommand = this->redoList.Pop();
 		if (previousCommand != 0)
 		{
 			isStop = false;

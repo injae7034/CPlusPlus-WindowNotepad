@@ -341,6 +341,26 @@ void NotepadForm::OnCommand(UINT nId)
 	//3. command가 NULL이 아니면
 	if (command != NULL)
 	{
+		//잘라내기 command이면(Execute를 먼저 하고 넣으려고 하면 Execute뒤에는 선택영역이 없어서
+		//선택영역이 있는 상태에서 잘라내기를 했는지 선택영역이 없는 상태에사 잘라내기를 했는지 구분할 수
+		//없어서 잘라내기 경우에만 Execute를 하기 전에 앞에서 선택영역이 있으면 
+		//undoList에 추가하고(스택쌓기), 선택영역이 없으면 undoList에 추가하지 않고(스택에 쌓지않고),
+		//뒤에서 바로 command할당해제 시켜준다.)
+		bool isSelectedTextsDeleted = false;
+		if (nId == IDM_NOTE_CUT)
+		{
+			//선택영역이 있으면
+			if (this->isSelecting == true)
+			{
+				//3.3.1.1 command를 멈추게하는 표시를 한다.
+				command->SetUndoMacroEnd();
+				//3.3.1.2 UndoList에 추가한다.
+				this->commandHistory->PushUndoList(command);
+				//3.3.1.3 redoList를 초기화시킨다.
+				this->commandHistory->MakeRedoListEmpty();
+				isSelectedTextsDeleted = true;
+			}
+		}
 		//3.1 ConcreteCommand의 execute 함수를 실행한다.
 		command->Execute();
 		//3.2 글자를 입력하는 command이면 
@@ -376,24 +396,28 @@ void NotepadForm::OnCommand(UINT nId)
 			}
 		}
 		//3.4 선택영역을 지우거나 선택영역을 잘라내는 command이면
-		else if (nId == IDM_NOTE_REMOVE || nId == IDM_NOTE_CUT)
+		else if (nId == IDM_NOTE_REMOVE)
 		{
-			//3.3.1.1 command를 멈추게하는 표시를 한다.
+			//3.4.1.1 command를 멈추게하는 표시를 한다.
 			command->SetUndoMacroEnd();
-			//3.3.1.2 UndoList에 추가한다.
+			//3.4.1.2 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);
-			//3.3.1.3 redoList를 초기화시킨다.
+			//3.4.1.3 redoList를 초기화시킨다.
 			this->commandHistory->MakeRedoListEmpty();
 		}
-		//3.3 글자를 입력하는 command나 글자를 지우는 command가 아니면
+		//3.5 글자를 입력하는 command나 글자를 지우는 command가 아니면
 		//undoList에 들어간 command가 아니면 따로 할당해제를 해줘야 메모리 누수가 안생긴다.
 		//undoList에 들어간 command는 commandHistory가 소멸될 때, 소멸자에서 같이 할당해제된다.
 		else
 		{
-			//3.3.1 command를 할당해제한다.
-			if (command != 0)
+			//선택된 영역이 삭제가 안되었으면
+			if (isSelectedTextsDeleted == false)
 			{
-				delete command;
+				//3.5.1 command를 할당해제한다.
+				if (command != 0)
+				{
+					delete command;
+				}
 			}
 		}
 	}

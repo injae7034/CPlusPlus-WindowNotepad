@@ -1042,6 +1042,401 @@ void Note::CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 	}
 }
 
+//선택영역 복사하고 지우기
+Glyph* Note::CopySelectedTextsAndRemove(Long selectedStartRowPos,
+	Long selectedStartLetterPos, Long selectedEndRowPos, Long selectedEndLetterPos)
+{
+	//시작은 무조건 오른쪽방향임
+	Long startRowIndex = 0;//시작하는 줄의 위치
+	Long startLetterIndex = 0;//시작하는 글자 위치
+	Long endRowIndex = 0;//끝나는 줄의 위치
+	Long endLetterIndex = 0;//끝나는 글자 위치
+	Glyph* letter = 0;//글자의 주소를 담을 공간
+	Long nextRowIndex = 0;//다음 줄의 주소위치
+	Glyph* copyRow = 0;//힙에 새로 생성되는 줄의 주소를 담을 공간
+	Glyph* startRow = this->GetAt(selectedStartRowPos);//시작하는 줄의 주소를 담을 공간
+	//1. Note를 생성한다.
+	Glyph* copyNote = new Note();
+	//2. 복사할 startRow가 진짜 줄이면
+	if (!dynamic_cast<DummyRow*>(startRow))
+	{
+		//2.1 Row를 생성한다.
+		copyRow = new Row();
+	}
+	//3. 복사할 startRow가 가짜 줄이면
+	else
+	{
+		//3.1 DummyRow를 생성한다.
+		copyRow = new DummyRow();
+	}
+	//4. 새로 생성한 Row를 command의 Note에 추가한다.
+	copyNote->Add(copyRow);
+	//5. 선택이 시작되는 줄과 선택이 끝나는 줄이 같으면
+	//(한 줄 내에서만 선택이 되어 있으므로 줄을 지워지지 않고 글자들만 지워짐)
+	if (selectedStartRowPos == selectedEndRowPos)
+	{
+		//5.1 선택이 오른쪽으로 진행되었으면
+		if (selectedStartLetterPos < selectedEndLetterPos)
+		{
+			//5.1.1 시작하는 글자위치를 선택이 시작되는 글자위치로 정한다.
+			startLetterIndex = selectedStartLetterPos;
+			//5.1.2 끝나는 글자위치를 선택이 끝나는 글자위치로 정한다.
+			endLetterIndex = selectedEndLetterPos;
+			//5.1.3 시작하는 줄의 위치를 선택이 시작하는 줄의 위치로 정한다.
+			startRowIndex = selectedStartRowPos;
+
+		}
+		//5.2 선택이 왼쪽으로 진행되었으면
+		else
+		{
+			//5.2.1 시작하는 글자위치를 선택이 끝나는 글자위치로 정한다.
+			startLetterIndex = selectedEndLetterPos;
+			//5.2.2 끝나는 글자위치를 선택이 시작하는 글자위치로 정한다.
+			endLetterIndex = selectedStartLetterPos;
+			//5.2.3 시작하는 줄의 위치를 선택이 끝나는 줄의 위치로 정한다.
+			startRowIndex = selectedEndRowPos;
+		}
+		//5.3 시작하는 줄을 구한다.
+		startRow = this->GetAt(startRowIndex);
+		//5.4 시작하는 글자위치부터 끝나는 글자까지 지운다.
+		while (startLetterIndex < endLetterIndex)
+		{
+			//5.4.1 글자를 지우기 전에 글자를 구한다.
+			letter = startRow->GetAt(startLetterIndex);
+			//5.4.2 글자를 깊은 복사해서 새로 생성한 줄에 저장한다.
+			copyRow->Add(letter->Clone());
+			//5.4.3 줄에서 글자를 지운다.
+			startRow->Remove(startLetterIndex);
+			//5.4.4 줄에서 글자가 지워지면 줄의 개수가 줄고 시작하는 글자의 다음 글자가
+			//선택이 시작하는 글자의 위치로 앞당겨져 오게 되므로 선택이 끝나는 줄의 값을 감소시킨다. 
+			endLetterIndex--;
+		}
+	}
+	//6. 선택이 시작되는 줄과 선택이 끝나는 줄이 서로 다르면
+	//(선택이 여러 줄에 걸쳐서 되어 있기 때문에 글자가 다 지워진 줄은 지워져야함)
+	else
+	{
+		//6.1 선택이 오른쪽으로 진행되었으면 
+		if (selectedStartRowPos < selectedEndRowPos)
+		{
+			//6.1.1 시작하는 글자위치를 선택이 시작되는 글자위치로 정한다.
+			startLetterIndex = selectedStartLetterPos;
+			//6.1.2 끝나는 글자위치를 선택이 끝나는 글자위치로 정한다.
+			endLetterIndex = selectedEndLetterPos;
+			//6.1.3 시작하는 줄의 위치를 선택이 시작하는 줄의 위치로 정한다.
+			startRowIndex = selectedStartRowPos;
+			//6.1.4 끝나는 줄의 위치를 선택이 끝나는 줄의 위치로 정한다.
+			endRowIndex = selectedEndRowPos;
+		}
+		//6.2 선택이 왼쪽으로 진행되었으면
+		else
+		{
+			//6.2.1 시작하는 글자위치를 선택이 끝나는 글자위치로 정한다.
+			startLetterIndex = selectedEndLetterPos;
+			//6.2.2 끝나는 글자위치를 선택이 시작하는 글자위치로 정한다.
+			endLetterIndex = selectedStartLetterPos;
+			//6.2.3 시작하는 줄의 위치를 선택이 끝나는 줄의 위치로 정한다.
+			startRowIndex = selectedEndRowPos;
+			//6.2.4 끝나는 줄의 위치를 선택이 시작하는 줄의 위치로 정한다.
+			endRowIndex = selectedStartRowPos;
+		}
+		//6.3 시작하는 줄을 구한다.
+		startRow = this->GetAt(startRowIndex);
+		Glyph* endRow = 0;//끝나는 줄의 위치
+		Glyph* row = 0;//줄의 주소를 담을 공간
+		Long letterIndex = 0;//글자 위치
+		//6.4 시작하는 글자위치부터 시작하는 줄의 마지막 글자까지 지운다.
+		while (startLetterIndex < startRow->GetLength())
+		{
+			//6.4.1 글자를 지우기 전에 글자를 구한다.
+			letter = startRow->GetAt(startLetterIndex);
+			//6.4.2 글자를 깊은 복사해서 새로 생성한 줄에 저장한다.
+			copyRow->Add(letter->Clone());
+			//6.4.3 줄에서 글자를 지운다.
+			startRow->Remove(startLetterIndex);
+		}
+		//6.5 시작하는 줄의 다음줄부터 끝나는 줄전까지 글자와 줄을 지운다.
+		nextRowIndex = startRowIndex + 1;
+		while (nextRowIndex < endRowIndex)
+		{
+			//6.5.1 줄을 구한다.
+			row = this->GetAt(nextRowIndex);
+			//6.5.2 복사할 줄이 진짜 줄이면
+			if (!dynamic_cast<DummyRow*>(row))
+			{
+				//6.5.2.1 Row를 생성한다.
+				copyRow = new Row();
+			}
+			//6.5.3 복사할 줄이 가짜 줄이면
+			else
+			{
+				//6.5.3.1 DummyRow를 생성한다.
+				copyRow = new DummyRow();
+			}
+			//6.5.4 새로 생성한 Row를 command의 Note에 추가한다.
+			copyNote->Add(copyRow);
+			//6.5.5 글자위치를 원위치시킨다.
+			letterIndex = 0;
+			//6.5.6 줄에서 마지막 글자까지 반복한다.
+			while (letterIndex < row->GetLength())
+			{
+				//6.5.6.1 글자를 지우기 전에 글자를 구한다.
+				letter = row->GetAt(letterIndex);
+				//6.5.6.2 글자를 깊은 복사해서 DummyRow에 저장한다.
+				copyRow->Add(letter->Clone());
+				//6.5.6.3 줄의 글자를 지운다.
+				row->Remove(letterIndex);
+			}
+			//6.5.7 줄의 글자를 다지웠기때문에 메모장에서 줄을 지운다.
+			this->Remove(nextRowIndex);
+			//6.5.8 줄을 지웠기 때문에 선택이 끝나는 줄의 위치가 한칸 앞당겨진다.
+			endRowIndex--;
+		}
+		//6.6 끝나는 줄을 구한다.
+		endRow = this->GetAt(endRowIndex);
+		//6.7 복사할 줄이 진짜 줄이면
+		if (!dynamic_cast<DummyRow*>(endRow))
+		{
+			//6.7.1 Row를 생성한다.
+			copyRow = new Row();
+		}
+		//6.8 복사할 줄이 가짜 줄이면
+		else
+		{
+			//6.8.1 DummyRow를 생성한다.
+			copyRow = new DummyRow();
+		}
+		//6.9 새로 생성한 Row를 command의 Note에 추가한다.
+		copyNote->Add(copyRow);
+		//6.10 끝나는 줄의 처음부터 끝나는 글자까지 글자를 지운다.
+		letterIndex = 0;
+		while (letterIndex < endLetterIndex)
+		{
+			//6.10.1 글자를 지우기 전에 글자를 구한다.
+			letter = endRow->GetAt(letterIndex);
+			//6.10.2 글자를 깊은 복사해서 DummyRow에 저장한다.
+			copyRow->Add(letter->Clone());
+			//6.10.3 끝나는 줄의 글자를 지운다.
+			endRow->Remove(letterIndex);
+			//6.10.4 끝나는 줄의 첫글자를 지우면 다음 글자부터 앞으로 한칸씩
+			//당겨지기 때문에 끝나는 글자위치를 -1 감소시킨다.
+			endLetterIndex--;
+		}
+		//6.11 끝나는 줄을 시작하는 줄로 Join시킨다.
+		endRow->Join(startRow);
+		//6.12 끝나는 줄이 시작하는 줄로 Join되었기 때문에
+		//끝나는 줄을 메모장에서 지운다.
+		this->Remove(endRowIndex);
+		//6.13 현재 줄의 위치를 시작하는 줄의 위치로 변경한다.
+		this->current = startRowIndex;
+		row = this->GetAt(startRowIndex);
+		//6.14 현재 글자의 위치를 시작하는 글자의 위치로 변경한다.
+		row->Move(startLetterIndex);
+	}
+	//7. 복사한 내용을 반환한다.
+	return copyNote;
+}
+
+//선택영역 지우기
+void Note::RemoveSelectedTexts(Long selectedStartRowPos,
+	Long selectedStartLetterPos, Long selectedEndRowPos, Long selectedEndLetterPos)
+{
+	//시작은 무조건 오른쪽방향임
+	Long startRowIndex = 0;//시작하는 줄의 위치
+	Long startLetterIndex = 0;//시작하는 글자 위치
+	Long endRowIndex = 0;//끝나는 줄의 위치
+	Long endLetterIndex = 0;//끝나는 글자 위치
+	Glyph* letter = 0;//글자의 주소를 담을 공간
+	Long nextRowIndex = 0;//다음 줄의 주소위치
+	Glyph* startRow = 0;//시작하는 줄의 주소를 담을 공간
+	//1. 선택이 시작되는 줄과 선택이 끝나는 줄이 같으면
+	//(한 줄 내에서만 선택이 되어 있으므로 줄을 지워지지 않고 글자들만 지워짐)
+	if (selectedStartRowPos == selectedEndRowPos)
+	{
+		//1.1 선택이 오른쪽으로 진행되었으면
+		if (selectedStartLetterPos < selectedEndLetterPos)
+		{
+			//1.1.1 시작하는 글자위치를 선택이 시작되는 글자위치로 정한다.
+			startLetterIndex = selectedStartLetterPos;
+			//1.1.2 끝나는 글자위치를 선택이 끝나는 글자위치로 정한다.
+			endLetterIndex = selectedEndLetterPos;
+			//1.1.3 시작하는 줄의 위치를 선택이 시작하는 줄의 위치로 정한다.
+			startRowIndex = selectedStartRowPos;
+
+		}
+		//1.2 선택이 왼쪽으로 진행되었으면
+		else
+		{
+			//1.2.1 시작하는 글자위치를 선택이 끝나는 글자위치로 정한다.
+			startLetterIndex = selectedEndLetterPos;
+			//1.2.2 끝나는 글자위치를 선택이 시작하는 글자위치로 정한다.
+			endLetterIndex = selectedStartLetterPos;
+			//1.2.3 시작하는 줄의 위치를 선택이 끝나는 줄의 위치로 정한다.
+			startRowIndex = selectedEndRowPos;
+		}
+		//1.3 선택이 시작되는 줄을 구한다.
+		startRow = this->GetAt(startRowIndex);
+		//1.4 시작하는 글자위치부터 끝나는 글자까지 지운다.
+		while (startLetterIndex < endLetterIndex)
+		{
+			//1.4.1 줄에서 글자를 지운다.
+			startRow->Remove(startLetterIndex);
+			//1.4.2 줄에서 글자가 지워지면 줄의 개수가 줄고 시작하는 글자의 다음 글자가
+			//선택이 시작하는 글자의 위치로 앞당겨져 오게 되므로 선택이 끝나는 줄의 값을 감소시킨다. 
+			endLetterIndex--;
+		}
+	}
+	//2. 선택이 시작되는 줄과 선택이 끝나는 줄이 서로 다르면
+	//(선택이 여러 줄에 걸쳐서 되어 있기 때문에 글자가 다 지워진 줄은 지워져야함)
+	else
+	{
+		//2.1 선택이 오른쪽으로 진행되었으면 
+		if (selectedStartRowPos < selectedEndRowPos)
+		{
+			//2.1.1 시작하는 글자위치를 선택이 시작되는 글자위치로 정한다.
+			startLetterIndex = selectedStartLetterPos;
+			//2.1.2 끝나는 글자위치를 선택이 끝나는 글자위치로 정한다.
+			endLetterIndex = selectedEndLetterPos;
+			//2.1.3 시작하는 줄의 위치를 선택이 시작하는 줄의 위치로 정한다.
+			startRowIndex = selectedStartRowPos;
+			//2.1.4 끝나는 줄의 위치를 선택이 끝나는 줄의 위치로 정한다.
+			endRowIndex = selectedEndRowPos;
+		}
+		//2.2 선택이 왼쪽으로 진행되었으면
+		else
+		{
+			//2.2.1 시작하는 글자위치를 선택이 끝나는 글자위치로 정한다.
+			startLetterIndex = selectedEndLetterPos;
+			//2.2.2 끝나는 글자위치를 선택이 시작하는 글자위치로 정한다.
+			endLetterIndex = selectedStartLetterPos;
+			//2.2.3 시작하는 줄의 위치를 선택이 끝나는 줄의 위치로 정한다.
+			startRowIndex = selectedEndRowPos;
+			//2.2.4 끝나는 줄의 위치를 선택이 시작하는 줄의 위치로 정한다.
+			endRowIndex = selectedStartRowPos;
+		}
+		Glyph* endRow = 0;//끝나는 줄의 위치
+		Glyph* row = 0;//줄의 주소를 담을 공간
+		Long letterIndex = 0;//글자 위치
+		//2.3 선택이 시작되는 줄을 구한다.
+		startRow = this->GetAt(startRowIndex);
+		//2.4 시작하는 글자위치부터 시작하는 줄의 마지막 글자까지 지운다.
+		while (startLetterIndex < startRow->GetLength())
+		{
+			//2.4.1 줄에서 글자를 지운다.
+			startRow->Remove(startLetterIndex);
+		}
+		//2.5 시작하는 줄의 다음줄부터 끝나는 줄전까지 글자와 줄을 지운다.
+		nextRowIndex = startRowIndex + 1;
+		while (nextRowIndex < endRowIndex)
+		{
+			//2.5.1 줄을 구한다.
+			row = this->GetAt(nextRowIndex);
+			//2.5.2 글자위치를 원위치시킨다.
+			letterIndex = 0;
+			//2.5.3 줄에서 마지막 글자까지 반복한다.
+			while (letterIndex < row->GetLength())
+			{
+				//2.5.3.1 줄의 글자를 지운다.
+				row->Remove(letterIndex);
+			}
+			//2.5.4 줄의 글자를 다지웠기때문에 메모장에서 줄을 지운다.
+			this->Remove(nextRowIndex);
+			//2.5.5 줄을 지웠기 때문에 선택이 끝나는 줄의 위치가 한칸 앞당겨진다.
+			endRowIndex--;
+		}
+		//2.6 끝나는 줄을 구한다.
+		endRow = this->GetAt(endRowIndex);
+		//2.7 끝나는 줄의 처음부터 끝나는 글자까지 글자를 지운다.
+		letterIndex = 0;
+		while (letterIndex < endLetterIndex)
+		{
+			//2.7.1 끝나는 줄의 글자를 지운다.
+			endRow->Remove(letterIndex);
+			//2.7.2 끝나는 줄의 첫글자를 지우면 다음 글자부터 앞으로 한칸씩
+			//당겨지기 때문에 끝나는 글자위치를 -1 감소시킨다.
+			endLetterIndex--;
+		}
+		//2.8 끝나는 줄을 시작하는 줄로 Join시킨다.
+		endRow->Join(startRow);
+		//2.9 끝나는 줄이 시작하는 줄로 Join되었기 때문에
+		//끝나는 줄을 메모장에서 지운다.
+		this->Remove(endRowIndex);
+		//2.10 현재 줄의 위치를 시작하는 줄의 위치로 변경한다.
+		this->current = startRowIndex;
+		row = this->GetAt(startRowIndex);
+		//2.11 현재 글자의 위치를 시작하는 글자의 위치로 변경한다.
+		row->Move(startLetterIndex);
+	}
+}
+
+//해당위치에 texts를 삽입하기
+Long Note::InsertTexts(Long currentRowIndex, Long currentLetterIndex, Glyph* note)
+{
+	//1. 현재 줄을 구한다.
+	Glyph* currentRow = this->GetAt(currentRowIndex);
+	//2. 메모장의 현재 글자위치가 줄의 글자개수보다 작으면
+	//뒤에 split할 글자가 있으면 split하고 마지막 글자라서 뒤에 글자가 없으면 split하지 않는다.
+	Glyph* splitedRow = 0;
+	bool isSplited = false;
+	if (currentLetterIndex < currentRow->GetLength())
+	{
+		//2.1 메모장의 현재 줄에서 현재 글자위치 다음부터 split시킨다.(splitedRow가 힙에 할당됨)
+		splitedRow = currentRow->Split(currentLetterIndex);
+		//2.2 split이 되었기 때문에 isSplited을 true로 바꿔준다.
+		isSplited = true;
+	}
+	//3. command의 현재 노트의 첫번째 줄을 구한다.
+	Long firstCopyRowPos = 0;
+	Glyph* firstCopyRow = note->GetAt(firstCopyRowPos);
+	Glyph* letter = 0;//글자를 담을 공간
+	//4. command의 현재 노트의 첫번째 줄의 개수보다 작은동안 반복한다.
+	Long letterIndex = 0;
+	while (letterIndex < firstCopyRow->GetLength())
+	{
+		//4.1 command의 현재 노트의 첫번째 줄의 글자를 구한다.
+		letter = firstCopyRow->GetAt(letterIndex);
+		//4.2 글자를 메모장의 현재 줄에 추가한다.(깊은 복사)
+		currentRow->Add(letter->Clone());
+		//4.3 다음 글자로 이동한다.
+		letterIndex++;
+	}
+	//5. command의 현재 노트의 첫번째 줄에서 다음 줄로 이동한다.
+	Long nextCopyRowPos = firstCopyRowPos + 1;
+	Glyph* copyRow = firstCopyRow;//첫번째 줄이 디폴트
+	Long i = currentRowIndex;
+	//6. 클립보드의 현재 노트(복사한 내용)의 마지막줄까지 반복한다.
+	while (nextCopyRowPos < note->GetLength())
+	{
+		//6.1 복사한 줄을 구한다.
+		copyRow = note->GetAt(nextCopyRowPos);
+		//6.2 메모장의 현재 줄의 다음 줄로 이동한다.
+		i++;
+		//6.3 구한 줄을 메모장의 현재 줄의 위치 다음부터 끼워넣는다.(깊은 복사)
+		i = this->Add(i, copyRow->Clone());
+		//6.4 복사한 노트에서 다음 줄로 이동한다.
+		nextCopyRowPos++;
+	}
+	//7. 메모장에서 현재 줄을 구한다.
+	currentRow = this->GetAt(i);
+	//8. 메모장에서 현재 글자위치를 구한다.
+	currentLetterIndex = currentRow->GetCurrent();
+	//9. 메모장에서 아까 split했던 글자들이 있으면
+	if (isSplited == true)
+	{
+		//9.1 split한 줄을 메모장의 현재 줄에 Join시킨다.
+		splitedRow->Join(currentRow);
+		//9.2 splitedRow를 할당해제 시켜준다.
+		if (splitedRow != 0)
+		{
+			delete splitedRow;
+		}
+		//9.3 메모장에서 현재 글자위치를 다시 조정해준다.
+		currentRow->Move(currentLetterIndex);
+	}
+	//10. 현재 줄의 위치를 반환한다.
+	return i;
+}
+
 //Visitor Pattern
 void Note::Accept(GlyphVisitor* glyphVisitor)
 {

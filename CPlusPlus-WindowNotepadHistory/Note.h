@@ -27,6 +27,11 @@ public:
 	virtual void CalculateSelectedRange(Long* startingRowPos, Long* startingLetterPos,
 		Long* endingRowPos, Long* endingLetterPos);
 	virtual void Accept(GlyphVisitor* glyphVisitor);
+	virtual Glyph* CopySelectedTextsAndRemove(Long selectedStartRowPos,
+		Long selectedStartLetterPos, Long selectedEndRowPos, Long selectedEndLetterPos);
+	virtual void RemoveSelectedTexts(Long selectedStartRowPos,
+		Long selectedStartLetterPos, Long selectedEndRowPos, Long selectedEndLetterPos);
+	virtual Long InsertTexts(Long currentRowIndex, Long currentLetterIndex, Glyph* note);
 };
 
 #endif // !_NOTE_H
