@@ -58,9 +58,30 @@ void RowAutoChange::DoAllRows()
 			//3.5.2 rowIndex번째 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의
 			//글자부터 rowIndex번째 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.
 			//(DummyRow생성)
-			glyph = row->Split(letterIndex, true);
-			//3.5.3 새로운 줄을 rowIndex번째 줄의 다음 위치에 끼워넣는다.
-			rowIndex = this->notepadForm->note->Add(rowIndex + 1, glyph);
+			//줄을 나누고자 하는 글자가 처음이 아니면
+			if (letterIndex != 0)
+			{
+				glyph = row->Split(letterIndex, true);
+			}
+			//줄을 나누고자 하는 글자가 처음이면
+			else if (letterIndex == 0)
+			{
+				glyph = row->Split(1, true);
+			}
+			//생성한 가짜줄에 글자가 있으면
+			if (glyph->GetLength() > 0)
+			{
+				// 새로운 줄을 rowIndex번째 줄의 다음 위치에 끼워넣는다.
+				rowIndex = this->notepadForm->note->Add(rowIndex + 1, glyph);
+			}
+			//생성한 가짜줄에 글자가 없으면
+			else
+			{
+				//생성한 가짜 줄을 없앤다.
+				delete glyph;
+				//줄의 개수를 증가시킨다.
+				rowIndex++;
+			}
 		}
 		//3.6 letterIndex가 rowIndex번째 줄의 총글자 개수보다 크거나 같으면
 		else if (letterIndex >= row->GetLength())
@@ -151,11 +172,31 @@ void RowAutoChange::DoRow()
 			//5.5.2 rowIndex번째 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의
 			//글자부터 rowIndex번째 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.
 			//(DummyRow생성)
-			dummyRow = row->Split(letterIndex, true);
-			//5.5.3 새로운 줄을 rowIndex번째 줄의 다음 위치에 끼워넣는다.
-			i = this->notepadForm->note->Add(i + 1, dummyRow);
-			//5.5.4 count를 세준다.
-			count++;
+			//줄을 나누고자 하는 글자위치가 처음이 아니면
+			if (letterIndex != 0)
+			{
+				dummyRow = row->Split(letterIndex, true);
+			}
+			//줄을 나누고자 하는 글자위치가 처음이면
+			else if (letterIndex == 0)
+			{
+				dummyRow = row->Split(1, true);
+			}
+			//만든 가짜줄이 글자를 가지고 있으면
+			if (dummyRow->GetLength() > 0)
+			{
+				//5.5.3 새로운 줄을 rowIndex번째 줄의 다음 위치에 끼워넣는다.
+				i = this->notepadForm->note->Add(i + 1, dummyRow);
+				//5.5.4 count를 세준다.
+				count++;
+			}
+			//만든 가짜 줄이 글자를 가지고 있지 않으면
+			else
+			{
+				//가짜줄을 지운다.
+				delete dummyRow;
+				i++;
+			}
 		}
 		//5.6 letterIndex가 rowIndex번째 줄의 총글자 개수보다 크거나 같으면
 		else if (letterIndex >= row->GetLength())
@@ -244,15 +285,39 @@ Long RowAutoChange::DoPartRows(Long startRowAutoChange, Long endRowAutoChange)
 			//반영하기 때문에 항상 현재 글자보다 한칸 앞서 있다
 			//그래서 letterIndex-1에서 split을 해야 화면을 넘는 글자를 다음 줄로 보낼 수 있다.
 			letterIndex--;
-			//3.5.2 붙여넣은 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의 글자부터 
-			//붙여넣은 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.(DummyRow생성)
-			glyph = row->Split(letterIndex, true);
-			//3.5.3 split해서 생성된 새로운 줄(DummyRow)을 
-			//메모장의 노트에 splited된 줄 다음에 끼워넣는다. 
-			startRowAutoChange = this->notepadForm->note->Add(startRowAutoChange + 1, glyph);
-			//3.5.4 메모장의 노트에 줄이 추가되었기 때문에 줄의 개수가 증가했으므로 
-			//붙여넣기가 끝나는 줄의 위치도 한 줄 증가시켜준다.
-			endRowAutoChange++;
+			//3.5.2 rowIndex번째 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의
+			//글자부터 rowIndex번째 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.
+			//(DummyRow생성)
+			//줄을 나누고자 하는 글자가 처음이 아니면
+			if (letterIndex != 0)
+			{
+				glyph = row->Split(letterIndex, true);
+			}
+			//줄을 나누고자 하는 글자가 처음이면
+			else if (letterIndex == 0)
+			{
+				glyph = row->Split(1, true);
+			}
+			//생성한 가짜줄에 글자가 있으면
+			if (glyph->GetLength() > 0)
+			{
+				//3.5.3 split해서 생성된 새로운 줄(DummyRow)을 
+				//메모장의 노트에 splited된 줄 다음에 끼워넣는다. 
+				startRowAutoChange = this->notepadForm->note->Add(startRowAutoChange + 1, glyph);
+				//3.5.4 메모장의 노트에 줄이 추가되었기 때문에 줄의 개수가 증가했으므로 
+				//붙여넣기가 끝나는 줄의 위치도 한 줄 증가시켜준다.
+				endRowAutoChange++;
+			}
+			//생성한 가짜줄에 글자가 없으면
+			else
+			{
+				//생성한 가짜 줄을 없앤다.
+				delete glyph;
+				//3.6.1 다음 붙여넣기 한 줄로 이동한다.
+				//줄이 메모장의 노트에 추가되지 않았기 때문에 노트의 줄개수가 늘어나지 않는다.
+				//그래서 여기서는 붙여넣기가 끝나는 줄의 위치를 증가시켜줄 필요가 없다.
+				startRowAutoChange++;
+			}
 		}
 		//3.6 letterIndex가 붙여넣기한 줄의 총글자 개수보다 크거나 같으면
 		//붙여넣기 한 줄의 전체글자까지의 길이가 현재화면보다 작으면

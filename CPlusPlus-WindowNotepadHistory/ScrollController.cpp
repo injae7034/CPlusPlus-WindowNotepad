@@ -65,19 +65,35 @@ void ScrollController::Update()
 	scrollInfo.nMin = this->scroll[0]->min;
 	scrollInfo.nMax = this->scroll[0]->max;
 	scrollInfo.nPos = this->scroll[0]->currentPos;
-	scrollInfo.nPage = this->scroll[0]->pageSize;
+	//6. 자동개행이 진행중이 아니면
+	if (this->notepadForm->isRowAutoChanging == false)
+	{
+		//6.1 현재 화면크기로 설정한다.(그래거 현재줄의 max값이 현재 화면의 가로 길이를 벗어나면
+		//스크롤이 생성됨)
+		scrollInfo.nPage = this->scroll[0]->pageSize;
+	}
+	//7. 자동개행이 진행 중이면
+	else
+	{
+		//7.1 현재 화면의 가로길이를 줄의 길이 max보다 1 크게 설정한다
+		//자동개행이 진행중이면 절대로 가로 스크롤이 생성되면 안되기 때문에
+		//무조건 현재 최대 줄의 가로 길이보다 1크게 해서 가로 스크롤이 생성되지 않게 막는다.
+		scrollInfo.nPage = this->scroll[0]->max + 1;
+
+	}
 	scrollInfo.nTrackPos = 2;
-	//6. 수평스크롤바에 대한 수평스크롤 정보를 갱신해준다.
+	//7. 수평스크롤바에 대한 수평스크롤 정보를 갱신해준다.
 	this->notepadForm->SetScrollInfo(SB_HORZ, &scrollInfo);
-	//7. 현재 화면의 세로 길이를 구한다.
+	//8. 현재 화면의 세로 길이를 구한다.
 	pageSize = rect.Height();
-	//8.페이지 단위로 이동할 때 화면에서 위에 줄이 잘리지 않도록 여백을 구해서 max에 더해준다.
+	//9.페이지 단위로 이동할 때 화면에서 위에 줄이 잘리지 않도록 여백을 구해서 max에 더해준다.
 	Long letterHeight = this->notepadForm->textExtent->GetHeight();
-	//nMax랑 nPage랑 크기가 같으면 수평스크롤이 생기기 때문에 -1을 해준다.
+	//nMax랑 nPage랑 크기가 같으면 수평스크롤이 생기기 때문에 -1을 해서 nMax보다 nPage가 작게 해줌!
+	//왜냐혀면 뒤에서 max + blank를 해주기 때문에!
 	Long blank = pageSize - (pageSize / letterHeight * letterHeight) - 1;
-	//9. 현재 화면에서 텍스트의 총 세로 길이(용지최대세로길이)를 구한다.
+	//10. 현재 화면에서 텍스트의 총 세로 길이(용지최대세로길이)를 구한다.
 	max = this->notepadForm->textExtent->GetHeight() * (this->notepadForm->note->GetLength());
-	//10. 수직스크롤에 대한 정보를 갱신해준다.
+	//11. 수직스크롤에 대한 정보를 갱신해준다.
 	this->scroll[1]->min = 0;
 	this->scroll[1]->max = max + blank;//페이지단위 이동시 남는 공간을 더해줌.
 	this->scroll[1]->currentPos = this->notepadForm->GetScrollPos(SB_VERT);
@@ -86,7 +102,7 @@ void ScrollController::Update()
 	scrollInfo.nMax = this->scroll[1]->max;
 	scrollInfo.nPos = this->scroll[1]->currentPos;
 	scrollInfo.nPage = this->scroll[1]->pageSize;
-	//11. 수직스크롤바에 대한 수직스크롤 정보를 갱신해준다.
+	//12. 수직스크롤바에 대한 수직스크롤 정보를 갱신해준다.
 	this->notepadForm->SetScrollInfo(SB_VERT, &scrollInfo);
 }
 

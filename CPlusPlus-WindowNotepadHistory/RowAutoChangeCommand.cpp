@@ -49,69 +49,12 @@ void RowAutoChangeCommand::Execute()
 	//5. 자동 줄 바꿈 메뉴가 체크되어 있지 않으면
 	if (state == MF_UNCHECKED)
 	{
-		//5.1 현재 화면의 너비를 구한다.
-		CRect rect;
-		this->notepadForm->GetClientRect(&rect);
-		Long letterWidth = 0;
-		string content;
-		//5.2 GlyphFinder를 생성한다.
-		GlyphFinder glyphFinder(this->notepadForm->note);
-		//5.3 이동하기 전에 줄과 글자의 위치를 구한다.
-		Long previousRowIndex = this->notepadForm->note->GetCurrent();
-		Long previousLetterIndex = this->notepadForm->current->GetCurrent();
-		//5.4 탭문자를 아래로 찾기로 찾는다.
-		this->notepadForm->note->First();
-		this->notepadForm->current = this->notepadForm->note->
-			GetAt(this->notepadForm->note->GetCurrent());
-		this->notepadForm->current->First();
-		Long findingStartRowIndex = 0;
-		Long findingStartLetterIndex = 0;
-		Long findingEndRowIndex = 0;
-		Long findingEndLetterIndex = 0;
-		glyphFinder.FindDown("\t", &findingStartRowIndex, &findingStartLetterIndex,
-			&findingEndRowIndex, &findingEndLetterIndex);
-		//5.5 찾은 게 있으면
-		if (findingStartRowIndex != findingEndRowIndex ||
-			findingStartLetterIndex != findingEndLetterIndex)
-		{
-			//5.5.1 탭문자의 너비를 구한다.
-			letterWidth = this->notepadForm->textExtent->GetTextWidth("\t");
-		}
-		//5.6 찾은 게 없으면
-		else
-		{
-			//5.6.1 한글의 너비를 구한다.
-			letterWidth = this->notepadForm->textExtent->GetTextWidth("가");
-		}
-		//5.7 글자의 너비가 화면의 크기보다 작으면
-		if (letterWidth < rect.Width())
-		{
-			//5.7.1 자동 줄 바꿈 메뉴를 체크해준다.
-			this->notepadForm->GetMenu()->
-				CheckMenuItem(IDM_ROW_AUTOCHANGE, MF_CHECKED | MF_BYCOMMAND);
-			//5.7.2 자동개행을 실행한다.
-			rowAutoChange.DoAllRows();
-			this->notepadForm->isRowAutoChanging = true;
-			//5.7.3 캐럿을 제일 처음으로 보낸다.
-			this->notepadForm->note->First();
-			this->notepadForm->current = this->notepadForm->note->
-				GetAt(this->notepadForm->note->GetCurrent());
-			this->notepadForm->current->First();
-		}
-		//5.8 글자의 너비가 화면의 크기보다 크거나 같으면
-		else
-		{
-			//5.8.1 여백을 다시 설정하라는 메세지박스를 출력한다.
-			int messageBoxButton = this->notepadForm->MessageBox(
-				"글자의 가로 길이가 현재 화면의 가로 길이보다 길어서\n"
-				"자동 줄 바꿈을 할 수 없습니다.\n"
-				"화면의 길이를 늘리거나 글꼴에서 글자 크기를 변경시켜주세요.",
-				"자동 줄 바꿈", MB_OK);
-			//5.8.2 원래 위치로 이동시킨다.
-			previousRowIndex = this->notepadForm->note->Move(previousRowIndex);
-			this->notepadForm->current = this->notepadForm->note->GetAt(previousRowIndex);
-			this->notepadForm->current->Move(previousLetterIndex);
-		}
+		//5.1 자동 줄 바꿈 메뉴를 체크해준다.
+		this->notepadForm->GetMenu()->
+			CheckMenuItem(IDM_ROW_AUTOCHANGE, MF_CHECKED | MF_BYCOMMAND);
+		//5.2 자동개행을 실행한다.
+		rowAutoChange.DoAllRows();
+		this->notepadForm->isRowAutoChanging = true;
 	}
 	//6. 자동 줄 바꿈 메뉴가 체크되어 있으면
 	else
@@ -122,12 +65,12 @@ void RowAutoChangeCommand::Execute()
 		//6.2 자동개행을 취소한다.
 		rowAutoChange.UndoAllRows();
 		this->notepadForm->isRowAutoChanging = false;
-		//6.3 캐럿을 제일 처음으로 보낸다.
-		this->notepadForm->note->First();
-		this->notepadForm->current = this->notepadForm->note->
-			GetAt(this->notepadForm->note->GetCurrent());
-		this->notepadForm->current->First();
 	}
+	//7. 캐럿을 제일 처음으로 보낸다.
+	this->notepadForm->note->First();
+	this->notepadForm->current = this->notepadForm->note->
+		GetAt(this->notepadForm->note->GetCurrent());
+	this->notepadForm->current->First();
 }
 
 

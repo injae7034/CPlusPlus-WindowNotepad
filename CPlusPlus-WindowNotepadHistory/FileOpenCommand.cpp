@@ -146,6 +146,8 @@ void FileOpenCommand::Execute()
 			//불러오는 메모장을 위해 새로운 note를 만듬.
 			//3.2.11 glyphCreator를 만든다.
 			GlyphCreator glyphCreator;
+			//2. 클립보드를 만든다.
+			this->notepadForm->clipboard = glyphCreator.Create((char*)"clipboard");
 			this->notepadForm->note = glyphCreator.Create((char*)"\0");
 			//3.2.12 줄을 만든다.
 			Glyph* row = glyphCreator.Create((char*)"\n");

@@ -90,6 +90,7 @@ private:
 	Glyph* glyph;//OnCharcommand와 OnImeCharCommand에 SingleByteLetter나
 	//DoubleByteLetter를 전달하기 위해 임시저장
 	Glyph* removedSelectedTexts;//OnImeCharcommand에 지워진 선택된 영역을 전달하기 위해 임시저장
+	HICON icon;
 };
 
 //인라인함수정의
