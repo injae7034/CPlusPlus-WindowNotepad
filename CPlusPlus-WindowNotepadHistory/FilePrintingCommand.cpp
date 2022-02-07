@@ -1,8 +1,6 @@
 #include "FilePrintingCommand.h"
 #include "NotepadForm.h"
 #include "afxdlgs.h"//CCommonDialog헤더파일
-#include "afxext.h"//CPrintInfo헤더파일
-#include "afxwin.h"//CView헤더파일
 #include "Glyph.h"
 #include "PrintingVisitor.h"
 #include "PrintInformation.h"

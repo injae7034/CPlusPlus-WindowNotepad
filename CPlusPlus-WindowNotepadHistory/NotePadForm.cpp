@@ -643,7 +643,7 @@ void NotepadForm::OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu)
 
 BOOL NotepadForm::OnEraseBkgnd(CDC* pDC)
 {
-	return true;
+	return TRUE;
 }
 
 //메모장에서 닫기버튼을 클릭했을 떄

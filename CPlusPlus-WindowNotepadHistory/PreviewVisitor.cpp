@@ -5,6 +5,7 @@
 #include "Font.h"
 #include "PrintInformation.h"
 #include "PreviewForm.h"
+#include "Glyph.h"
 
 //디폴트생성자
 PreviewVisitor::PreviewVisitor(NotepadForm* notepadForm, CDC* dc,
@@ -37,78 +38,93 @@ void PreviewVisitor::VisitNote(Glyph* note)
 	CDC* cdc = CDC::FromHandle(this->notepadForm->printInformation->GetHDC());
 	//2. 프린트 가능한 영역을 구한다. 
 	CRect rect(0, 0, cdc->GetDeviceCaps(HORZRES), cdc->GetDeviceCaps(VERTRES));
-	//3. 프린트가 가능한 영역을 회색으로 칠한다.
-	CDC dcBgc;
-	dcBgc.CreateCompatibleDC(this->dc);
-	HBITMAP hbmpBgc = ::CreateCompatibleBitmap(dcBgc, rect.Width(), rect.Height());
-	HBITMAP oldBMPBgc= (HBITMAP)dcBgc.SelectObject(hbmpBgc);
-	dcBgc.FillRect(&rect, CBrush::FromHandle((HBRUSH)GetStockObject(GRAY_BRUSH)));
-	//4. 프린트할 노트를 구한다.
-	Glyph* printNote = this->notepadForm->printInformation->GetPrintNote();
-	//5. 한 페이지당 인쇄할 줄의 수를 구한다.
-	Long pageRowCount = this->notepadForm->printInformation->GetPageRowCount();
-	//6. 비트맵을 생성한다.(프린트 화면이 메모장 화면보다 더크기 때문에 메모장 화면에서 프린트 화면을
-	//제대로 보여주기 위해서는 축소를 시켜줘야하는데 축소시키기 위해서는 비트맵을 생성해야한다.)
+	//3.배경을 회색으로 칠할 비트맵을 생성한다.
+	//CDC dcBgc;
+	//dcBgc.CreateCompatibleDC(this->dc);
+	//HBITMAP hbmpBgc = ::CreateCompatibleBitmap(dcBgc, rect.Width(), rect.Height());
+	//HBITMAP oldBMPBgc= (HBITMAP)dcBgc.SelectObject(hbmpBgc);
+	//dcBgc.FillRect(&rect, CBrush::FromHandle((HBRUSH)GetStockObject(GRAY_BRUSH)));
+	//4. 글자를 출력할 비트맵을 생성한다.(프린트 화면이 메모장 화면보다 더크기 때문에 메모장 화면에서
+	//프린트 화면을 제대로 보여주기 위해서는 축소를 시켜줘야하는데 축소시키기 위해서는 비트맵을 생성해야한다.)
 	CDC dcText;
 	dcText.CreateCompatibleDC(this->dc);
 	HBITMAP hbmp = ::CreateCompatibleBitmap(dcText, rect.Width(), rect.Height());
 	HBITMAP oldBMP = (HBITMAP)dcText.SelectObject(hbmp);
-	//텍스트가 출력될 부분을 하얀색으로 칠한다.
+	//5. 텍스트가 출력될 부분의 배경을 흰색으로 칠한다.
 	dcText.FillRect(&rect, CBrush::FromHandle((HBRUSH)GetStockObject(WHITE_BRUSH)));
+	//6. 글자가 출력될 비트맵은 dc를 저장한다.
 	this->tempDC = &dcText;
 	dcText.SetMapMode(MM_ANISOTROPIC);
 	dcText.SetWindowExt(12, 12);
 	dcText.SetViewportExt(5, 5);
-	//7. 한 페이지당 인쇄할 줄의 개수보다 작은동안 그리고 프린트할 노트의 줄의 개수보다 작은동안 반복한다.
+	//7. 인쇄 및 미리보기를 설정할 부분을 흰색으로 칠한다.
+	//CDC dcSetUp;
+	//dcSetUp.CreateCompatibleDC(this->dc);
+	//HBITMAP hbmpSetUp = ::CreateCompatibleBitmap(dcSetUp, rect.Width(), rect.Height());
+	//HBITMAP oldBMPSetUp = (HBITMAP)dcSetUp.SelectObject(hbmpSetUp);
+	//dcSetUp.FillRect(&rect, CBrush::FromHandle((HBRUSH)GetStockObject(WHITE_BRUSH)));
+	//dcSetUp.SetMapMode(MM_ANISOTROPIC);
+	//dcSetUp.SetWindowExt(12, 12);
+	//dcSetUp.SetViewportExt(5, 5);
+	//8. 한 페이지당 인쇄할 줄의 개수보다 작은동안 그리고 프린트할 노트의 줄의 개수보다 작은동안 반복한다.
 	Glyph* row = 0;
 	Long rowIndex = 0;
-	Long i = 0;
-	while (i < pageRowCount && rowIndex < printNote->GetLength())
+	while (rowIndex < this->notepadForm->previewForm->GetNote()->GetLength())
 	{
-		//7.1 현재 줄을 구한다.
+		//8.1 현재 줄을 구한다.
 		row = note->GetAt(rowIndex);
-		//7.2 출력될 부분의 위치를 업데이트해준다.
+		//8.2 출력될 부분의 위치를 업데이트해준다.
 		this->glyphXPos = 0;
-		this->glyphYPos = i;
-		//7.3 한페이지에 줄의 texts를 출력한다.
+		this->glyphYPos = rowIndex;
+		//8.3 한페이지에 줄의 texts를 출력한다.
 		row->Accept(this);
-		//7.4 줄의 위치를 증가시킨다.
+		//8.4 줄의 위치를 증가시킨다.
 		rowIndex++;
-		i++;
 	}
-	//8. 비트맵이 축소되면서 글자가 뭉개지는걸 방지하기 위한 조치
+	//9. 비트맵이 축소되면서 글자가 뭉개지는걸 방지하기 위한 조치
 	this->dc->SetStretchBltMode(HALFTONE);
-	//9. 미리보기 폼의 정중앙을 구한다.
+	//10. 미리보기 폼의 정중앙을 구한다.
 	CRect clientRect;
 	this->notepadForm->previewForm->GetClientRect(&clientRect);
 	CPoint centerPoint = clientRect.CenterPoint();
-	//10. 클라이언트 영역의 크기가 바뀐 만큼의 비율을 구한다. 
+	//11. 클라이언트 영역의 크기가 바뀐 만큼의 비율을 구한다. 
 	double changedRectWidth = clientRect.Width();
 	double changedRectHeight = clientRect.Height();
-	double multiplicandWidth = changedRectWidth 
-		/ this->notepadForm->previewForm->GetOriginalRectWidth();
-	double multiplicandHeight = changedRectHeight 
-		/ this->notepadForm->previewForm->GetOriginalRectHeight();
-	//11. 비트맵 축소 크기를 구한다.
+	double firstRectWidth = this->notepadForm->previewForm->GetFirstClientRect().Width();
+	double firstRectHeight = this->notepadForm->previewForm->GetFirstClientRect().Height();
+	double multiplicandWidth = changedRectWidth / firstRectWidth;
+	double multiplicandHeight = changedRectHeight / firstRectHeight;
+	//12. 비트맵 축소 크기를 구한다.
 	double downsizedWidth = rect.Width() / 10;
 	double downsizedHeight = rect.Height() / 10;
-	
-	this->dc->StretchBlt(0, 0, rect.Width(), rect.Height(), &dcBgc,
-		0, 0, rect.Width(), rect.Height(), SRCCOPY);
-	dcBgc.SelectObject(oldBMPBgc);
-	::DeleteObject(hbmpBgc);
-	dcBgc.DeleteDC();
-	
-	//11. 프린트화면 크기에 맞게 생성한 비트맵을 현재 화면크기에 맞게 축소시켜서 미리보기 폼의 중앙에 출력한다.
-	this->dc->StretchBlt(centerPoint.x - downsizedWidth / 2 * multiplicandWidth,
+	//13. 프린트화면 크기에 맞게 생성한 회색배경 비트맵을 현재 화면크기에 맞게 축소시켜서 출력한다.
+	//this->dc->StretchBlt(0, 0, rect.Width(), rect.Height(), &dcBgc,
+	//	0, 0, rect.Width(), rect.Height(), SRCCOPY);
+	//dcBgc.SelectObject(oldBMPBgc);
+	//dcBgc.DeleteDC();
+	CRect fillRect(0, 0, changedRectWidth / 10 * 7, changedRectHeight);
+	this->dc->FillRect(&fillRect, CBrush::FromHandle((HBRUSH)GetStockObject(GRAY_BRUSH)));
+	//14. 프린트화면 크기에 맞게 생성한 글자비트맵을 현재 화면크기에 맞게 축소시켜서
+	//화면의 10/7 영역에 출력한다.
+	this->dc->StretchBlt(changedRectWidth / 10 * 7 /2 - downsizedWidth / 2 * multiplicandWidth,
 		centerPoint.y - downsizedHeight / 2 * multiplicandHeight,
 		downsizedWidth * multiplicandWidth, downsizedHeight * multiplicandHeight,
 		&dcText, 0, 0, rect.Width(), rect.Height(), SRCCOPY);
-	//12. 비트맵을 선택한다.
 	dcText.SelectObject(oldBMP);
-	//13.HBITMAP과 CDC를 지운다.
 	::DeleteObject(hbmp);
 	dcText.DeleteDC();
+	fillRect = CRect(changedRectWidth / 10 * 7 / 2 + downsizedWidth / 2 * multiplicandWidth
+		+ changedRectWidth / 10 * 7 / 2 - downsizedWidth / 2 * multiplicandWidth, 0,
+		rect.Width(), rect.Height());
+	this->dc->FillRect(&fillRect, CBrush::FromHandle((HBRUSH)GetStockObject(WHITE_BRUSH)));
+	//15. 프린트화면 크기에 맞게 생성한  인쇄 및 미리보기 비트맵을 현재 화면크기에 맞게 축소시켜서
+	//화면의 10/3 영역에 출력한다.
+	//this->dc->StretchBlt(changedRectWidth / 10 * 7 /2 + downsizedWidth / 2 * multiplicandWidth
+	//	+ changedRectWidth / 10 * 7 / 2 - downsizedWidth / 2 * multiplicandWidth, 0,
+	//	rect.Width(), rect.Height(), &dcSetUp, 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+	//dcSetUp.SelectObject(oldBMPSetUp);
+	//::DeleteObject(hbmpSetUp);
+	//dcSetUp.DeleteDC();
 }
 
 //Row
