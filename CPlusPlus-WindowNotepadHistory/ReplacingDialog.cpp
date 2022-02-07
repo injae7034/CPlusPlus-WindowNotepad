@@ -9,6 +9,7 @@
 
 BEGIN_MESSAGE_MAP(ReplacingDialog, CFindReplaceDialog)
 	ON_EN_CHANGE(IDC_EDIT_FINDINGCONTENT, OnFindingContentEditTyped)
+	ON_BN_CLICKED(IDC_BUTTON_SWAP, OnSwapButtonClicked)
 	ON_BN_CLICKED(IDC_BUTTON_FIND, OnFindButtonClicked)
 	ON_BN_CLICKED(IDC_BUTTON_REPLACE, OnReplacedButtonClicked)
 	ON_BN_CLICKED(IDC_BUTTON_REPLACEALL, OnReplaceAllButtonClicked)
@@ -18,9 +19,10 @@ END_MESSAGE_MAP()
 
 //CFindReplaceDialog의 기본적인 것들을 상속받고, 나머지 상세사항을 더 구체화함!
 ReplacingDialog::ReplacingDialog(CWnd* parent)
-	:CFindReplaceDialog()
+	:CFindReplaceDialog(), findingKeyword(), replacingKeyword()
 {
 	this->notepadForm = (NotepadForm*)parent;
+	this->matchCaseChecked = BST_CHECKED;
 	//대화상자를 내가 만든 IDD_FINDINGDIALOG를 이용해서 커스터마이징할 때 추가해줘야 함
 	this->m_fr.Flags |= FR_ENABLETEMPLATE;// |= 는 기존에꺼에 더해준다는 의미(누적)
 	this->m_fr.hInstance = AfxGetResourceHandle();
@@ -36,7 +38,8 @@ BOOL ReplacingDialog::OnInitDialog()
 	//OnInitDialog에서 보이게 하고 활성화를 시켜준다.
 	this->GetDlgItem(IDC_CHECKBOX_WRAPAROUND)->ShowWindow(SW_SHOW);
 	this->GetDlgItem(IDC_CHECKBOX_WRAPAROUND)->EnableWindow(1);
-	//찾기, 바꾸기, 모두 바꾸기 버튼을 글자가 없으면 수행이 안되기 때문에 디폴트값으로 비활성화 시킨다.
+	//Swap, 찾기, 바꾸기, 모두 바꾸기 버튼을 글자가 없으면 수행이 안되기 때문에 디폴트값으로 비활성화 시킨다.
+	this->GetDlgItem(IDC_BUTTON_SWAP)->EnableWindow(0);
 	this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(0);
 	this->GetDlgItem(IDC_BUTTON_REPLACE)->EnableWindow(0);
 	this->GetDlgItem(IDC_BUTTON_REPLACEALL)->EnableWindow(0);
@@ -189,7 +192,8 @@ BOOL ReplacingDialog::OnInitDialog()
 		{
 			delete copyRow;
 		}
-		//3.10 선택된 texts가 있기 때문에 찾기, 바꾸기, 모두 바꾸기를 활성화시켜준다.
+		//3.10 선택된 texts가 있기 때문에 Swap, 찾기, 바꾸기, 모두 바꾸기를 활성화시켜준다.
+		this->GetDlgItem(IDC_BUTTON_SWAP)->EnableWindow(1);
 		this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(1);
 		this->GetDlgItem(IDC_BUTTON_REPLACE)->EnableWindow(1);
 		this->GetDlgItem(IDC_BUTTON_REPLACEALL)->EnableWindow(1);
@@ -207,7 +211,8 @@ void ReplacingDialog::OnFindingContentEditTyped()
 	//2. content가 널문자가 아니면
 	if (content != "")
 	{
-		//2.1 선택된 texts가 있기 때문에 찾기, 바꾸기, 모두 바꾸기를 활성화시켜준다.
+		//2.1 선택된 texts가 있기 때문에 swap, 찾기, 바꾸기, 모두 바꾸기를 활성화시켜준다.
+		this->GetDlgItem(IDC_BUTTON_SWAP)->EnableWindow(1);
 		this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(1);
 		this->GetDlgItem(IDC_BUTTON_REPLACE)->EnableWindow(1);
 		this->GetDlgItem(IDC_BUTTON_REPLACEALL)->EnableWindow(1);
@@ -215,24 +220,40 @@ void ReplacingDialog::OnFindingContentEditTyped()
 	//3. content가 널문자이면
 	else
 	{
-		//3.1 선택된 texts가 있기 때문에 찾기, 바꾸기, 모두 바꾸기를 비활성화시켜준다.
+		//3.1 선택된 texts가 있기 때문에 swap, 찾기, 바꾸기, 모두 바꾸기를 비활성화시켜준다.
+		this->GetDlgItem(IDC_BUTTON_SWAP)->EnableWindow(0);
 		this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(0);
 		this->GetDlgItem(IDC_BUTTON_REPLACE)->EnableWindow(0);
 		this->GetDlgItem(IDC_BUTTON_REPLACEALL)->EnableWindow(0);
 	}
 }
 
-//3. 찾기 버튼을 클릭했을 때
+//3. 찾을 내용과 바꿀 내용을 바꾸기 버튼을 누를 때
+void ReplacingDialog::OnSwapButtonClicked()
+{
+	//1. 찾기 에디트 컨트롤에 적혀있는 글자를 읽어서 저장한다.
+	CString findingKeyword;
+	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(findingKeyword);
+	//2. 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽어서 저장한다.
+	CString replacingKeyword;
+	this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(replacingKeyword);
+	//3. 찾기 에디트 컨트롤에서 읽은 글자를 바꾸기 에디트 컨트롤에 출력한다.
+	this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->SetWindowText(findingKeyword);
+	//4. 바꾸기 에디트 컨트롤에서 읽은 글자를 찾기 에디트 컨트롤에 출력한다.
+	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->SetWindowText(replacingKeyword);
+}
+
+//4. 찾기 버튼을 클릭했을 때
 void ReplacingDialog::OnFindButtonClicked()
 {
 	//1. GlyphFinder를 생성한다.
 	GlyphFinder glyphFinder(this->notepadForm->note);
-	//2. 에디트컨트롤에 적혀있는 글자를 읽는다.
+	//2. 찾기 에디트컨트롤에 적혀있는 글자를 읽는다.
 	CString keyword;
 	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(keyword);
 	//3. 선택된 체크박스를 읽는다.
 	int wrapAroundChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->GetCheck();
-	int matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
+	this->matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
 
 	Long findingStartRowIndex = 0;
 	Long findingStartLetterIndex = 0;
@@ -243,14 +264,14 @@ void ReplacingDialog::OnFindButtonClicked()
 	Long endRowIndex = this->notepadForm->note->GetLength() - 1;
 
 	//4. '대/소문자 구분' 체크박스가 선택되어 있고, '주위에 배치' 체크박스가 선택이 안되어있으면
-	if (matchCaseChecked == BST_CHECKED && wrapAroundChecked == BST_UNCHECKED)
+	if (this->matchCaseChecked == BST_CHECKED && wrapAroundChecked == BST_UNCHECKED)
 	{
 		//4.1 아래로 찾기를 실행한다.
 		glyphFinder.FindDown((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
 			&findingEndRowIndex, &findingEndLetterIndex);
 	}
 	//5. '대/소문자 구분', '주위에 배치' 체크박스가 선택이 되어있으면
-	else if (matchCaseChecked == BST_CHECKED && wrapAroundChecked == BST_CHECKED)
+	else if (this->matchCaseChecked == BST_CHECKED && wrapAroundChecked == BST_CHECKED)
 	{
 		//5.1 아래로 찾기를 실행한다.
 		glyphFinder.FindDown((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
@@ -269,14 +290,14 @@ void ReplacingDialog::OnFindButtonClicked()
 		}
 	}
 	//6. '대/소문자 구분', '주위에 배치' 체크박스가 선택이 안되어있으면
-	else if (matchCaseChecked == BST_UNCHECKED && wrapAroundChecked == BST_UNCHECKED)
+	else if (this->matchCaseChecked == BST_UNCHECKED && wrapAroundChecked == BST_UNCHECKED)
 	{
 		//6.1 대/소문자 구분없이 아래로 찾기를 실행한다.
 		glyphFinder.FindDownWithMatchCase((LPCTSTR)keyword, &findingStartRowIndex,
 			&findingStartLetterIndex, &findingEndRowIndex, &findingEndLetterIndex);
 	}
 	//7. '주위에 배치' 체크박스가 선택이 되어있고 '대/소문자 구분'이 선택 안되어있으면
-	else if (matchCaseChecked == BST_UNCHECKED && wrapAroundChecked == BST_CHECKED)
+	else if (this->matchCaseChecked == BST_UNCHECKED && wrapAroundChecked == BST_CHECKED)
 	{
 		//7.1 대/소문자 구분없이 아래로 찾기를 실행한다.
 		glyphFinder.FindDownWithMatchCase((LPCTSTR)keyword, &findingStartRowIndex,
@@ -294,7 +315,6 @@ void ReplacingDialog::OnFindButtonClicked()
 				&findingStartLetterIndex, &findingEndRowIndex, &findingEndLetterIndex);
 		}
 	}
-	
 	//8. 찾은 게 있으면
 	if (findingStartRowIndex != findingEndRowIndex ||
 		findingStartLetterIndex != findingEndLetterIndex)
@@ -351,7 +371,7 @@ void ReplacingDialog::OnFindButtonClicked()
 	this->notepadForm->Invalidate(TRUE);
 }
 
-//4. 바꾸기 버튼을 클릭했을 떄
+//5. 바꾸기 버튼을 클릭했을 떄
 void ReplacingDialog::OnReplacedButtonClicked()
 {
 	//1. 선택된 texts가 없으면
@@ -364,41 +384,60 @@ void ReplacingDialog::OnReplacedButtonClicked()
 	//2. 선택된 texts가 있으면
 	else
 	{
-		//2.1 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
-		this->notepadForm->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
-		//2.2 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
-		CString word;
-		this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(word);
-		//2.3 현재 줄의 위치를 구한다.
-		Long currentRowIndex = this->notepadForm->note->GetCurrent();
-		//2.4 현재 줄을 구한다.
-		Glyph* currentRow = this->notepadForm->note->GetAt(currentRowIndex);
-		//2.5 현재 줄에서 단어단위로 추가한다.
-		currentRow->AddWord((LPCTSTR)word);
-		//2.6 자동개행이 진행중이면 단어를 추가하고 자동개행시켜준다.
-		if (this->notepadForm->isRowAutoChanging == true)
-		{
-			this->notepadForm->SendMessage(WM_SIZE);
-		}
+		//2.1 현재 글자위치와 줄의 위치를 선택이 시작하는 줄의 위치와 글자 위치로 이동하기 전에 저장한다.
+		Long previousRowIndex = this->notepadForm->note->GetCurrent();
+		Long previousLetterIndex = this->notepadForm->current->GetCurrent();
+		//선택영역이 지금 찾은 글자와 일치하지 않는 경우 그 글자는 바꾸면 안되기 때문에 선택영역이 있으면
+		//우선 선택영역의 시작줄의 위치와 글자위치로 이동시키고, 그다음에 선택영역을 무효화시키고,
+		//다시 찾을 단어와 일치하는지 확인해서 일치하면 선택하고 일치하지 않으면 선택하지 않는다.
+		//그래야 선택영역과 찾을 단어가 일치 하지 않는데 선택영역의 단어가 바꿀 단어로 바뀌는 일이 생기지 X
+		//2.2 현재 글자위치와 줄의 위치를 선택이 시작하는 줄의 위치와 글자위치로 이동시킨다.
+		Long currentRowIndex = this->notepadForm->note->Move(this->notepadForm->selectedStartYPos);
+		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
+		this->notepadForm->current->Move(this->notepadForm->selectedStartXPos);
+		//2.3 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
+		this->notepadForm->selectingTexts->Undo();
+		//2.4 선택이 끝난 상태로 바꾼다.
+		this->notepadForm->isSelecting = false;
+		//2.5 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+		this->notepadForm->selectedStartXPos = 0;
+		//2.6 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+		this->notepadForm->selectedStartYPos = 0;
 		//2.7 '찾기 버튼을 클릭했을 때'로 메세지를 보낸다.
 		//윈도우에서 버튼을 클릭했을 때 메세지는 WM_COMMAND이다
 		this->SendMessage(WM_COMMAND, IDC_BUTTON_FIND);
+		//2.8 선택된 영역이 있으면(찾은 단어가 있으면)
+		if (this->notepadForm->isSelecting == true)
+		{
+			//2.8.1 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+			CString word;
+			this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(word);
+			this->replacingKeyword = (LPCTSTR)word;
+			//2.8.2 OnReplaceButtonClikedCommand로 메세지를 보낸다.
+			this->notepadForm->SendMessage(WM_COMMAND, ID_ONREPLACEBUTTONCLICKEDCOMMAND);
+			//2.8.3 바꿀 단어를 바꿨기 때문에 메모장의 바꿀 단어를 초기화해준다.
+			this->replacingKeyword = "";
+			//2.8.4 '찾기 버튼을 클릭했을 때'로 메세지를 보낸다.
+			//윈도우에서 버튼을 클릭했을 때 메세지는 WM_COMMAND이다
+			this->SendMessage(WM_COMMAND, IDC_BUTTON_FIND);
+		}
+		//2.9 선택된 영역이 없으면(찾은 단어가 없으면)
+		else
+		{
+			//2.9.1 다시 이전 줄과 글자 위치를 이동시킨다.
+			currentRowIndex = this->notepadForm->note->Move(previousRowIndex);
+			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
+			this->notepadForm->current->Move(previousLetterIndex);
+			//2.9.2 변화를 메모장에 갱신한다.
+			this->notepadForm->Notify();
+			this->notepadForm->Invalidate();
+		}
 	}
-	//10. 캐럿의 위치가 변경되었음을 알린다.
-	this->notepadForm->Notify();
-	//11. 변경사항을 갱신한다.
-	this->notepadForm->Invalidate(TRUE);
 }
 
-//4. 모두 바꾸기 버튼을 클릭했을 떄
+//6. 모두 바꾸기 버튼을 클릭했을 떄
 void ReplacingDialog::OnReplaceAllButtonClicked()
 {
-	Long findingStartRowIndex = 0;
-	Long findingStartLetterIndex = 0;
-	Long findingEndRowIndex = 0;
-	Long findingEndLetterIndex = 0;
-	Glyph* currentRow = 0;
-	bool isFounded = true;//찾을 단어가 발견이 되었는지 아닌지를 판별할 flag
 	//1. 선택이 진행되고 있는 중이었으면
 	if (this->notepadForm->isSelecting == true)
 	{
@@ -410,149 +449,23 @@ void ReplacingDialog::OnReplaceAllButtonClicked()
 		this->notepadForm->selectedStartXPos = 0;
 		//1.4 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
 		this->notepadForm->selectedStartYPos = 0;
-	}
-	//2. 선택한 texts들을 다 선택취소했으면
-	if (this->notepadForm->isSelecting == false)
-	{
-		//2.1 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
+		//1.5 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
-
-	//3. 현재 줄의 위치를 제일 처음으로 보낸다.
-	Long currentRowIndex = this->notepadForm->note->First();
-	//4. 메모장에서 현재 줄의 위치를 다시 저장한다.
-	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
-	//5. 현재 글자의 위치를 제일 처음으로 보낸다.
-	Long currentLetterIndex = this->notepadForm->current->First();
-
-	//6. GlyphFinder를 생성한다.
-	GlyphFinder glyphFinder(this->notepadForm->note);
-	//7. 찾기 에디트 컨트롤에 적혀있는 글자를 읽는다.
-	CString keyword;
-	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(keyword);
-	//8. 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
-	CString word;
-	this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(word);
-	//9. 대/소문자 구분 체크박스를 읽는다.
-	int matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
-	//10. 대/소문자 구분이 되어 있으면
-	if (matchCaseChecked == BST_CHECKED)
-	{
-		//10.1 찾은게 있는 동안 반복한다.
-		while (isFounded == true)
-		{
-			//10.1.1 아래로 찾기를 실행한다.
-			glyphFinder.FindDown((LPCTSTR)keyword, &findingStartRowIndex, &findingStartLetterIndex,
-				&findingEndRowIndex, &findingEndLetterIndex);
-			//10.1.2 찾은 게 있으면
-			if (findingStartRowIndex != findingEndRowIndex ||
-				findingStartLetterIndex != findingEndLetterIndex)
-			{
-				//10.1.2.1 선택이 시작되는 캐럿의 x좌표를 저장한다.
-				this->notepadForm->selectedStartXPos = findingStartLetterIndex;
-				//10.1.2.2 선택이 시작되는 캐럿의 y좌표를 저장한다.
-				this->notepadForm->selectedStartYPos = findingStartRowIndex;
-				//10.1.2.3 찾은 글자를 선택한다.
-				this->notepadForm->selectingTexts->DoNext(findingStartRowIndex,
-					findingStartLetterIndex, findingEndRowIndex, findingEndLetterIndex);
-				//10.1.2.4 캐럿의 위치를 메모장의 찾은 문자열이 있는 줄의 찾은 문자열 마지막 글자위치로 이동한다.
-				this->notepadForm->note->Move(findingEndRowIndex);
-				this->notepadForm->current = this->notepadForm->note->GetAt(findingEndRowIndex);
-				this->notepadForm->current->Move(findingEndLetterIndex);
-				//10.1.2.5 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
-				this->notepadForm->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
-				//10.1.2.6 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
-				this->notepadForm->selectingTexts->Undo();
-				//10.1.2.7 선택이 끝난 상태로 바꾼다.
-				this->notepadForm->isSelecting = false;
-				//10.1.2.8 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
-				this->notepadForm->selectedStartXPos = 0;
-				//10.1.2.9 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
-				this->notepadForm->selectedStartYPos = 0;
-				//10.1.2.10 현재 줄의 위치를 구한다.
-				currentRowIndex = this->notepadForm->note->GetCurrent();
-				//10.1.2.11 현재 줄을 구한다.
-				currentRow = this->notepadForm->note->GetAt(currentRowIndex);
-				//10.1.2.12 현재 줄에서 단어단위로 추가한다.
-				currentRow->AddWord((LPCTSTR)word);
-				//10.1.2.13 자동개행이 진행중이면 단어를 추가하고 자동개행시켜준다.
-				if (this->notepadForm->isRowAutoChanging == true)
-				{
-					this->notepadForm->SendMessage(WM_SIZE);
-				}
-			}
-			//10.1.3 찾은 게 없으면
-			else
-			{
-				isFounded = false;
-			}
-		}	
-	}
-	//11. 대/소문자 구분이 안되어었으면
-	else
-	{
-		//11.1 찾은게 있는 동안 반복한다.
-		while (isFounded == true)
-		{
-			//11.1.1 대/소문자 구분없이 아래로 찾기를 실행한다.
-			glyphFinder.FindDownWithMatchCase((LPCTSTR)keyword, &findingStartRowIndex,
-				&findingStartLetterIndex, &findingEndRowIndex, &findingEndLetterIndex);
-			//11.1.2 찾은 게 있으면
-			if (findingStartRowIndex != findingEndRowIndex ||
-				findingStartLetterIndex != findingEndLetterIndex)
-			{
-				//11.1.2.1 선택이 시작되는 캐럿의 x좌표를 저장한다.
-				this->notepadForm->selectedStartXPos = findingStartLetterIndex;
-				//11.1.2.2 선택이 시작되는 캐럿의 y좌표를 저장한다.
-				this->notepadForm->selectedStartYPos = findingStartRowIndex;
-				//11.1.2.3 찾은 글자를 선택한다.
-				this->notepadForm->selectingTexts->DoNext(findingStartRowIndex,
-					findingStartLetterIndex, findingEndRowIndex, findingEndLetterIndex);
-				//11.1.2.4 캐럿의 위치를 메모장의 찾은 문자열이 있는 줄의 찾은 문자열 마지막 글자위치로 이동한다.
-				this->notepadForm->note->Move(findingEndRowIndex);
-				this->notepadForm->current = this->notepadForm->note->GetAt(findingEndRowIndex);
-				this->notepadForm->current->Move(findingEndLetterIndex);
-				//11.1.2.5 RemoveCommand로 메세지를 보내서 선택영역을 지운다.
-				this->notepadForm->SendMessage(WM_COMMAND, IDM_NOTE_REMOVE);
-				//11.1.2.6 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
-				this->notepadForm->selectingTexts->Undo();
-				//11.1.2.7 선택이 끝난 상태로 바꾼다.
-				this->notepadForm->isSelecting = false;
-				//11.1.2.8 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
-				this->notepadForm->selectedStartXPos = 0;
-				//11.1.2.9 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
-				this->notepadForm->selectedStartYPos = 0;
-				//11.1.2.10 현재 줄의 위치를 구한다.
-				currentRowIndex = this->notepadForm->note->GetCurrent();
-				//11.1.2.11 현재 줄을 구한다.
-				currentRow = this->notepadForm->note->GetAt(currentRowIndex);
-				//11.1.2.12 현재 줄에서 단어단위로 추가한다.
-				currentRow->AddWord((LPCTSTR)word);
-				//11.1.2.13 자동개행이 진행중이면 단어를 추가하고 자동개행시켜준다.
-				if (this->notepadForm->isRowAutoChanging == true)
-				{
-					this->notepadForm->SendMessage(WM_SIZE);
-				}
-			}
-			//11.1.3 찾은 게 없으면
-			else
-			{
-				isFounded = false;
-			}
-		}
-	}
-	//12. 현재 줄의 위치를 제일 처음으로 보낸다.
-	currentRowIndex = this->notepadForm->note->First();
-	//13. 메모장에서 현재 줄의 위치를 다시 저장한다.
-	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
-	//14. 현재 글자의 위치를 제일 처음으로 보낸다.
-	this->notepadForm->current->First();
-	//15. 캐럿의 위치가 변경되었음을 알린다.
-	this->notepadForm->Notify();
-	//16. 변경사항을 갱신한다.
-	this->notepadForm->Invalidate(TRUE);
+	//2. 찾기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+	CString findingKeyword;
+	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(findingKeyword);
+	this->findingKeyword = findingKeyword;
+	//3. 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+	CString replacingKeyword;
+	this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(replacingKeyword);
+	this->replacingKeyword = replacingKeyword;
+	//4. 대/소문자 구분 체크박스를 읽는다.
+	this->matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
+	//5. OnReplaceAllButtonClikedCommand로 메세지를 보낸다.
+	this->notepadForm->SendMessage(WM_COMMAND, ID_ONREPLACEALLBUTTONCLICKEDCOMMAND);
 }
 
 //6. 취소 버튼을 클릭했을 때
@@ -570,17 +483,6 @@ void ReplacingDialog::OnCancelButtonClicked()
 //7.닫기버튼을 클릭했을 때
 void ReplacingDialog::OnClose()
 {
-#if 0
-	// 찾기 프레임 윈도우를 띄우기 전에 찾기 프레암 윈도우가 있는지 확인하고 있으면 할당해제한다.
-	if (this->notepadForm->findReplaceDialog != 0)
-	{
-		//CFindReplaceDialog를 할당해제할때는 delete대신에 DestroyWindow를 이용하자!
-		this->notepadForm->findReplaceDialog->DestroyWindow();
-		//delete this->notepadForm->findingDialog;
-		//댕글링 포인터를 0으로 안바꿔주면 할당해제가 됬는데 다시 할당해제를 하러 들어와서 에러가난다.
-		//this->notepadForm->findReplaceDialog = 0;
-	}
-#endif
 	this->notepadForm->findReplaceDialog = 0;
 	//1. 바꾸기 다이얼로그를 닫는다.
 	CFindReplaceDialog::OnClose();

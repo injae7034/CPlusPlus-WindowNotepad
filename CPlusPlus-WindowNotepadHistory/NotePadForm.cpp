@@ -402,8 +402,10 @@ void NotepadForm::OnCommand(UINT nId)
 				}
 			}
 		}
-		//3.4 선택영역을 지우거나 선택영역을 잘라내는 command이면
-		else if (nId == IDM_NOTE_REMOVE || nId == IDM_NOTE_CUT)
+		//3.4 선택영역을 지우거나 선택영역을 잘라내거나 바꾸는 command이면
+		else if (nId == IDM_NOTE_REMOVE || nId == IDM_NOTE_CUT
+			|| nId == ID_ONREPLACEBUTTONCLICKEDCOMMAND
+			|| nId == ID_ONREPLACEALLBUTTONCLICKEDCOMMAND)
 		{
 			//3.4.1.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);

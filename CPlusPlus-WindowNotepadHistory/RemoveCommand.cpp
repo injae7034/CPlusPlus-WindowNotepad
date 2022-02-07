@@ -17,6 +17,7 @@ RemoveCommand::RemoveCommand(NotepadForm* notepadForm)
 	this->isRedoMacroEnd = false;
 	this->selectedStartXPos = 0;
 	this->selectedStartYPos = 0;
+	this->isSelectedTextsRemoved = true;//무조건 선택영역을 지우기 때문에 default값이 true
 }
 
 //처음 실행 및 다시 실행
@@ -177,11 +178,9 @@ void RemoveCommand::Unexecute()
 	//11. 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
-		//11.1 자동개행클래스를 생성한다.
-		RowAutoChange rowAutoChange(this->notepadForm);
-		//11.2 부분자동개행을 한다.
+		//11.1 부분자동개행을 한다.
 		Long endPastedRowPos = rowAutoChange.DoPartRows(currentRowPos, rowIndex);
-		//11.3 붙여넣기가 끝나는 줄로 이동시킨다.
+		//11.2 붙여넣기가 끝나는 줄로 이동시킨다.
 		//붙여넣기가 끝나는 줄은 OnSize에서 부분자동개행을 해서 처리되기 때문에 캐럿의 위치만 조정해주면 됨!
 		currentRowPos = this->notepadForm->note->Move(endPastedRowPos);
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
@@ -266,6 +265,12 @@ bool RemoveCommand::IsRedoMacroEnd()
 void RemoveCommand::SetRedone()
 {
 	this->isRedone = true;
+}
+
+//선택영역이 지워졌는지 확인 여부
+bool RemoveCommand::IsSelectedTextsRemoved()
+{
+	return this->isSelectedTextsRemoved;
 }
 
 //소멸자

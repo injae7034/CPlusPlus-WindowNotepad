@@ -90,14 +90,33 @@ Long Command::GetLetterIndex()
 	return -1;
 }
 
-//선택이 시작되는 글자의 위치구하기
-Long Command::GetSelectedStartXPos()
+//시작하는 글자의 위치구하기
+Long Command::GetStartXPos()
 {
 	return -1;
 }
-
-//선택이 시작되는 줄의 위치구하기
-Long Command::GetSelectedStartYPos()
+//시작하는 줄의 위치구하기
+Long Command::GetStartYPos()
+{
+	return -1;
+}
+//선택이 끝나는 줄의 위치 구하기
+Long Command::GetSelectedEndYPos()
+{
+	return -1;
+}
+//선택이 끝나는 글자 위치 구하기
+Long Command::GetSelectedEndXPos()
+{
+	return -1;
+}
+//붙여넣기가 끝나는 줄의 위치구하기
+Long Command::GetPastingEndYPos()
+{
+	return -1;
+}
+//붙여넣기가 끝나는 글자의 위치구하기
+Long Command::GetPastingEndXPos()
 {
 	return -1;
 }

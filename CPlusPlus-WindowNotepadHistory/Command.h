@@ -21,8 +21,12 @@ public:
 	virtual Long GetStartPasteLetterIndex();
 	virtual Long GetRowIndex();
 	virtual Long GetLetterIndex();
-	virtual Long GetSelectedStartXPos();
-	virtual Long GetSelectedStartYPos();
+	virtual Long GetStartXPos();//시작하는 글자의 위치구하기
+	virtual Long GetStartYPos();//시작하는 줄의 위치구하기
+	virtual Long GetSelectedEndXPos();//선택이 끝나는 글자의 위치구하기
+	virtual Long GetSelectedEndYPos();//선택이 끝나는 줄의 위치구하기
+	virtual Long GetPastingEndXPos();//붙여넣기가 끝나는 글자의 위치구하기
+	virtual Long GetPastingEndYPos();//붙여넣기가 끝나는 줄의 위치구하기
 	virtual ~Command() = 0;//추상클래스 소멸자
 	//인라인함수정의
 	NotepadForm* GetNotepadForm() const;
