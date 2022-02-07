@@ -304,9 +304,14 @@ void Note::NextWordOnRowAutoChange(Long currentRowIndex, Long currentLetterIndex
 	if (i == rowContentLength)
 	{
 		//7.1 다음 줄로 이동한다.
-		currentRowIndex++;
-		//7.2 다음 줄의 처음글자위치로 이동한다.
-		currentLetterIndex = 0;
+		//currentRowIndex++;
+		Long previousRowIndex = currentRowIndex;
+		currentRowIndex = this->Next();
+		if (previousRowIndex < currentRowIndex)
+		{
+			//7.2 다음 줄의 처음글자위치로 이동한다.
+			currentLetterIndex = 0;
+		}
 		//7.3 줄을 구한다.
 		row = this->GetAt(currentRowIndex);
 		//7.4 줄의 content를 구한다.
@@ -648,9 +653,10 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 	//6. 현재 글자 위치가 0보다 크면(현재 글자 위치가 0이면 단어단위로 이동할 수 X)
 	if (currentLetterIndex > 0)
 	{
+		bool isThereTabOrSpaceBeforeChar = false;
 		//6.1 줄에서 읽어야 할 글자 한 칸 만큼 감소시킨다.
 		i = currentLettersLength - 1;
-		//currentLetterIndex--;
+		currentLetterIndex--;
 		//6.2 줄에서 i번째 읽을 글자가 한글이면
 		if ((rowContent[i] & 0x80))//한글이면(2byte문자)
 		{
@@ -671,6 +677,7 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 		//6.4 현재 글자 위치가 1보다 크고 읽은 글자가 스페이스(공백)문자인동안 반복한다.
 		while (currentLetterIndex > 1 && letterContent == " ")
 		{
+			isThereTabOrSpaceBeforeChar = true;
 			//6.4.1 현재 글자위치를 감소시킨다.
 			currentLetterIndex--;
 			i--;
@@ -687,6 +694,7 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 		//6.6 현재 글자 위치가 1보다 크고 읽은 글자가 탭문자인동안 반복한다.
 		while (currentLetterIndex > 1 && letterContent == "\t")
 		{
+			isThereTabOrSpaceBeforeChar = true;
 			//6.6.1 현재 글자위치를 감소시킨다.
 			currentLetterIndex--;
 			i--;
@@ -700,9 +708,15 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 			currentLetterIndex--;
 			i--;
 		}
-		//6.8 현재 글자 위치가 1보다 크고 읽은 글자가 스페이스와 탭문자가 아닌동안 반복한다.
+		//6.8 현재 글자 위치가 1보다 크고 읽은 글자가 스페이스와 탭문자가 아니면
 		if (currentLetterIndex > 1 && letterContent != " " && letterContent != "\t")
 		{
+			if (isThereTabOrSpaceBeforeChar == false)
+			{
+				//6.9.1 현재 글자 위치를 감소시킨다.
+				currentLetterIndex--;
+				i--;
+			}
 			//6.8.1 현재 읽은 글자가 한글이면
 			if ((rowContent[i] & 0x80))//한글이면(2byte문자)
 			{
@@ -796,6 +810,12 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 				}
 			}
 		}
+
+		if (letterContent == " " || letterContent == "\t")
+		{
+			currentLetterIndex++;
+		}
+
 	}
 	//7. 현재 글자 위치가 제일 처음이면(0이면)
 	else if (currentLetterIndex == 0)
@@ -834,7 +854,7 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 	//10. 현재 줄의 length를 구한다.
 	Long currentRowContentLength = currentRowContent.length();
 	//11. i가 현재 줄의 length보다 크거나 같은동안 반복한다.
-	while (i >= currentRowContentLength)
+	while (i > currentRowContentLength)
 	{
 		//11.1 현재 줄의 길이를 뺀다.
 		i -= currentRowContentLength;
@@ -863,8 +883,8 @@ void Note::PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterI
 	currentRowIndex = this->Move(currentRowIndex);
 	currentRow = this->GetAt(currentRowIndex);
 	currentLetterIndex = currentRow->Move(currentLetterIndex);
-	//13. 현재 줄의 위치가 현재 줄의 마지막 글자 위치이면
-	if (currentLetterIndex == currentRow->GetLength())
+	//13. 현재 줄의 위치가 현재 줄의 마지막 글자 위치이고 노트에 줄이 최소 2개 이상이면
+	if (currentLetterIndex == currentRow->GetLength() && this->GetLength() > 1)
 	{
 		//13.1 다음 줄을 구한다.
 		Glyph* nextRow = this->GetAt(currentRowIndex + 1);

@@ -88,17 +88,6 @@ void PageMoveController::Update()
 		//6.4 수직스크롤바의 Thumb를 수직스크롤의 현재 위치로 이동시킨다.
 		this->notepadForm->SetScrollPos(SB_VERT,
 			this->notepadForm->scrollController->scroll[1]->GetCurrentPos());
-#if 0
-		//6.1 수직스크롤이 이동할 범위(distance)를 구한다.
-		//캐럿의 세로 위치 마지막 지점에서 화면의 세로길이의 차로 정한다.
-		distance = endCaretYPos - this->notepadForm->
-			scrollController->scroll[1]->GetPageSize();
-		//6.2 수직스크롤의 현재위치를 distance로 이동시킨다.
-		this->notepadForm->scrollController->scroll[1]->Move(distance);
-		//6.3 수직스크롤바의 Thumb를 수직스크롤의 현재 위치로 이동시킨다.
-		this->notepadForm->SetScrollPos(SB_VERT,
-			this->notepadForm->scrollController->scroll[1]->GetCurrentPos());
-#endif
 	}
 	//7. 메모장에서 캐럿의 가로위치(caretXPos)를 구한다.
 	caretXPos = this->notepadForm->textExtent->GetTextWidth(this->notepadForm->

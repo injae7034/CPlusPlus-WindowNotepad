@@ -58,7 +58,14 @@ void RowAutoChange::DoAllRows()
 			//3.5.2 rowIndex번째 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의
 			//글자부터 rowIndex번째 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.
 			//(DummyRow생성)
-			glyph = row->Split(letterIndex, true);
+			if (letterIndex != 0)
+			{
+				glyph = row->Split(letterIndex, true);
+			}
+			else if (letterIndex == 0)
+			{
+				glyph = row->Split(1, true);
+			}
 			//3.5.3 새로운 줄을 rowIndex번째 줄의 다음 위치에 끼워넣는다.
 			rowIndex = this->notepadForm->note->Add(rowIndex + 1, glyph);
 		}
@@ -151,7 +158,14 @@ void RowAutoChange::DoRow()
 			//5.5.2 rowIndex번째 줄의 가로 길이가 현재화면의 가로 길이보다 커진 시점의
 			//글자부터 rowIndex번째 줄에서 letterIndex 다음 위치에 있는 글자들을 나눈다.
 			//(DummyRow생성)
-			dummyRow = row->Split(letterIndex, true);
+			if (letterIndex != 0)
+			{
+				dummyRow = row->Split(letterIndex, true);
+			}
+			else if (letterIndex == 0)
+			{
+				dummyRow = row->Split(1, true);
+			}
 			//5.5.3 새로운 줄을 rowIndex번째 줄의 다음 위치에 끼워넣는다.
 			i = this->notepadForm->note->Add(i + 1, dummyRow);
 			//5.5.4 count를 세준다.

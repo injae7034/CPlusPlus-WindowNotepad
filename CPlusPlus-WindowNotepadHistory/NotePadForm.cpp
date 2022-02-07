@@ -39,12 +39,18 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_MESSAGE(WM_IME_CHAR, OnImeChar)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
 	ON_COMMAND_RANGE(IDM_FILE_OPEN, ID_ONCHARCOMMAND, OnCommand)
-	ON_WM_MENUSELECT(IDR_MENU1 ,OnMenuSelect)
+	ON_WM_MENUSELECT(IDR_MENU1, OnMenuSelect)
 	//ON_REGISTERED_MESSAGE() //찾기공통대화상자에서 부모윈도우로 메세지를 전달하기 위해 필요함
 	ON_WM_KEYDOWN()
 	ON_WM_VSCROLL()
 	ON_WM_HSCROLL()
 	ON_WM_SIZE()
+	ON_WM_MOUSEWHEEL()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONDBLCLK()
+	ON_WM_RBUTTONDOWN()
+	ON_WM_MOUSEMOVE()
+	ON_WM_LBUTTONUP()
 	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
@@ -61,6 +67,7 @@ NotepadForm::NotepadForm()
 	this->isDirty = false;//false로 초기화시킴
 	this->isSelecting = false;//false로 초기화시킴
 	this->isRowAutoChanging = false;//false로 초기화 시킴.
+	this->isMouseLButtonClicked = false;//false로 초기화 시킴.
 	this->fileName = "제목 없음";
 	this->filePath = "";
 	this->previousPageWidth = 0;//처음생성될때는 현재 화면 너비를 0으로 초기화해줌
@@ -73,6 +80,7 @@ NotepadForm::NotepadForm()
 	this->printInformation = NULL;
 	this->previewForm = NULL;
 	this->pageSetUpInformation = NULL;
+	this->caretController = 0;
 }
 
 //메모장 윈도우가 생성될 때
@@ -99,6 +107,8 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//8. CMenu를 notepadForm에 연결한다.
 	this->menu.LoadMenu(IDR_MENU1);
 	SetMenu(&this->menu);
+	//마우스 오른쪽 버튼을 클릭했을 때 메뉴를 notepadForm에 연결한다.
+	this->mouseRButtonMenu.LoadMenu(IDR_MENU3);
 	//9. CMenu의 메뉴들이 자동으로 Enable되는 것을 막기 위해 FALSE 처리를 해줘야함
 	//아니면 다른 곳에서 Unenable시켜도 계속해서 자동으로 Enable시켜버림!
 	this->m_bAutoMenuEnable = FALSE;
@@ -106,18 +116,29 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	//실행취소, 다시실행 메뉴를 비활성화 시킨다.
+	this->menu.EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	this->menu.EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	//마우스클릭 메뉴의 복사하기, 잘라내기, 삭제, 실행취소, 다시 실행 메뉴를 비활성화시킨다.
+	this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	//11. 외부클립보드에 현재 문자열이 저장되어있으면
 	unsigned int priority_list = CF_TEXT;
 	if (GetPriorityClipboardFormat(&priority_list, 1) == CF_TEXT)
 	{
 		//11.1 붙여넣기 메뉴를 활성화시켜준다.
 		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
 	}
 	//12. 외부클립보드에 현재 문자열이 저장되어 있지않으면
 	else if (GetPriorityClipboardFormat(&priority_list, 1) == NULL)
 	{
 		//12.1 붙여넣기 메뉴를 비활성화시킨다.
 		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
 	//CFont에서 사용하고자 하는 글자크기와 글자체로 초기화시킴.
 	//기본생성자로 생성된 this->font에 매개변수 5개생성자로 치환(=)시킴
@@ -356,9 +377,12 @@ LRESULT NotepadForm::OnStartCompostion(WPARAM wParam, LPARAM lParam)
 		//1.9 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
 		this->selectedStartYPos = 0;
 		//1.10 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
-		this->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-		this->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-		this->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
 
 	return 0;
@@ -378,6 +402,7 @@ void NotepadForm::OnKillFocus(CWnd* pNewWnd)
 {
 	//1. CaretController를 구독해제한다.(여기서 할당해제도 같이됨)
 	Subject::Detach(this->caretController);
+	this->caretController = 0;
 }
 
 //Command패턴
@@ -400,8 +425,14 @@ void NotepadForm::OnCommand(UINT nId)
 			isStop = false;
 			//3.2.2 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command, isStop);
-			//3.2.3 redoList를 초기화시킨다.
+			//3.2.3 실행취소를 활성화 시킨다.
+			this->menu.EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_ENABLED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_ENABLED);
+			//3.2.4 redoList를 초기화시킨다.
 			this->commandHistory->MakeRedoListEmpty();
+			//3.2.5 다시 실행을 비활성화시킨다.
+			this->menu.EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		}
 		//3.3 글자를 지우는 command이거나 붙여넣기 command이면
 		else if (nId == ID_BACKSPACEKEYACTIONCOMMAND || nId == ID_DELETEKEYACTIONCOMMAND
@@ -416,8 +447,14 @@ void NotepadForm::OnCommand(UINT nId)
 			{
 				//3.3.2.1 UndoList에 추가한다.
 				this->commandHistory->PushUndoList(command, isStop);
-				//3.3.2.2 redoList를 초기화시킨다.
+				//3.3.2.2 실행취소를 활성화 시킨다.
+				this->menu.EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_ENABLED);
+				this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_ENABLED);
+				//3.3.2.3 redoList를 초기화시킨다.
 				this->commandHistory->MakeRedoListEmpty();
+				//3.3.2.4 다시 실행을 비활성화시킨다.
+				this->menu.EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+				this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 			}
 			//3.3.3 Command에 변경사항이 없으면
 			else
@@ -438,8 +475,14 @@ void NotepadForm::OnCommand(UINT nId)
 			isStop = true;
 			//3.4.2 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command, isStop);
-			//3.4.3 redoList를 초기화시킨다.
+			//3.4.3 실행취소를 활성화 시킨다.
+			this->menu.EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_ENABLED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_ENABLED);
+			//3.4.4 redoList를 초기화시킨다.
 			this->commandHistory->MakeRedoListEmpty();
+			//3.4.5 다시 실행을 비활성화시킨다.
+			this->menu.EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		}
 		//3.5 글자를 입력하는 command나 글자를 지우는 command가 아니면
 		//undoList에 들어간 command가 아니면 따로 할당해제를 해줘야 메모리 누수가 안생긴다.
@@ -478,6 +521,9 @@ void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 			this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 			this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		}
 		//3.3.4 메모장에 선택이 되어 있으면
 		else
@@ -485,6 +531,9 @@ void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
 			this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
 			this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+			this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
 		}
 		//3.3.5 변화를 메모장에 갱신한다.
 		//if 구조안에서 Notify를 해줘야 Ctrl이나 Shift, Alt Capslock과 같은 특수기능키가 눌렸을 때
@@ -563,15 +612,493 @@ void NotepadForm::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	}
 }
 
+//메모장에서 마우스 휠로 스크롤 이동할 때
+BOOL NotepadForm::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+{
+	//1. pageMoveController가 할당되어 있으면
+	if (this->pageMoveController != 0)
+	{
+		//1.1 pageMoveController를 구독해제(할당해제)한다.
+		Subject::Detach(this->pageMoveController);
+		//1.2 댕글링 포인터를 없애기 위해 0을 저장한다.
+		this->pageMoveController = 0;
+	}
+	//2. scrollActionCreator를 생성한다.
+	ScrollActionCreator scrollActionCreator(this);
+	//3. 휠을 아래로 움직였으면
+	UINT nSBCode;
+	if (zDelta < 0)
+	{
+		nSBCode = 1;
+	}
+	//4. 휠을 위로 움직였으면
+	else
+	{
+		nSBCode = 0;
+	}
+	//5. concreteScrollAction을 생성한다.
+	ScrollAction* scrollAction = scrollActionCreator.Create(nSBCode);
+	//6. scrollAction이 NULL이 아니면
+	if (scrollAction != NULL)
+	{
+		//6.1 수직스크롤이 있으면
+		Long i = 0;
+		if (GetStyle() & WS_VSCROLL)
+		{
+			//6.1.1 3번 반복한다.
+			while (i < 3)
+			{
+				scrollAction->OnVScroll(nSBCode, 0, NULL);
+				i++;
+			}
+		}
+		//6.2 수직 스크롤이 없고 수평스크롤이 있으면
+		else if (GetStyle() & WS_HSCROLL)
+		{
+			//6.2.1 3번 반복한다.
+			while (i < 3)
+			{
+				scrollAction->OnHScroll(nSBCode, 0, NULL);
+				i++;
+			}
+		}
+		//6.3 scrollAction을 할당해제한다.
+		delete scrollAction;
+	}
+	//7. 변경사항을 옵저버들에게 알린다.
+	this->Notify();
+	this->Invalidate();
+	//8. pageMoveController가 할당해제되어있으면
+	if (this->pageMoveController == 0)
+	{
+		//8.1 pageMoveController를 다시 할당해준다.
+		this->pageMoveController = new PageMoveController(this);
+	}
+
+	return CFrameWnd::OnMouseWheel(nFlags, zDelta, pt);
+}
+
+//왼쪽 마우스 버튼을 클릭했을 때
+void NotepadForm::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	//마우스 왼쪽 버튼을 클릭했다고 표시한다.
+	this->isMouseLButtonClicked = true;
+	//1. shift키가 눌러져 있는지 확인한다.
+	Long shiftPressedCheck = GetKeyState(VK_SHIFT);
+	//2. shift키를 안눌렀고, 선택이 진행중이면
+	if (!(shiftPressedCheck & 0x80) && this->isSelecting == true)
+	{
+		//2.1 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
+		this->selectingTexts->Undo();
+		//2.2 선택이 끝난 상태로 바꾼다.
+		this->isSelecting = false;
+		//2.3 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+		this->selectedStartXPos = 0;
+		//2.4 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+		this->selectedStartYPos = 0;
+		this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	}
+	//3. 마우스가 이동하기 전에 줄의 위치와 글자 위치를 구한다.
+	Long previousRowIndex = this->note->GetCurrent();
+	Long previousLetterIndex = this->current->GetCurrent();
+	//3. 수직스크롤의 현재 위치를 구한다.
+	Long currentScrollYPos = this->GetScrollPos(SB_VERT);
+	//4. 마우스가 클릭한 곳의 y좌표를 구한다.
+	Long mouseClickYPos = point.y + currentScrollYPos;
+	//5. 노트의 첫 줄부터 길이를 세서 마우스가 클릭한 곳의 y좌표보다 작거나 같은동안
+	//그리고 마지막 줄의 위치보다 작은동안 반복한다.
+	Long currentRowIndex = 0;
+	Long currentRowPos = currentRowIndex * this->textExtent->GetHeight()
+		+ this->textExtent->GetHeight();
+	Long lastRowIndex = this->note->GetLength() - 1;
+	while (currentRowPos < mouseClickYPos && currentRowIndex < lastRowIndex)
+	{
+		//5.1 줄의 위치를 증가시킨다.
+		currentRowIndex++;
+		//5.2 줄의 길이를 구한다.
+		currentRowPos = currentRowIndex * this->textExtent->GetHeight()
+			+ this->textExtent->GetHeight();
+	}
+	//6. 줄의 위치를 이동시킨다.
+	currentRowIndex = this->note->Move(currentRowIndex);
+	this->current = this->note->GetAt(currentRowIndex);
+	//7. 수평스크롤의 현재 위치를 구한다.
+	Long currentScrollXPos = this->GetScrollPos(SB_HORZ);
+	//8. 마우스가 클릭한 곳의 x좌표를 구한다.
+	Long mouseClickXPos = point.x + currentScrollXPos;
+	//9. 줄의 첫 글자부터 너비를 세서 마우스가 클릭한 곳의 x좌표보다 작거나 같은동안
+	//그리고 글자위치가 줄의 글자개수보다 작은동안 반복한다.
+	Long currentLetterIndex = 0;
+	Long currentLetterPos = this->textExtent->GetTextWidth(this->current
+		->GetPartOfContent(currentLetterIndex));
+	while (currentLetterPos < mouseClickXPos && currentLetterIndex < this->current->GetLength())
+	{
+		//9.1 글자 위치를 증가시킨다.
+		currentLetterIndex++;
+		//9.2 글자 너비를 구한다.
+		currentLetterPos = this->textExtent->GetTextWidth(this->current
+			->GetPartOfContent(currentLetterIndex));
+	}
+	//10. 이전 글자까지 줄의 텍스트 너비를 구한다.
+	Long previousLetterPos = this->textExtent->
+		GetTextWidth(this->current->GetPartOfContent(currentLetterIndex - 1));
+	//11. 마우스클릭 x좌표에서 이전 글자까지 줄의 텍스트 너비의 차를 구한다.
+	Long previousDifference = mouseClickXPos - previousLetterPos;
+	//12. 현재 글자까지 줄의 텍스트 너비에서 마우스클릭 x좌표의 차를 구한다.
+	Long currentDifference = currentLetterPos - mouseClickXPos;
+	//13. 이전 차가 현재 차보다 작거나 같으면
+	if (previousDifference <= currentDifference)
+	{
+		//13.1 이전 글자 위치로 이동시킨다.
+		currentLetterIndex = this->current->Move(currentLetterIndex - 1);
+	}
+	//14. 이전 차가 현재 차보다 크면
+	else
+	{
+		//14.1 글자 위치를 이동시킨다.
+		currentLetterIndex = this->current->Move(currentLetterIndex);
+	}
+	//15. Shift키를 누른 채로 왼쪽 마우스를 클릭했으면
+	if (shiftPressedCheck & 0x80)
+	{
+		//15.1 마우스가 실질적으로 이동했으면
+		if (previousRowIndex != currentRowIndex || previousLetterIndex != currentLetterIndex)
+		{
+			//15.1.1 선택이 진행 중이 아니면
+			if (this->isSelecting == false)
+			{
+				//15.1.1.1 선택이 진행되고 있는 중으로 상태를 바꾼다.
+				this->isSelecting = true;
+				//15.1.1.2 선택이 시작되는 캐럿의 x좌표를 저장한다.
+				this->selectedStartXPos = previousLetterIndex;
+				//15.1.1.3 선택이 시작되는 캐럿의 y좌표를 저장한다.
+				this->selectedStartYPos = previousRowIndex;
+				//15.1.1.4 선택영역이 생겼기 때문에 메뉴버튼에서 복사하기, 잘라내기, 삭제메뉴를 활성화시킨다.
+				this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+				this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+				this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
+				this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+				this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+				this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
+			}
+			//15.1.2 선택이 진행 중이면
+			else
+			{
+				//15.1.2.1 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
+				this->selectingTexts->Undo();
+			}
+			//15.1.3 선택이 시작되는 줄보다 현재 줄의 위치가 더크면
+			if (this->selectedStartYPos < currentRowIndex)
+			{
+				//15.1.3.1 텍스트를 다음으로 선택한다.
+				this->selectingTexts->DoNext(this->selectedStartYPos, this->selectedStartXPos,
+					currentRowIndex, currentLetterIndex);
+			}
+			//15.1.4 선택이 시작되는 줄의 위치와 현재 줄의 위치가 같으면 
+			else if (this->selectedStartYPos == currentRowIndex)
+			{
+				//15.1.4.1 선택이 시작되는 글자 위치보다 현재 글자 위치가 더크면
+				if (this->selectedStartXPos < currentLetterIndex)
+				{
+					//15.1.4.1.1 텍스트를 다음으로 선택한다.
+					this->selectingTexts->DoNext(this->selectedStartYPos, this->selectedStartXPos,
+						currentRowIndex, currentLetterIndex);
+				}
+				//15.1.4.2 선택이 시작되는 글자 위치가 현재 글자 위치보다 더 크면
+				else
+				{
+					//15.1.4.2.1 텍스트를 이전으로 선택한다.
+					this->selectingTexts->DoPrevious(this->selectedStartYPos,
+						this->selectedStartXPos, currentRowIndex, currentLetterIndex);
+				}
+			}
+			//15.1.5 선택이 시작되는 줄의 위치가 현재 줄의 위치보다 더 크면
+			else if (this->selectedStartYPos > currentRowIndex)
+			{
+				//15.1.5.1 텍스트를 이전으로 선택한다.
+				this->selectingTexts->DoPrevious(this->selectedStartYPos,
+					this->selectedStartXPos, currentRowIndex, currentLetterIndex);
+			}
+		}
+	}
+
+	this->SetCapture();
+
+	//16. 변경사항을 옵저버들에게 알린다.
+	this->Notify();
+	this->Invalidate();
+}
+
+//왼쪽 마우스 버튼을 더블 클릭했을 때
+void NotepadForm::OnLButtonDblClk(UINT nFlags, CPoint point)
+{
+	//1. 메모장에서 현재 줄의 위치를 구한다.
+	Long currentRowIndex = this->note->GetCurrent();
+	//2. 메모장에서 현재 글자의 위치를 구한다.
+	Long currentLetterIndex = this->note->GetAt(currentRowIndex)->GetCurrent();
+	Long previousRowIndex = 0;
+	Long previousLetterIndex = 0;
+	//3. 자동개행이 진행 중이 아니면
+	if (this->isRowAutoChanging == false)
+	{
+		//3.1 이동하기 전에 줄의 위치를 구한다.
+		previousRowIndex = currentRowIndex;
+		//3.2 이동하기 전에 글자의 위치를 구한다.
+		previousLetterIndex = currentLetterIndex;
+		//3.3 노트에서 단어단위로 왼쪽으로 이동한다.
+		currentLetterIndex = this->note->PreviousWord();
+		//3.4 이동한 후에 줄의 위치를 구한다.
+		currentRowIndex = this->note->GetCurrent();
+		//3.5 현재 줄을 이동한 후의 줄로 변경한다.
+		this->current = this->note->GetAt(currentRowIndex);
+	}
+	//4. 자동개행이 진행 중이면
+	else
+	{
+		//4.1 노트에서 자동개행 진행 중인 상태에서 단어단위로 오른쪽으로 이동한다.
+		this->note->
+			PreviousWordOnRowAutoChange(currentRowIndex, currentLetterIndex);
+		//4.2 이동한 후에 줄의 위치를 구한다.
+		currentRowIndex = this->note->GetCurrent();
+		//4.3 메모장의 현재 줄을 이동한 후의 줄로 변경한다.
+		this->current = this->note->GetAt(currentRowIndex);
+	}
+	//5. 단어단위로 오른쪽으로 이동하기 전에 줄의 위치를 구한다.
+	previousRowIndex = this->note->GetCurrent();
+	//6. 단어단위로 오른쪽으로 이동하기 전에 글자의 위치를 구한다.
+	previousLetterIndex = this->current->GetCurrent();
+	//7. 자동개행이 진행 중이 아니면
+	currentRowIndex = previousRowIndex;
+	currentLetterIndex = previousLetterIndex;
+	if (this->isRowAutoChanging == false)
+	{
+		//7.1 노트에서 단어단위로 오른쪽으로 이동한다.
+		currentLetterIndex = this->note->NextWord();
+	}
+	//8. 자동개행이 진행 중이면
+	else
+	{
+		//8.1 노트에서 자동개행이 진행 중인 상태에서 단어단위로 오른쪽으로 이동한다.
+		this->note->NextWordOnRowAutoChange(currentRowIndex, currentLetterIndex);
+	}
+	//9. 단어 단위로 오른쪽으로 이동한 후에 현재 줄과 글자의 위치를 구한다.
+	currentRowIndex = this->note->GetCurrent();
+	this->current = this->note->GetAt(currentRowIndex);
+	currentLetterIndex = this->current->GetCurrent();
+	//10. 단어단위로 이동한 후에 줄의 위치가 서로 다르면
+	if (previousRowIndex < currentRowIndex)
+	{
+		//10.1 선택이 진행되고 있는 중으로 상태를 바꾼다.
+		this->isSelecting = true;
+		//10.2 선택이 시작되는 캐럿의 x좌표를 저장한다.
+		this->selectedStartXPos = previousLetterIndex;
+		//10.3 선택이 시작되는 캐럿의 y좌표를 저장한다.
+		this->selectedStartYPos = previousRowIndex;
+	}
+	//11. 단어단위로 이동한 후에 줄의 위치가 서로 같으면(한 줄 내에서 단어단위 이동이 있으면)
+	else
+	{
+		//11.1 단어 단위로 이동이 있었으면
+		if (previousLetterIndex < currentLetterIndex)
+		{
+			//11.1.1 선택이 진행되고 있는 중으로 상태를 바꾼다.
+			this->isSelecting = true;
+			//11.1.2 선택이 시작되는 캐럿의 x좌표를 저장한다.
+			this->selectedStartXPos = previousLetterIndex;
+			//11.1.3 선택이 시작되는 캐럿의 y좌표를 저장한다.
+			this->selectedStartYPos = previousRowIndex;
+		}
+	}
+	//12. 선택이 진행 중이면
+	if (this->isSelecting == true)
+	{
+		//12.1 텍스트를 선택한다.
+		this->selectingTexts->DoNext(previousRowIndex, previousLetterIndex,
+			currentRowIndex, currentLetterIndex);
+		//12.2 선택영역이 생겼기 때문에 메뉴버튼에서 복사하기, 잘라내기, 삭제메뉴를 활성화시킨다.
+		this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+		this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+		this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
+		//12.3 변경사항을 옵저버들에게 알린다.
+		this->Notify();
+		this->Invalidate();
+	}	
+}
+
+//오른쪽 마우스 버튼을 클릭했을 때
+void NotepadForm::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	CMenu* MyMenu;
+	CPoint pt;
+	GetCursorPos(&pt);
+	MyMenu = this->mouseRButtonMenu.GetSubMenu(0);
+	MyMenu->TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON, pt.x, pt.y, this);
+}
+
+//마우스를 움직일 때
+void NotepadForm::OnMouseMove(UINT nFlags, CPoint point)
+{
+	//1. shift키가 눌러져 있는지 확인한다.
+	//Long shiftPressedCheck = GetKeyState(VK_SHIFT);
+	//마우스 왼쪽 버튼이 눌러져 있거나 또는 shift키를 누른 채로 마우스 왼쪽 버튼을 눌렀으면
+	if (this->isMouseLButtonClicked == true
+		|| nFlags == MK_SHIFT && this->isMouseLButtonClicked == true)
+	{
+		//1. 마우스가 이동하기 전에 줄의 위치와 글자 위치를 구한다.
+		Long previousRowIndex = this->note->GetCurrent();
+		Long previousLetterIndex = this->current->GetCurrent();
+		//2. 수직스크롤의 현재 위치를 구한다.
+		Long currentScrollYPos = this->GetScrollPos(SB_VERT);
+		//3. 마우스가 드래그한 곳의 y좌표를 구한다.
+		Long mouseDragYPos = point.y + currentScrollYPos;
+		//4. 노트의 첫 줄부터 길이를 세서 마우스가 드래그한 곳의 y좌표보다 작거나 같은동안
+		//그리고 마지막 줄의 위치보다 작은동안 반복한다.
+		Long currentRowIndex = 0;
+		Long currentRowPos = currentRowIndex * this->textExtent->GetHeight()
+			+ this->textExtent->GetHeight();
+		Long lastRowIndex = this->note->GetLength() - 1;
+		while (currentRowPos < mouseDragYPos && currentRowIndex < lastRowIndex)
+		{
+			//4.1 줄의 위치를 증가시킨다.
+			currentRowIndex++;
+			//4.2 줄의 길이를 구한다.
+			currentRowPos = currentRowIndex * this->textExtent->GetHeight()
+				+ this->textExtent->GetHeight();
+		}
+		//5. 줄의 위치를 이동시킨다.
+		currentRowIndex = this->note->Move(currentRowIndex);
+		this->current = this->note->GetAt(currentRowIndex);
+		//6. 수평스크롤의 현재 위치를 구한다.
+		Long currentScrollXPos = this->GetScrollPos(SB_HORZ);
+		//7. 마우스가 드래그한 곳의 x좌표를 구한다.
+		Long mouseDragXPos = point.x + currentScrollXPos;
+		//8. 줄의 첫 글자부터 너비를 세서 마우스가 드래그한 곳의 x좌표보다 작거나 같은동안
+		//그리고 글자위치가 줄의 글자개수보다 작은동안 반복한다.
+		Long currentLetterIndex = 0;
+		Long currentLetterPos = this->textExtent->GetTextWidth(this->current
+			->GetPartOfContent(currentLetterIndex));
+		while (currentLetterPos < mouseDragXPos
+			&& currentLetterIndex < this->current->GetLength())
+		{
+			//8.1 글자 위치를 증가시킨다.
+			currentLetterIndex++;
+			//8.2 글자 너비를 구한다.
+			currentLetterPos = this->textExtent->GetTextWidth(this->current
+				->GetPartOfContent(currentLetterIndex));
+		}
+		//10. 이전 글자까지 줄의 텍스트 너비를 구한다.
+		Long previousLetterPos = this->textExtent->
+			GetTextWidth(this->current->GetPartOfContent(currentLetterIndex - 1));
+		//11. 마우스클릭 x좌표에서 이전 글자까지 줄의 텍스트 너비의 차를 구한다.
+		Long previousDifference = mouseDragXPos - previousLetterPos;
+		//12. 현재 글자까지 줄의 텍스트 너비에서 마우스클릭 x좌표의 차를 구한다.
+		Long currentDifference = currentLetterPos - mouseDragXPos;
+		//13. 이전 차가 현재 차보다 작거나 같으면
+		if (previousDifference <= currentDifference)
+		{
+			//13.1 이전 글자 위치로 이동시킨다.
+			currentLetterIndex = this->current->Move(currentLetterIndex - 1);
+		}
+		//14. 이전 차가 현재 차보다 크면
+		else
+		{
+			//14.1 글자 위치를 이동시킨다.
+			currentLetterIndex = this->current->Move(currentLetterIndex);
+		}
+		//10. 마우스가 실질적으로 이동했으면
+		if (previousRowIndex != currentRowIndex || previousLetterIndex != currentLetterIndex)
+		{
+			//10.1 선택이 진행 중이 아니면
+			if (this->isSelecting == false)
+			{
+				//10.1.1 선택이 진행되고 있는 중으로 상태를 바꾼다.
+				this->isSelecting = true;
+				//10.1.2 선택이 시작되는 캐럿의 x좌표를 저장한다.
+				this->selectedStartXPos = previousLetterIndex;
+				//10.1.3 선택이 시작되는 캐럿의 y좌표를 저장한다.
+				this->selectedStartYPos = previousRowIndex;
+				//10.1.4 선택영역이 생겼기 때문에 메뉴버튼에서 복사하기, 잘라내기, 삭제메뉴를 활성화시킨다.
+				this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+				this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+				this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
+				this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+				this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+				this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
+			}
+			//10.2 선택이 진행 중이면
+			else
+			{
+				//1.1. 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
+				this->selectingTexts->Undo();
+			}
+			//10.2 선택이 시작되는 줄보다 현재 줄의 위치가 더크면
+			if (this->selectedStartYPos < currentRowIndex)
+			{
+				//10.2.1 텍스트를 다음으로 선택한다.
+				this->selectingTexts->DoNext(this->selectedStartYPos, this->selectedStartXPos,
+					currentRowIndex, currentLetterIndex);
+			}
+			//10.3 선택이 시작되는 줄의 위치와 현재 줄의 위치가 같으면 
+			else if (this->selectedStartYPos == currentRowIndex)
+			{
+				//10.3.1 선택이 시작되는 글자 위치보다 현재 글자 위치가 더크면
+				if (this->selectedStartXPos < currentLetterIndex)
+				{
+					//10.3.1.1 텍스트를 다음으로 선택한다.
+					this->selectingTexts->DoNext(this->selectedStartYPos, this->selectedStartXPos,
+						currentRowIndex, currentLetterIndex);
+				}
+				//10.3.2 선택이 시작되는 글자 위치가 현재 글자 위치보다 더 크면
+				else
+				{
+					//10.3.2.1 텍스트를 이전으로 선택한다.
+					this->selectingTexts->DoPrevious(this->selectedStartYPos,
+						this->selectedStartXPos, currentRowIndex, currentLetterIndex);
+				}
+			}
+			//10.4 선택이 시작되는 줄의 위치가 현재 줄의 위치보다 더 크면
+			else if (this->selectedStartYPos > currentRowIndex)
+			{
+				//10.4.1 텍스트를 이전으로 선택한다.
+				this->selectingTexts->DoPrevious(this->selectedStartYPos,
+					this->selectedStartXPos, currentRowIndex, currentLetterIndex);
+			}
+			//10.5 변경사항을 옵저버들에게 알린다.
+			this->Notify();
+			this->Invalidate();
+		}
+	}
+	
+}
+
+//왼쪽 마우스 버튼을 땠을 때
+void NotepadForm::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	::ReleaseCapture();
+	//마우스 왼쪽 버튼을 땠다고 표시한다.
+	this->isMouseLButtonClicked = false;
+}
+
 //메모장에서 화면의 크기가 변경될 때
 void NotepadForm::OnSize(UINT nType, int cx, int cy)
 {
-	//1. 현재 메모장의 창의 상태(최소화, 최대화, 이전 크기로 복원)와 가로 길이와 세로 길이를 입력받는다.
+	//현재 메모장의 창의 상태(최소화, 최대화, 이전 크기로 복원)와 가로 길이와 세로 길이를 입력받는다.
 	CFrameWnd::OnSize(nType, cx, cy);
 	//1. 현재 화면의 크기를 구한다.
 	CRect rect;
 	this->GetClientRect(&rect);
 	cx = rect.Width();
+
+	//Long letterWidth = this->
+
 	//2. 현재 메모장의 상태가 최소화가 아니면(최소화이면 cx와 cy 값이 둘다 0이 되고, 
 	//cx가 0이면 아래에서 cx크기로 반복을 돌리는데 무한반복이 발생해서 최소화버튼을 누르면 뻑이남!) 
 	if (nType != SIZE_MINIMIZED)
@@ -633,12 +1160,14 @@ void NotepadForm::OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu)
 	{
 		//1.1 붙여넣기 메뉴를 활성화시켜준다.
 		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
 	}
 	//2. 외부클립보드에 문자열이 저장되어 있지 않으면
 	else if (GetPriorityClipboardFormat(&priority_list, 1) == NULL)
 	{
 		//2.1 붙여넣기 메뉴를 비활성화시킨다.
 		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
 }
 

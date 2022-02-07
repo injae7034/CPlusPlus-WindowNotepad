@@ -65,7 +65,15 @@ void ScrollController::Update()
 	scrollInfo.nMin = this->scroll[0]->min;
 	scrollInfo.nMax = this->scroll[0]->max;
 	scrollInfo.nPos = this->scroll[0]->currentPos;
-	scrollInfo.nPage = this->scroll[0]->pageSize;
+	if (this->notepadForm->isRowAutoChanging == false)
+	{
+		scrollInfo.nPage = this->scroll[0]->pageSize;
+	}
+	else
+	{
+		scrollInfo.nPage = this->scroll[0]->max + 1;
+		
+	}
 	scrollInfo.nTrackPos = 2;
 	//6. 수평스크롤바에 대한 수평스크롤 정보를 갱신해준다.
 	this->notepadForm->SetScrollInfo(SB_HORZ, &scrollInfo);

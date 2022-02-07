@@ -68,7 +68,7 @@ BEGIN
     END
     POPUP "편집"
     BEGIN
-        MENUITEM "복사하기",                        IDM_NOTE_COPY, GRAYED
+        MENUITEM "복사하기",                        IDM_NOTE_COPY
         MENUITEM "붙여넣기",                        IDM_NOTE_PASTE
         MENUITEM "잘라내기",                        IDM_NOTE_CUT
         MENUITEM "모두 선택",                       IDM_NOTE_SELECTALL
@@ -77,6 +77,21 @@ BEGIN
         MENUITEM "바꾸기",                         IDM_NOTE_REPLACE
         MENUITEM "실행 취소",                       IDM_NOTE_UNDO
         MENUITEM "다시 실행",                       IDM_NOTE_REDO
+    END
+END
+
+IDR_MENU3 MENU
+BEGIN
+    POPUP "메뉴"
+    BEGIN
+        MENUITEM "실행 취소",                       IDM_NOTE_UNDO
+        MENUITEM "다시 실행",                       IDM_NOTE_REDO
+        MENUITEM "잘라내기",                        IDM_NOTE_CUT
+        MENUITEM "복사하기",                        IDM_NOTE_COPY
+        MENUITEM "붙여넣기",                        IDM_NOTE_PASTE
+        MENUITEM "삭제",                          IDM_NOTE_REMOVE
+        MENUITEM SEPARATOR
+        MENUITEM "모두 선택\t\t\t(&A)",             IDM_NOTE_SELECTALL
     END
 END
 

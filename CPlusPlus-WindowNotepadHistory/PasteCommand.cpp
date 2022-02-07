@@ -114,8 +114,8 @@ void PasteCommand::Execute()
 					glyph = glyphCreator.Create(content + i);
 					//2.1.6.2.2 새로운 줄을 추가한다.
 					rowIndex = this->glyph->Add(glyph);
-					//2.1.6.2.3 다음 글자가 '\n'이면
-					if (content[i + 1] == '\n')
+					//2.1.6.2.3 현재 글자가 '\r'이고 다음 글자가 '\n'이면
+					if (content[i] == '\r' && content[i + 1] == '\n')
 					{
 						i++;
 					}

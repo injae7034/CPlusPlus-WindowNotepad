@@ -138,32 +138,6 @@ Long Subject::Search(Observer* key)
 	Long index = this->observers.LinearSearchUnique(key, CompareObserver);
 	//2. 위치를 출력한다.
 	return index;
-#if 0
-	//1. 찾고자 하는 옵저버를 매개변수로 입력받는다.
-	Long index = 0;
-	Observer* observer = 0;
-	//2. index가 length보다 작은 동안 그리고 찾고자 하는 옵저버가 아닌동안 반복한다.
-	while (index < this->length && dynamic_cast<Observer*>(observer) != key)
-	{
-		//2.1 옵저버 리스트에서 옵저버를 구한다.
-		observer = this->observers.GetAt(index);
-		//2.2 index를 증가시킨다.
-		index++;
-	}
-	//3. 찾고자 하는 옵저버를 찾았으면
-	if (dynamic_cast<Observer*>(observer) == key)
-	{
-		//3.1 index를 감소시켜준다.
-		index--;
-	}
-	//4. 찾고자 하는 옵저버를 못찾았으면
-	else
-	{
-		index = -1;
-	}
-	//5. 찾은 위치를 반환한다.
-	return index;
-#endif
 }
 
 //메모리맵을 그려서 정확하게 비교하자

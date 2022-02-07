@@ -1,6 +1,7 @@
 #include "CommandHistory.h"
 #include "NotepadForm.h"
 #include "Command.h"
+#include "Glyph.h"
 #include "Row.h"
 
 //디폴트 생성자 정의
@@ -58,6 +59,7 @@ void CommandHistory::Undo()
 				isStop = true;
 			}
 		}
+		
 		//1.6 previousCommand가 undoMacroEnd이면
 		if (isStop == false && previousCommand->IsUndoMacroEnd() == true
 			|| command->IsSelectedTextsRemoved() == true)
@@ -65,6 +67,23 @@ void CommandHistory::Undo()
 			//1.6.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
 			this->undoList.Push(previousCommand);
 		}
+	}
+	//redoList에 command가 있으면
+	if (this->redoListLength > 0)
+	{
+		// 다시실행을 활성화 시킨다.
+		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REDO, MF_BYCOMMAND | MF_ENABLED);
+		this->notepadForm->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REDO, 
+			MF_BYCOMMAND | MF_ENABLED);
+	}
+	//undoList에 command가 없으면
+	if (this->undoListLength == 0)
+	{
+		// 실행취소를 비활성화 시킨다.
+		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_UNDO, 
+			MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->notepadForm->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_UNDO,
+			MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
 }
 
@@ -133,6 +152,22 @@ void CommandHistory::Redo()
 			this->redoList.Push(previousCommand);
 		}
 	}
+	//undoList에 command가 있으면
+	if (this->undoListLength > 0)
+	{
+		// 실행취소를 활성화 시킨다.
+		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_ENABLED);
+		this->notepadForm->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_UNDO, MF_BYCOMMAND | MF_ENABLED);
+	}
+	//redoList에 command가 없으면
+	if (this->redoListLength == 0)
+	{
+		// 다시실행을 비활성화 시킨다.
+		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REDO,
+			MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+		this->notepadForm->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REDO,
+			MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+	}
 }
 
 //UndoList의 제일 마지막 배열 요소 구하기
@@ -150,47 +185,53 @@ Command* CommandHistory::GetRedoListTop()
 //OnCharCommand, OnImeCharCommand와 같이 메모장에 텍스트를 입력하는 command를 undoList에 넣기
 Long CommandHistory::PushUndoList(Command* command, bool isStop)
 {
-	//1. isStop이 false이면
+	//1. 현재 undoList에서 마지막 값을 구한다.
+	Command* lastCommand = this->undoList.GetTop();
+	//2. isStop이 false이면
 	if (isStop == false)
 	{
-		//1.1 glyph를 구한다.
+		//2.1 glyph를 구한다.
 		Glyph* glyph = command->GetGlyph();
-		//1.2 매개변수로 입력받은 command가 개행문자를 가지고 있으면
+		//2.2 매개변수로 입력받은 command가 개행문자를 가지고 있으면
 		if (dynamic_cast<Row*>(glyph))
 		{
-			//1.2.1 command를 undoMacro출력이 끝나는 지점으로 표시한다.
+			//2.2.1 command를 undoMacro출력이 끝나는 지점으로 표시한다.
 			command->SetUndoMacroEnd();
 		}
-		Long lastCommandLetterIndex = 0;
-		//1.3 현재 undoList에서 마지막 값을 구한다.
-		Command* lastCommand = this->undoList.GetTop();
-		//1.4 undoList에서 lastCommand가 있으면(undoList에 저장된 command가 한 개라도 있으면)
+		Long lastCommandLetterIndex = 0;//최신 command의 글자위치
+		//2.3 undoList에서 lastCommand가 있으면(undoList에 저장된 command가 한 개라도 있으면)
 		if (lastCommand != 0)
 		{
-			//1.4.2 lastCommand와 command의 줄의 위치가 같으면
+			//2.3.1 lastCommand와 command의 줄의 위치가 같으면
 			if (lastCommand->GetPastingEndYPos() == command->GetPastingEndYPos())
 			{
-				//1.4.2.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
+				//2.3.1.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
 				lastCommandLetterIndex = lastCommand->GetPastingEndXPos() + 1;
 				if (lastCommandLetterIndex != command->GetPastingEndXPos())
 				{
-					//1.4.2.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+					//2.3.1.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 					lastCommand->SetUndoMacroEnd();
 				}
 			}
-			//1.4.3 lastCommand와 command의 줄의 위치가 서로 다르면
+			//2.3.2 lastCommand와 command의 줄의 위치가 서로 다르면
 			else if (lastCommand->GetPastingEndYPos() != command->GetPastingEndYPos())
 			{
-				//1.4.3.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+				//2.3.2.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 				lastCommand->SetUndoMacroEnd();
 			}
 		}
 	}
-	//2. isStop이 true이면
+	//3. isStop이 true이면
 	else
 	{
-		//2.1 command를 끝나는 지점으로 표시한다.
+		//3.1 command를 끝나는 지점으로 표시한다.
 		command->SetUndoMacroEnd();
+		//3.2 undoList에서 lastCommand가 있으면(undoList에 저장된 command가 한 개라도 있으면)
+		if (lastCommand != 0)
+		{
+			//3.2.1 lastCommand를 끝나는 지점으로 표시한다.
+			lastCommand->SetUndoMacroEnd();
+		}
 	}
 	//3. undoList의 사용량이 할당량보다 크거나 같으면
 	if (this->undoListLength >= this->undoListCapacity)
@@ -209,6 +250,8 @@ Long CommandHistory::PushUndoList(Command* command, bool isStop)
 //RedoList의 제일 마지막 배열 요소 다음에 추가하기(Undo(실행취소)가 될 때, OnCharCommand들이 추가됨)
 Long CommandHistory::PushRedoList(Command* command)
 {
+	CString message;
+	Long number = command->GetStartXPos();
 	//1. Glyph를 구한다.
 	Glyph* glyph = command->GetGlyph();
 	//2. 매개변수로 입력박은 command가 개행문자를 가지고 있으면

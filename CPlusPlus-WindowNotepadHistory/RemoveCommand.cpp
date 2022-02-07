@@ -37,6 +37,23 @@ void RemoveCommand::Execute()
 	Long selectedEndRowPos = 0;//선택이 끝나는 줄 위치
 	Long selectedEndLetterPos = 0;//선택이 끝나는 글자 위치
 
+	//처음실행이 아니면
+	if (this->isRedone == true)
+	{
+		//1. 선택이 진행되고 있는 중이었으면
+		if (this->notepadForm->isSelecting == true)
+		{
+			//1.1. 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
+			this->notepadForm->selectingTexts->Undo();
+			//1.2 선택이 끝난 상태로 바꾼다.
+			this->notepadForm->isSelecting = false;
+			//1.3 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+			this->notepadForm->selectedStartXPos = 0;
+			//1.4 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+			this->notepadForm->selectedStartYPos = 0;
+		}
+	}
+
 	//2. RemoveCommand가 처음 실행되면
 	if (this->isRedone == false)
 	{

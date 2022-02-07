@@ -3,6 +3,7 @@
 // Notepad20210203+Menu.rc에서 사용되고 있습니다.
 //
 #define IDR_MENU1                       101
+#define IDR_MENU3                       108
 #define IDC_BUTTON_FIND                 1002
 #define IDC_BUTTON_CANCLE               1003
 #define IDC_BUTTON_SWAP                 1003
@@ -72,6 +73,20 @@
 #define ID_40050                        40050
 #define ID_FILE_PREVIEW                 40051
 #define IDM_FILE_PREVIEW                40052
+#define ID_40053                        40053
+#define ID_UNDO                         40054
+#define ID_40055                        40055
+#define ID_CUT                          40056
+#define ID_40057                        40057
+#define ID_PASTE                        40058
+#define ID_40059                        40059
+#define ID_40060                        40060
+#define ID_DELETE                       40061
+#define ID_40062                        40062
+#define ID_SELECTALL                    40063
+#define ID_40064                        40064
+#define ID_40065                        40065
+#define ID_40066                        40066
 #define ID_ONREPLACEALLBUTTONCLICKEDCOMMAND 40991
 #define ID_ONREPLACEBUTTONCLICKEDCOMMAND 40992
 #define ID_SHIFTCTRLDELETEKEYACTIONCOMMAND 40993
@@ -89,8 +104,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        108
-#define _APS_NEXT_COMMAND_VALUE         40053
+#define _APS_NEXT_RESOURCE_VALUE        109
+#define _APS_NEXT_COMMAND_VALUE         40067
 #define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           111
 #endif

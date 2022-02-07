@@ -44,6 +44,7 @@ public:
 	CommandHistory* commandHistory;
 	
 	//flag는 public으로
+	bool isMouseLButtonClicked;//마우스 왼쪽 버튼을 클릭했는지 판별하기 위한 flag
 	bool isRowAutoChanging;//자동개행이 되는 중인지 아닌지 판별하기 위한 flag
 	bool isSelecting;//텍스트 선택을 하는 중인지 아닌지 판별하기 위한 flag
 	bool isComposing;//한글이 조립중인지 아닌지 판별하기 위한 flag
@@ -53,6 +54,7 @@ public:
 	Long selectedStartXPos;//선택이 시작되는 x좌표
 	Long selectedStartYPos;//선택이 시작되는 y좌표
 	Long previousPageWidth;
+	CMenu mouseRButtonMenu;
 	//인라인함수 정의
 	Glyph* GetGlyph() const;
 	Glyph* GetRemovedSelectedTexts() const;
@@ -72,6 +74,12 @@ protected://#
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnClose();
 	DECLARE_MESSAGE_MAP()
 private:
@@ -87,11 +95,11 @@ private:
 //인라인함수정의
 inline Glyph* NotepadForm::GetGlyph() const
 {
-	return this->glyph;
+	return const_cast<Glyph*>(this->glyph);
 }
 inline Glyph* NotepadForm::GetRemovedSelectedTexts() const
 {
-	return this->removedSelectedTexts;
+	return const_cast<Glyph*>(this->removedSelectedTexts);
 }
 
 //함수선언(함수포인터느낌)

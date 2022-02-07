@@ -199,6 +199,7 @@ void CopyCommand::Execute()
 	Long noteIndex = this->notepadForm->clipboard->Add(copyNote);
 	//10. 복사한 texts가 생겼기 때문에 붙여넣기 메뉴를 활성화시켜준다.
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
+	this->notepadForm->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_ENABLED);
 	//내부클립보드에 복사한 내용을 외부클립보드로 옮기기
 	//11. notepadForm의 clipboard에 새로 생성한 Note(복사한 내용)와 그 길이를 구한다.
 	CString content = this->notepadForm->clipboard->

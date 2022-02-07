@@ -11,7 +11,7 @@ public:
 	Stack(const Stack& source);//복사생성자
 	~Stack();//소멸자
 	Long Push(T object);//현재 마지막 배열요소의 다음에 삽입하고 그 위치를 반환함
-	T& Pop();//마지막 배열 요소를 삭제하고 반환함(꺼내기O)
+	T Pop();//마지막 배열 요소를 삭제하고 반환함(꺼내기O)
 	T& GetTop();//스택에서 제일 마지막 위치를 반환함(꺼내기X)
 	Stack<T>& operator=(const Stack& source);//치환연산자
 	T& operator[](Long index);//첨자연산자
@@ -103,7 +103,7 @@ Long Stack<T>::Push(T object)
 }
 //마지막 배열 요소를 삭제하고 반환하기
 template <typename T>
-T& Stack<T>::Pop()
+T Stack<T>::Pop()
 {
 	//<주의>여기서는 깊은 복사개념을 쓰면 안됨! this->objects.DeleteFromRear()를 호출하면 
 	//배열에서 마지막 요소(T를 담는공간)을 할당해제하고, 개수가 1개 줄어든 배열을 만들어서 복사해서 옮김 
@@ -125,21 +125,6 @@ T& Stack<T>::Pop()
 	//(내용)이 반환되고, DeleteFromRear를 하면 힙에 할당된 Personal의 내용(마지막 배열요소)은 할당해제
 	//된다. 그러나 아까 GetAt을 통해 Personal의 내용을 반환받았기 때문에 return을 하면 Personl(내용)이
 	//반환된다.(Command*이면 Command*가 반환되듯이)
-#if 0
-	//마지막 배열 요소를 구한다.
-	T lastObject = this->objects.GetAt(this->length - 1);
-	//마지막 배열 요소를 복사한다.(깊은 복사)
-	T (*newObject) = new T(lastObject);
-	//마지막 배열 요소를 지운다.
-	this->objects.DeleteFromRear();
-	//할당량을 감소시킨다.
-	this->capacity--;
-	//사용량을 감소시킨다.
-	this->length--;
-	//복사한 마지막 배열 요소를 반환한다.
-	return *newObject;
-	//끝내다.
-#endif
 	T Object = 0;
 	//스택에 object가 있으면
 	if (this->length > 0)

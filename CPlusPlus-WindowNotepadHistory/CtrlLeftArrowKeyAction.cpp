@@ -37,9 +37,9 @@ void CtrlLeftArrowKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//4.2 이동하기 전에 글자의 위치를 구한다.
 		Long previousLetterIndex = currentLetterIndex;
 		//4.3 노트에서 단어단위로 왼쪽으로 이동한다.
-		Long currentLetterIndex = this->notepadForm->note->PreviousWord();
+		currentLetterIndex = this->notepadForm->note->PreviousWord();
 		//4.4 이동한 후에 줄의 위치를 구한다.
-		Long currentRowIndex = this->notepadForm->note->GetCurrent();
+		currentRowIndex = this->notepadForm->note->GetCurrent();
 		//4.5 현재 줄을 이동한 후의 줄로 변경한다.
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
 	}
