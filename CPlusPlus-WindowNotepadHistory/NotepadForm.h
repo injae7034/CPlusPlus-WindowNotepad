@@ -17,6 +17,7 @@ class ScrollController;
 class TextExtent;
 class Glyph;
 class PrintInformation;
+class PreviewForm;
 
 typedef signed long int Long;
 
@@ -24,9 +25,9 @@ class NotepadForm :public CFrameWnd, public Subject//다중상속
 {
 public:
 	NotepadForm();//생성자
-	//CMenu& GetCMenu() const; GetMenu가 있어서 따로 CMenu를 구하기 위한 인라인함수가 필요없음
 public:
 	//주소는 public으로
+	PreviewForm* previewForm;
 	PrintInformation* printInformation;
 	Glyph* note;
 	Glyph* current;

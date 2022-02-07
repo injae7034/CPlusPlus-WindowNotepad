@@ -66,6 +66,9 @@
 #define IDM_FILE_PRINT                  40047
 #define ID_40048                        40048
 #define IDM_FILE_SETUP                  40049
+#define ID_40050                        40050
+#define ID_FILE_PREVIEW                 40051
+#define IDM_FILE_PREVIEW                40052
 #define ID_ONREPLACEALLBUTTONCLICKEDCOMMAND 40991
 #define ID_ONREPLACEBUTTONCLICKEDCOMMAND 40992
 #define ID_SHIFTCTRLDELETEKEYACTIONCOMMAND 40993
@@ -84,7 +87,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40050
+#define _APS_NEXT_COMMAND_VALUE         40053
 #define _APS_NEXT_CONTROL_VALUE         1005
 #define _APS_NEXT_SYMED_VALUE           111
 #endif

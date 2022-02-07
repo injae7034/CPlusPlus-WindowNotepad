@@ -26,6 +26,7 @@
 #include "OnReplaceAllButtonClickedCommand.h"
 #include "FilePrintingCommand.h"
 #include "FileSetupCommand.h"
+#include "FilePreviewCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -141,6 +142,10 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == IDM_FILE_SETUP)
 	{
 		command = new FileSetupCommand(this->notepadForm);
+	}
+	else if (nId == IDM_FILE_PREVIEW)
+	{
+		command = new FilePreviewCommand(this->notepadForm);
 	}
 
 	return command;

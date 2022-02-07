@@ -12,19 +12,18 @@ class PrintInformation {
 public:
 	NotepadForm* notepadForm;
 public:
-	PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFont, CDC* printerDC = 0);
+	PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFont, HDC hdc);
 	~PrintInformation();
-	HBITMAP CreateBitmap();
 	//인라인함수
 	Glyph* GetPrintNote() const;
 	LOGFONT& GetPrintLogFont() const;
-	CDC* GetPrintDC() const;
+	HDC GetHDC() const;
 	Long GetPageRowCount() const;
 	Long GetPrintableAreaHeight() const;
 private:
 	Glyph* printNote;
 	LOGFONT printLogFont;
-	CDC* printDC;
+	HDC hdc;
 	Long pageRowCount;
 	Long printableAreaHeight;
 };
@@ -37,9 +36,9 @@ inline LOGFONT& PrintInformation::GetPrintLogFont() const
 {
 	return const_cast<LOGFONT&>(this->printLogFont);
 }
-inline CDC* PrintInformation::GetPrintDC() const
+inline HDC PrintInformation::GetHDC() const
 {
-	return const_cast<CDC*>(this->printDC);
+	return this->hdc;
 }
 inline Long PrintInformation::GetPageRowCount() const
 {

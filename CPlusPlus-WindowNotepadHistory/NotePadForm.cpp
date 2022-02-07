@@ -24,6 +24,7 @@
 #include "TextingOutVisitor.h"
 #include "SelectingVisitor.h"
 #include "SelectingTexts.h"
+#include "PreviewForm.h"
 
 HHOOK hSaveMessageBoxHook;//전역변수 선언
 
@@ -70,6 +71,7 @@ NotepadForm::NotepadForm()
 	this->textExtent = NULL;
 	this->selectingTexts = NULL;
 	this->printInformation = NULL;
+	this->previewForm = NULL;
 }
 
 //메모장 윈도우가 생성될 때
@@ -746,6 +748,17 @@ void NotepadForm::OnClose()
 		if (this->commandHistory != 0)
 		{
 			delete this->commandHistory;
+		}
+		//3.7 PreviewForm을 지운다.
+		if (this->previewForm != 0)
+		{
+			this->previewForm->SendMessage(WM_CLOSE);
+			delete this->previewForm;
+		}
+		//3.8 프린트정보를 할당해제한다.
+		if (this->printInformation != 0)
+		{
+			delete this->printInformation;
 		}
 		// 메모장을 닫는다.
 		CFrameWnd::OnClose();

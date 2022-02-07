@@ -4,23 +4,26 @@
 #include "DummyRow.h"
 
 PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFont,
-	CDC* printerDC)
+	HDC hdc)
 {
 	this->notepadForm = notepadForm;
 	this->printNote = notepadForm->note->Clone();
 	this->printLogFont = printLogFont;
-	this->printDC = printerDC;
-	//한 페이지당 줄의 수를 구한다.
+	this->hdc = hdc;
+
+	//1. 프린트 다이얼로그의 hdc에서 cdc를 구한다.
+	CDC* cdc = CDC::FromHandle(hdc);
+	//2. 한 페이지당 줄의 수를 구한다.
 	CFont font;
 	HFONT oldFont;
 	font.CreateFontIndirect(&this->printLogFont);
-	oldFont = (HFONT)this->printDC->SelectObject(font);
+	oldFont = (HFONT)cdc->SelectObject(font);
 	TEXTMETRIC text;
-	this->printDC->GetTextMetrics(&text);
-	this->printableAreaHeight = this->printDC->GetDeviceCaps(VERTRES);
+	cdc->GetTextMetrics(&text);
+	this->printableAreaHeight = cdc->GetDeviceCaps(VERTRES);
 	this->pageRowCount = this->printableAreaHeight / text.tmHeight;
 
-	//1. 메모정에 선택영역이 있으면
+	//3. 메모장에 선택영역이 있으면
 	if (this->notepadForm->isSelecting == true)
 	{
 		//선택영역을 해제한다.
@@ -72,10 +75,11 @@ PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFon
 			index = 0;
 		}
 	}
+
 	Long rowIndex = 0;
 	Glyph* row = 0;
 	Glyph* previousRow = 0;
-	//2. 메모장에서 자동개행이 진행중이면
+	//4. 메모장에서 자동개행이 진행중이면
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
 		// 전체자동개행을 취소한다.
@@ -102,7 +106,8 @@ PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFon
 			}
 		}
 	}
-	//3. 전체 자동개행을 다시해준다.
+
+	//5. 전체 자동개행을 다시해준다.
 	Long letterIndex = 0;
 	Long rowTextWidth = 0;
 	Glyph* glyph = 0;
@@ -110,8 +115,7 @@ PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFon
 	row = 0;
 	previousRow = 0;
 	//1. 현재 프린트 가능한 화면의 크기를 구한다.
-	CRect rect(0, 0, this->printDC->GetDeviceCaps(HORZRES),
-		this->printDC->GetDeviceCaps(VERTRES));
+	CRect rect(0, 0, cdc->GetDeviceCaps(HORZRES), cdc->GetDeviceCaps(VERTRES));
 	//2. 현재 화면의 가로 길이를 구한다.
 	Long pageWidth = rect.Width();
 	//3. Note의 총 줄의 개수보다 작은동안 반복한다.
@@ -128,7 +132,7 @@ PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFon
 		while (letterIndex < row->GetLength() && rowTextWidth < pageWidth)
 		{
 			//3.4.1 증가된 letterIndex까지의 가로 길이를 측정한다.
-			rowTextWidth = this->printDC->GetTextExtent
+			rowTextWidth = cdc->GetTextExtent
 			(row->GetPartOfContent(letterIndex + 1).c_str()).cx;
 			//3.4.2 letterIndex를 증가시킨다.
 			letterIndex++;
@@ -158,27 +162,14 @@ PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFon
 	}
 }
 
-HBITMAP PrintInformation::CreateBitmap()
-{
-	CRect rect(0, 0, this->printDC->GetDeviceCaps(HORZRES),
-		this->printDC->GetDeviceCaps(VERTRES));
-	CDC dcTemp;
-	dcTemp.CreateCompatibleDC(this->printDC);
-	HBITMAP hbmp = ::CreateCompatibleBitmap(dcTemp, rect.right, rect.bottom);
-	HBITMAP oldBMP = (HBITMAP)dcTemp.SelectObject(hbmp);
-	dcTemp.FillRect(&rect, CBrush::FromHandle((HBRUSH)GetStockObject(WHITE_BRUSH)));
-
-	return hbmp;
-}
-
 PrintInformation::~PrintInformation()
 {
 	if (this->printNote != NULL)
 	{
 		delete this->printNote;
 	}
-	if (this->printDC != NULL)
+	if (this->hdc != NULL)
 	{
-		this->printDC->DeleteDC();
+		DeleteDC(this->hdc);
 	}
 }

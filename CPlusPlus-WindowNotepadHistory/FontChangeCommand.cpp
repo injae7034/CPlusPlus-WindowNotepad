@@ -55,6 +55,8 @@ void FontChangeCommand::Execute()
         {
             //4.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
             //OnSize에서 부분자동개행을 하도록 한다. 
+            //전체 글꼴과 크기가 바뀌기 때문에 사이즈를 의도적으로 변경해서 전체자동개행이 이뤄지도록 유도함
+            this->notepadForm->previousPageWidth = -1;
             this->notepadForm->SendMessage(WM_SIZE);
         }
     }
