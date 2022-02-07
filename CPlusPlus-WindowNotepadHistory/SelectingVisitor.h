@@ -6,7 +6,7 @@
 class SelectingVisitor :public GlyphVisitor
 {
 public:
-	SelectingVisitor(NotepadForm* notepadForm, CPaintDC* dc,
+	SelectingVisitor(NotepadForm* notepadForm, CDC* dc,
 		Long glyphXPos, Long glyphYPos);//디폴트생성자
 	SelectingVisitor(const SelectingVisitor& source);//복사생성자
 	SelectingVisitor& operator=(const SelectingVisitor& source);//치환연산자

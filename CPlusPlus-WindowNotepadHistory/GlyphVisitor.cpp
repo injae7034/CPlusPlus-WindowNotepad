@@ -2,7 +2,7 @@
 #include "Glyph.h"
 
 //디폴트생성자
-GlyphVisitor::GlyphVisitor(NotepadForm* notepadForm, CPaintDC* dc,
+GlyphVisitor::GlyphVisitor(NotepadForm* notepadForm, CDC* dc,
 	Long glyphXPos, Long glyphYPos)
 {
 	this->notepadForm = notepadForm;

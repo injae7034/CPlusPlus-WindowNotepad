@@ -6,7 +6,7 @@
 class TextingOutVisitor :public GlyphVisitor
 {
 public:
-	TextingOutVisitor(NotepadForm* notepadForm, CPaintDC* dc,
+	TextingOutVisitor(NotepadForm* notepadForm, CDC* dc,
 		Long glyphXPos, Long glyphYPos);//디폴트생성자
 	TextingOutVisitor(const TextingOutVisitor& source);//복사생성자
 	TextingOutVisitor& operator=(const TextingOutVisitor& source);//치환연산자

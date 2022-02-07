@@ -32,13 +32,14 @@ void FontChangeCommand::Execute()
         //NotepadForm의 Font의 생성자를 호출해서 내용을 변경하면 된다.
         //주소록의 Correct에서 사용한 원리와 같음!!!
         //3.1 폰트대화상자에서 선택한 글꼴의 정보를 얻는다.
+        //fontDialog.GetSize();
         fontDialog.GetCurrentFont(&logFont);
         //3.2 폰트대화상자에서 선택한 글꼴의 색을 얻는다.
         selectedColor = fontDialog.GetColor();
         //3.3 notepadForm의 font에 선택한 글꼴의 정보를 저장한다.
         //private멤버의 내용에 접근하고 싶으면 인라인함수(Get)를 이용하고
         //private멤버의 내용을 변경하고 싶으면 생성자를 이용한다!
-        this->notepadForm->font = Font(logFont, selectedColor);
+        this->notepadForm->font = Font(logFont, fontDialog.GetSize(), selectedColor);
         //3.4 기존 글꼴 정보를 가지고 있는 TextExtent를 할당해제(소멸)해준다.
         if (this->notepadForm->textExtent != NULL)
         {

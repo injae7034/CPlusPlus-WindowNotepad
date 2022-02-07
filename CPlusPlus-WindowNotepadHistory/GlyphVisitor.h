@@ -2,7 +2,7 @@
 #define _GLYPHVISITOR_H
 
 class Glyph;
-class CPaintDC;
+class CDC;
 class NotepadForm;
 
 typedef signed long int Long;
@@ -11,11 +11,11 @@ class GlyphVisitor
 {
 public:
 	NotepadForm* notepadForm;
-	CPaintDC *dc;
+	CDC *dc;
 	Long glyphXPos;
 	Long glyphYPos;
 public:
-	GlyphVisitor(NotepadForm* notepadForm = 0, CPaintDC* dc = 0,
+	GlyphVisitor(NotepadForm* notepadForm = 0, CDC* dc = 0,
 		Long glyphXPos = 0, Long glyphYPos = 0);//디폴트생성자
 	GlyphVisitor(const GlyphVisitor& source);//복사생성자
 	GlyphVisitor& operator=(const GlyphVisitor& source);//치환연산자

@@ -19,6 +19,7 @@
 #include "PageMoveController.h"
 #include "RowAutoChange.h"
 
+#include "PrintInformation.h"
 #include "CommandHistory.h"
 #include "TextingOutVisitor.h"
 #include "SelectingVisitor.h"
@@ -32,12 +33,10 @@ BEGIN_MESSAGE_MAP(NotepadForm, CFrameWnd)
 	ON_WM_PAINT()
 	ON_WM_SETFOCUS()
 	ON_WM_KILLFOCUS()
+	ON_WM_ERASEBKGND()//더블버퍼링을 막기 위한 조치
 	ON_MESSAGE(WM_IME_COMPOSITION, OnComposition)
 	ON_MESSAGE(WM_IME_CHAR, OnImeChar)
 	ON_MESSAGE(WM_IME_STARTCOMPOSITION, OnStartCompostion)
-	//해당범위(IDM_FILE_OPEN ~ IDM_FONT_CHANGE)의 id들을 클릭하면 OnCommand함수실행
-	//resource.h에서 가장 처음에 추가된게 시작범위이고, 가장 마지막에 추가된게 끝나는 범위임
-	//윈도우의 메뉴 그림이랑은 아무 상관이 없음!!
 	ON_COMMAND_RANGE(IDM_FILE_OPEN, ID_ONCHARCOMMAND, OnCommand)
 	ON_WM_MENUSELECT(IDR_MENU1 ,OnMenuSelect)
 	//ON_REGISTERED_MESSAGE() //찾기공통대화상자에서 부모윈도우로 메세지를 전달하기 위해 필요함
@@ -68,15 +67,9 @@ NotepadForm::NotepadForm()
 	this->selectedStartYPos = 0;//처음생성될때는 선택된 texts가 없기 때문에 0으로 초기화해줌
 	this->glyph = 0;//메모장이 처음 생성되면 글자가 없기 때문에 0으로 초기화해줌
 	this->removedSelectedTexts = 0;//메모장이 처음 생성되면 지워진 선택된 글자가 없기 때문에 0으로 초기화함
-	//CFont에서 사용하고자 하는 글자크기와 글자체로 초기화시킴.
-	//기본생성자로 생성된 this->font에 매개변수 5개생성자로 치환(=)시킴
-	LOGFONT logFont;
-	memset(&logFont, 0, sizeof(LOGFONT));
-	logFont.lfHeight = 100;
-	wsprintf(logFont.lfFaceName, "궁서체");
-	this->font = Font(logFont, RGB(0, 0, 0));
 	this->textExtent = NULL;
 	this->selectingTexts = NULL;
+	this->printInformation = NULL;
 }
 
 //메모장 윈도우가 생성될 때
@@ -123,6 +116,15 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		//12.1 붙여넣기 메뉴를 비활성화시킨다.
 		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
+	//CFont에서 사용하고자 하는 글자크기와 글자체로 초기화시킴.
+	//기본생성자로 생성된 this->font에 매개변수 5개생성자로 치환(=)시킴
+	CFont font;
+	CDC* dc = this->GetDC();
+	Long size = 500;
+	font.CreatePointFont(size, "궁서체", dc);
+	LOGFONT logFont;
+	font.GetLogFont(&logFont);
+	this->font = Font(logFont, size, RGB(0, 0, 0));
 	//13. textExtent를 힙에 할당한다.
 	this->textExtent = new TextExtent(this);
 	//14. 선택한 메모장의 노트(내용)를 불러온다.
@@ -193,14 +195,30 @@ void NotepadForm::OnPaint()
 {
 	//1. CPaintDC를 생성한다.
 	CPaintDC dc(this);
+
+	// 더블버퍼링을 막기 위한 조치
+	CRect rect;
+	this->GetClientRect(&rect);
+	CDC dcTemp;
+	dcTemp.CreateCompatibleDC(&dc);
+	HBITMAP hbmp = ::CreateCompatibleBitmap(dc, rect.right, rect.bottom);
+	HBITMAP oldBMP = (HBITMAP)dcTemp.SelectObject(hbmp);
+	dcTemp.FillRect(&rect, CBrush::FromHandle((HBRUSH)GetStockObject(WHITE_BRUSH)));
+	
 	//2. 선택 안된 범위를 출력할 연산을 생성한다.
-	TextingOutVisitor textingOutVisitor = TextingOutVisitor(this, &dc, 0, 0);
+	TextingOutVisitor textingOutVisitor = TextingOutVisitor(this, &dcTemp, 0, 0);
 	//3. 선택된 범위를 출력할 연산을 생성한다.
-	SelectingVisitor selectingVisitor = SelectingVisitor(this, &dc, 0, 0);
+	SelectingVisitor selectingVisitor = SelectingVisitor(this, &dcTemp, 0, 0);
 	//4. 선택이 안된 범위를 출력한다.
 	this->note->Accept(&textingOutVisitor);
 	//5. 선택된 범위를 출력한다.
 	this->note->Accept(&selectingVisitor);
+
+	// 더블버퍼링을 막기 위한 조치
+	dc.BitBlt(0, 0, rect.right, rect.bottom, &dcTemp, 0, 0, SRCCOPY);
+	dcTemp.SelectObject(oldBMP);
+	::DeleteObject(hbmp);
+	dcTemp.DeleteDC();
 }
 
 //한글을 입력받을 때
@@ -619,6 +637,11 @@ void NotepadForm::OnMenuSelect(UINT nItemID, UINT nFlags, HMENU hSysMenu)
 		//2.1 붙여넣기 메뉴를 비활성화시킨다.
 		this->menu.EnableMenuItem(IDM_NOTE_PASTE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	}
+}
+
+BOOL NotepadForm::OnEraseBkgnd(CDC* pDC)
+{
+	return true;
 }
 
 //메모장에서 닫기버튼을 클릭했을 떄

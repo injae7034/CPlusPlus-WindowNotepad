@@ -16,6 +16,7 @@ class PageMoveController;
 class ScrollController;
 class TextExtent;
 class Glyph;
+class PrintInformation;
 
 typedef signed long int Long;
 
@@ -26,6 +27,7 @@ public:
 	//CMenu& GetCMenu() const; GetMenu가 있어서 따로 CMenu를 구하기 위한 인라인함수가 필요없음
 public:
 	//주소는 public으로
+	PrintInformation* printInformation;
 	Glyph* note;
 	Glyph* current;
 	Glyph* clipboard;
@@ -66,6 +68,7 @@ protected://#
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnClose();
 	DECLARE_MESSAGE_MAP()
 private:

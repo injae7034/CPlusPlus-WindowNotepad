@@ -5,7 +5,7 @@
 #include "Font.h"
 
 //디폴트생성자
-SelectingVisitor::SelectingVisitor(NotepadForm* notepadForm, CPaintDC* dc,
+SelectingVisitor::SelectingVisitor(NotepadForm* notepadForm, CDC* dc,
 	Long glyphXPos, Long glyphYPos)
 	:GlyphVisitor(notepadForm, dc, glyphXPos, glyphYPos)
 {
