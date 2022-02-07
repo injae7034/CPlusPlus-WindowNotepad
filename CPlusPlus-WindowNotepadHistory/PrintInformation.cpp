@@ -2,15 +2,16 @@
 #include "NotepadForm.h"
 #include "Glyph.h"
 #include "DummyRow.h"
+#include "PageSetUpInformation.h"
 
 PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFont,
-	HDC hdc)
+	HDC hdc, CRect printableRect)
 {
 	this->notepadForm = notepadForm;
 	this->printNote = notepadForm->note->Clone();
 	this->printLogFont = printLogFont;
 	this->hdc = hdc;
-
+	this->printableRect = printableRect;
 	//1. 프린트 다이얼로그의 hdc에서 cdc를 구한다.
 	CDC* cdc = CDC::FromHandle(hdc);
 	//2. 한 페이지당 줄의 수를 구한다.
@@ -20,10 +21,26 @@ PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFon
 	oldFont = (HFONT)cdc->SelectObject(font);
 	TEXTMETRIC text;
 	cdc->GetTextMetrics(&text);
-	this->printableAreaHeight = cdc->GetDeviceCaps(VERTRES);
-	this->pageRowCount = this->printableAreaHeight / text.tmHeight;
+	this->pageRowCount = (this->printableRect.bottom - this->printableRect.top)
+		/ text.tmHeight;
+	//3. 페이지 설정 정보가 있으면
+	if (this->notepadForm->pageSetUpInformation != 0)
+	{
+		//3.1 머리글이 있으면
+		if (this->notepadForm->pageSetUpInformation->GetHeader().Compare("") != 0)
+		{
+			//3.1.1 한 페이지당 줄의 개수를 감소시킨다.
+			this->pageRowCount--;
+		}
+		//3.2 바닥글이 있으면
+		if (this->notepadForm->pageSetUpInformation->GetFooter().Compare("") != 0)
+		{
+			//3.2.1 한 페이지당 줄의 개수를 감소시킨다.
+			this->pageRowCount--;
+		}
+	}
 
-	//3. 메모장에 선택영역이 있으면
+	//4. 메모장에 선택영역이 있으면
 	if (this->notepadForm->isSelecting == true)
 	{
 		//선택영역을 해제한다.
@@ -76,10 +93,10 @@ PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFon
 		}
 	}
 
+	//5. 메모장에서 자동개행이 진행중이면
 	Long rowIndex = 0;
 	Glyph* row = 0;
 	Glyph* previousRow = 0;
-	//4. 메모장에서 자동개행이 진행중이면
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
 		// 전체자동개행을 취소한다.
@@ -107,17 +124,15 @@ PrintInformation::PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFon
 		}
 	}
 
-	//5. 전체 자동개행을 다시해준다.
+	//6. 전체 자동개행을 다시해준다.
 	Long letterIndex = 0;
 	Long rowTextWidth = 0;
 	Glyph* glyph = 0;
 	rowIndex = 0;
 	row = 0;
 	previousRow = 0;
-	//1. 현재 프린트 가능한 화면의 크기를 구한다.
-	CRect rect(0, 0, cdc->GetDeviceCaps(HORZRES), cdc->GetDeviceCaps(VERTRES));
-	//2. 현재 화면의 가로 길이를 구한다.
-	Long pageWidth = rect.Width();
+	//1. 현재 화면의 가로 길이를 구한다.
+	Long pageWidth = this->printableRect.right - this->printableRect.left;
 	//3. Note의 총 줄의 개수보다 작은동안 반복한다.
 	while (rowIndex < this->printNote->GetLength())
 	{

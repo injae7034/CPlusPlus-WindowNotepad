@@ -72,6 +72,7 @@ NotepadForm::NotepadForm()
 	this->selectingTexts = NULL;
 	this->printInformation = NULL;
 	this->previewForm = NULL;
+	this->pageSetUpInformation = NULL;
 }
 
 //메모장 윈도우가 생성될 때
@@ -759,6 +760,10 @@ void NotepadForm::OnClose()
 		if (this->printInformation != 0)
 		{
 			delete this->printInformation;
+		}
+		if (this->pageSetUpInformation != 0)
+		{
+			delete this->pageSetUpInformation;
 		}
 		// 메모장을 닫는다.
 		CFrameWnd::OnClose();

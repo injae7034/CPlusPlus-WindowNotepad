@@ -2,56 +2,60 @@
 #include "NotepadForm.h"
 #include "afxdlgs.h"//CCommonDialog헤더파일
 #include "PageSetUpDialog.h"
-#include "PrintInformation.h"
+#include "PageSetUpInformation.h"
 
 //생성자
 FileSetupCommand::FileSetupCommand(NotepadForm* notepadForm)
 {
-
+    this->notepadForm = notepadForm;
 }
 
 //Execute
 void FileSetupCommand::Execute()
 {
+    //1. pageSetUpDialog를 생성한다.
     PageSetupDialog pageSetupDialog(this->notepadForm);
-
+    //2. pageSetUpDialog를 화면에 출력한다.
     LONG id;
     id = pageSetupDialog.DoModal();
+    //3. OK버튼을 눌렀으면
     if (id == IDOK)
     {
-        //2.2 프린트 다이얼로그에서 hdc를 구한다.
-        HDC hdc = this->notepadForm->printInformation->GetHDC();
+        //3.1 페이지 설정 대화상자에서 devmode구조체를 구한다.
+        DEVMODE* devmode = pageSetupDialog.GetDevMode();
+        //3.2 페이지 설정 대화상자에서 hdc를 구한다.
+        HDC hdc = pageSetupDialog.CreatePrinterDC();
         ASSERT(hdc);
-        //2.3 프린트 다이얼로그의 hdc에서 cdc를 구한다.
+        //3.2 hdc에서 cdc를 구한다.
         CDC* cdc = CDC::FromHandle(hdc);
-           // ->SetDC(pageSetupDialog.CreatePrinterDC());
+        //3.3 프린트가 가능한 영역을 구한다.
+        CRect rect(0, 0, cdc->GetDeviceCaps(HORZRES), cdc->GetDeviceCaps(VERTRES));
+        //3.4 페이지설정 대화상자에서 여백을 구한다.
+        CRect marginRect;
+        pageSetupDialog.GetMargins(&marginRect, NULL);
+        //3.5 구한 여백을 페이지 화면 비율에 맞게 다시 설정한다.
+        Long changedMarginRectLeft = marginRect.left * 600 / 2540;
+        Long changedMarginRectTop = marginRect.top * 600 / 2540;
+        Long changedMarginRectRight = marginRect.right * 600 / 2540;
+        Long changedMarginRectBottom = marginRect.bottom * 600 / 2540;
+        CRect changedMarginRect(changedMarginRectLeft, changedMarginRectTop,
+            changedMarginRectRight, changedMarginRectBottom);
+        //3.6 여백을 제외하고 프린트 가능한 영역을 구한다.
+        CRect printableRect(changedMarginRect.left, changedMarginRect.top,
+            rect.Width() - changedMarginRect.right, rect.Height() - changedMarginRect.bottom);
+        //3.7 기존 페이지설정 정보가 있으면
+        if (this->notepadForm->pageSetUpInformation != NULL)
+        {
+            //3.7.1 기존 페이지 설정 정보를 할당해제한다.
+            delete this->notepadForm->pageSetUpInformation;
+            this->notepadForm->pageSetUpInformation = 0;
+        }
+        //3.8 여백을 제외한 프린트 가능한 영역, 용지크기, 머릿글, 바닥글, 용지방향의 정보를 바탕으로
+        //새로운 페이지 설정 정보를 만든다.
+        this->notepadForm->pageSetUpInformation = new PageSetUpInformation(printableRect,
+            devmode->dmPaperSize, pageSetupDialog.GetHeader(), 
+            pageSetupDialog.GetFooter(), devmode->dmOrientation);
     }
-
-    GlobalFree(pageSetupDialog.m_psd.hDevMode);
-    GlobalFree(pageSetupDialog.m_psd.hDevNames);
-
-#if 0
-    CPageSetupDialog dlg(PSD_MARGINS | PSD_INHUNDREDTHSOFMILLIMETERS);
-
-    // Initialize margins
-    dlg.m_psd.rtMargin.top = 1000;
-    dlg.m_psd.rtMargin.left = 1250;
-    dlg.m_psd.rtMargin.right = 1250;
-    dlg.m_psd.rtMargin.bottom = 1000;
-    //dlg.m_psd.lpfnPagePaintHook = (LPPAGEPAINTHOOK)PaintHook;
-
-    if (IDOK == dlg.DoModal())
-    {
-        // Propagate changes to the app
-        AfxGetApp()->SelectPrinter(dlg.m_psd.hDevNames, dlg.m_psd.hDevMode);
-    }
-    else
-    {
-        TRACE(_T("CommDlgExtendedError returned error %d from ")
-            _T("CPageSetupDialog::DoModal().\n"),
-            (int)CommDlgExtendedError());
-    }
-#endif
 }
 
 //소멸자

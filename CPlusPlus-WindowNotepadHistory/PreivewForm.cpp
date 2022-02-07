@@ -5,7 +5,8 @@
 #include "Glyph.h"
 #include "Note.h"
 #include "PrintingVisitor.h"
-
+#include "PageSetUpDialog.h"
+#include "PageSetUpInformation.h"
 
 BEGIN_MESSAGE_MAP(PreviewForm, CFrameWnd)
 	ON_WM_CREATE()
@@ -36,7 +37,12 @@ PreviewForm::PreviewForm(NotepadForm* notepadForm)
 	//4. 한 페이지당 인쇄할 줄의 수를 구한다.
 	Long pageRowCount = this->notepadForm->printInformation->GetPageRowCount();
 	//5. 총페이지수를 설정한다.
-	this->totalPageCount = printNote->GetLength() / pageRowCount + 1;//버림으로 인해 +1해준다.
+	this->totalPageCount = printNote->GetLength() / pageRowCount;
+	Long remainder = printNote->GetLength() % pageRowCount;
+	if (remainder != 0)
+	{
+		this->totalPageCount++;
+	}
 	//6. 한 페이지당 인쇄할 줄의 개수보다 작은동안 그리고 프린트할 노트의 줄의 개수보다 작은동안 반복한다.
 	Glyph* row = 0;
 	Long rowIndex = 0;
@@ -284,11 +290,13 @@ void PreviewForm::OnGetMinMaxInfo(MINMAXINFO* lpMinMaxInfo)
 	lpMinMaxInfo->ptMinTrackSize.x = 600;
 	lpMinMaxInfo->ptMinTrackSize.y = 300;
 }
+
 //더블버퍼링을 막기 위한 조치
 BOOL PreviewForm::OnEraseBkgnd(CDC* pDC)
 {
 	return TRUE;
 }
+
 //스태틱 컨트롤의 기본 배경색이 회색이라서 배경색을 투명하게 바꾸기 위한 조치
 HBRUSH PreviewForm::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
@@ -357,54 +365,111 @@ void PreviewForm::OnNextPageButtonClicked()
 //페이지 설정 버튼을 클릭했을 때
 void PreviewForm::OnPageSetUpButtonClicked()
 {
-#if 0
-	//1. 페이지 설정 다이얼로그를 생성한다.
-	CPageSetupDialog dlg(PSD_MARGINS | PSD_INHUNDREDTHSOFMILLIMETERS);
-
-	// Initialize margins
-	dlg.m_psd.rtMargin.top = 1000;
-	dlg.m_psd.rtMargin.left = 1000;
-	dlg.m_psd.rtMargin.right = 1000;
-	dlg.m_psd.rtMargin.bottom = 1000;
-	//dlg.m_psd.lpfnPagePaintHook = (LPPAGEPAINTHOOK)PaintHook;
-
-	if (IDOK == dlg.DoModal())
+	//1. pageSetUpDialog를 생성한다.
+	PageSetupDialog pageSetupDialog(this);
+	//2. pageSetUpDialog를 화면에 출력한다.
+	LONG id;
+	id = pageSetupDialog.DoModal();
+	//3. OK버튼을 눌렀으면
+	if (id == IDOK)
 	{
-		// Propagate changes to the app
-		AfxGetApp()->SelectPrinter(dlg.m_psd.hDevNames, dlg.m_psd.hDevMode);
+		//3.1 페이지 설정 정보 대화상자에서 devmode구조체를 구한다.
+		DEVMODE* devmode = pageSetupDialog.GetDevMode();
+		//3.2 기존에 프린트 정보가 있으면
+		if (this->notepadForm->printInformation != 0)
+		{
+			//3.2.1 기존에 있는 프린트 정보를 없앤다.
+			delete this->notepadForm->printInformation;
+		}
+		//3.3 페이지 설정 대화상자에서 hdc를 구한다.
+		HDC hdc = pageSetupDialog.CreatePrinterDC();
+		ASSERT(hdc);
+		//3.4 hdc에서 cdc를 구한다.
+		CDC* cdc = CDC::FromHandle(hdc);
+		//3.5 프린트 가능한 영역을 구한다.
+		CRect rect(0, 0, cdc->GetDeviceCaps(HORZRES), cdc->GetDeviceCaps(VERTRES));
+		//3.6 페이지설정 대화상자에서 여백을 구한다.
+		CRect marginRect;
+		pageSetupDialog.GetMargins(&marginRect, NULL);
+		//3.7 구한 여백을 페이지 화면 비율에 맞게 다시 설정한다.
+		Long changedMarginRectLeft = marginRect.left * 600 / 2540;
+		Long changedMarginRectTop = marginRect.top * 600 / 2540;
+		Long changedMarginRectRight = marginRect.right * 600 / 2540;
+		Long changedMarginRectBottom = marginRect.bottom * 600 / 2540;
+		CRect changedMarginRect(changedMarginRectLeft, changedMarginRectTop,
+			changedMarginRectRight, changedMarginRectBottom);
+		//3.8 여백을 제외하고 프린트 가능한 영역을 구한다.
+		CRect printableRect(changedMarginRect.left, changedMarginRect.top,
+			rect.Width() - changedMarginRect.right, rect.Height() - changedMarginRect.bottom);
+		//3.9 프린트 비율로 글꼴의 비율을 맞춰준다.
+		LOGFONT printLogFont = this->notepadForm->font.GetLogFont();
+		printLogFont.lfHeight = -MulDiv(this->notepadForm->font.GetSize() / 10, 600, 72);
+		CFont font;
+		HFONT oldFont;
+		font.CreateFontIndirect(&printLogFont);
+		oldFont = (HFONT)cdc->SelectObject(font);
+		//3.10 기존 페이지 설정 정보가 있으면
+		if (this->notepadForm->pageSetUpInformation != 0)
+		{
+			//3.10.1 기존 페이지 설정 정보를 없앤다.
+			delete this->notepadForm->pageSetUpInformation;
+			this->notepadForm->pageSetUpInformation = 0;
+		}
+		//3.11 여백을 제외한 프린트 가능한 영역, 용지크기, 머릿글, 바닥글, 용지방향의 정보를 바탕으로
+		//새로운 페이지 설정 정보를 만든다.
+		this->notepadForm->pageSetUpInformation = new PageSetUpInformation(printableRect,
+			devmode->dmPaperSize, pageSetupDialog.GetHeader(),
+			pageSetupDialog.GetFooter(), devmode->dmOrientation);
+		//3.12 프린트정보를 저장할 클래스를 생성한다.
+		this->notepadForm->printInformation = new PrintInformation(this->notepadForm,
+			printLogFont, hdc, this->notepadForm->pageSetUpInformation->GetPrintableRect());
+		//3.13 기존에 note가 있으면
+		if (this->note != 0)
+		{
+			//3.13.1 기존 note를 지운다.
+			delete this->note;
+		}
+		//3.14 새로운 정보를 저장할 새로운 노트를 생성한다.
+		this->note = new Note();
+		//3.15 프린트할 노트를 구한다.
+		Glyph* printNote = this->notepadForm->printInformation->GetPrintNote();
+		//3.16 한 페이지당 인쇄할 줄의 수를 구한다.
+		Long pageRowCount = this->notepadForm->printInformation->GetPageRowCount();
+		//5. 총페이지수를 설정한다.
+		this->totalPageCount = printNote->GetLength() / pageRowCount;
+		Long remainder = printNote->GetLength() % pageRowCount;
+		if (remainder != 0)
+		{
+			this->totalPageCount++;
+		}
+		//3.18 한 페이지당 인쇄할 줄의 개수보다 작은동안 그리고 프린트할 노트의 줄의 개수보다 작은동안 반복한다.
+		Glyph* row = 0;
+		Long rowIndex = 0;
+		Long i = 0;
+		while (i < pageRowCount && rowIndex < printNote->GetLength())
+		{
+			//3.18.1 현재 줄을 구한다.
+			row = printNote->GetAt(rowIndex)->Clone();
+			//3.18.2 현재 줄을 previewForm 노트에 추가한다.
+			this->note->Add(row);
+			//3.18.3 줄의 위치를 증가시킨다.
+			rowIndex++;
+			i++;
+		}
+		//3.19 현재 페이지 번호를 설정한다.
+		this->currentPageNumber = 1;
+		//3.20 현재 페이지 번호를 에디트 컨트롤에 출력한다.
+		this->currentPageNumberEdit.SetWindowText(to_string(this->currentPageNumber).c_str());
+		//3.21 총 페이지 수를 스태틱 컨트롤에 출력한다.
+		this->totalPageCountStatic.SetWindowText(_T(to_string(this->totalPageCount).c_str()));
+		//3.22 변경사항을 갱신한다.
+		this->Invalidate(TRUE);
 	}
-	else
-	{
-		TRACE(_T("CommDlgExtendedError returned error %d from ")
-			_T("CPageSetupDialog::DoModal().\n"),
-			(int)CommDlgExtendedError());
-	}
-#endif
-	CPageSetupDialog psd(PSD_INTHOUSANDTHSOFINCHES | PSD_MARGINS |
-		PSD_ENABLEPAGEPAINTHOOK, this);
-
-	// Initialize margins
-	psd.m_psd.rtMargin.top = 1000;
-	psd.m_psd.rtMargin.left = 1250;
-	psd.m_psd.rtMargin.right = 1250;
-	psd.m_psd.rtMargin.bottom = 1000;
-	//psd.m_psd.lpfnPagePaintHook = (LPPAGEPAINTHOOK)PaintHook;
-
-	if (IDOK == psd.DoModal())
-	{
-		// Propagate changes to the app
-		AfxGetApp()->SelectPrinter(psd.m_psd.hDevNames, psd.m_psd.hDevMode);
-	}
-	else
-	{
-		TRACE(_T("CommDlgExtendedError returned error %d from ")
-			_T("CPageSetupDialog::DoModal().\n"),
-			(int)CommDlgExtendedError());
-	}
-
-	//3. 다음페이지 버튼에 포커스를 없앤다.
+	GlobalFree(pageSetupDialog.m_psd.hDevMode);
+	GlobalFree(pageSetupDialog.m_psd.hDevNames);
+	//4. 다음페이지 버튼에 포커스를 없앤다.
 	this->nextPageButton.SendMessage(WM_KILLFOCUS);
-	//4. 미리보기 폼에 포커스를 설정한다.
+	//5. 미리보기 폼에 포커스를 설정한다.
 	this->SetFocus();
 }
 
@@ -427,29 +492,61 @@ void PreviewForm::OnPagePrintButtonClicked()
 		ASSERT(hdc);
 		//2.3 프린트 다이얼로그의 hdc에서 cdc를 구한다.
 		CDC* cdc = CDC::FromHandle(hdc);
-		//2.4 프린트할 문서 정보를 담을 공간을 선언한다.
+		//2.4 프린트 다이얼로그에서 devmode를 구한다.
+		DEVMODE* devmode = dlg.GetDevMode();
+		 //2.5 페이지 설정 정보가 있으면
+        if (this->notepadForm->pageSetUpInformation != 0)
+        {
+            //2.5.1 페이지 설정에서 설정한 용지방향 정보를 devmode에 저장한다.
+            devmode->dmOrientation = this->notepadForm->pageSetUpInformation->GetOrientation();
+            //2.5.2 페이지 설정 정보에서 정한 용지크기 정보를 devmode에 저장한다.
+            devmode->dmPaperSize = this->notepadForm->pageSetUpInformation->GetPaperSize();
+        }
+        //2.6 페이지 설정 정보가 없으면
+        else
+        {
+            //2.6.1 세로 방향을 디폴트로 설정한다.
+            devmode->dmOrientation = 1;
+            //2.6.2 A4용지크기를 devmode에 저장한다.
+            devmode->dmPaperSize = 9;
+        }
+		//2.7 devmode에 정보를 반영해서 cdc를 reste(upadate)해준다.
+		cdc->ResetDCA(devmode);
+		//2.8 프린트할 문서 정보를 담을 공간을 선언한다.
 		DOCINFO docinfo;
-		//2.5 프린트할 문서 정보를 담을 공간을 초기화시켜준다.
+		//2.9 프린트할 문서 정보를 담을 공간을 초기화시켜준다.
 		ZeroMemory(&docinfo, sizeof(DOCINFO));
-		//2.6 프린트할 문서 정보의 이름을 정한다.
+		//2.10 프린트할 문서 정보의 이름을 정한다.
 		docinfo.lpszDocName = "메모장";
-		//2.7 프린트를 시작한다.
+		//2.11 프린트를 시작한다.
 		cdc->StartDoc(&docinfo);
-		//2.8 PrintingVisitor를 생성한다.
+		//2.12 PrintingVisitor를 생성한다.
 		PrintingVisitor printingVisitor = PrintingVisitor(this->notepadForm, cdc, 0, 0);
-		//2.9 프린트 비율로 글꼴의 비율을 맞춰준다.
+		//2.13 프린트 비율로 글꼴의 비율을 맞춰준다.
 		LOGFONT printLogFont = this->notepadForm->font.GetLogFont();
 		printLogFont.lfHeight = -MulDiv(this->notepadForm->font.GetSize() / 10, 600, 72);
 		CFont font;
 		HFONT oldFont;
 		font.CreateFontIndirect(&printLogFont);
 		oldFont = (HFONT)cdc->SelectObject(font);
-		//2.10 프린트정보를 저장할 클래스를 생성한다.
-		this->notepadForm->printInformation = new PrintInformation(this->notepadForm,
-			printLogFont, hdc);
-		//2.11 프린트 출력을 한다.
+		//2.14 페이지 설정 정보가 있으면
+		if (this->notepadForm->pageSetUpInformation != 0)
+		{
+			//2.14.1 페이지 설정에서 설정한 프린트가 가능한 영역을 반영해 프린트정보를 저장할 클래스를 생성한다.
+			this->notepadForm->printInformation = new PrintInformation(this->notepadForm,
+				printLogFont, hdc, this->notepadForm->pageSetUpInformation->GetPrintableRect());
+		}
+		//2.15 페이지 설정 정보가 없으면
+		else
+		{
+			//2.15.1 기본적인 프린트가 가능한 영역을 반영해 프린트정보를 저장할 클래스를 생성한다.
+			this->notepadForm->printInformation = new PrintInformation(this->notepadForm,
+				printLogFont, hdc,
+				CRect(0, 0, cdc->GetDeviceCaps(HORZRES), cdc->GetDeviceCaps(VERTRES)));
+		}
+		//2.16 프린트 출력을 한다.
 		this->notepadForm->printInformation->GetPrintNote()->Accept(&printingVisitor);
-		//2.12 프린트를 끝낸다.
+		//2.17 프린트를 끝낸다.
 		cdc->EndDoc();
 	}
 	//3. 다음페이지 버튼에 포커스를 없앤다.

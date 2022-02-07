@@ -18,6 +18,7 @@ class TextExtent;
 class Glyph;
 class PrintInformation;
 class PreviewForm;
+class PageSetUpInformation;
 
 typedef signed long int Long;
 
@@ -27,6 +28,7 @@ public:
 	NotepadForm();//积己磊
 public:
 	//林家绰 public栏肺
+	PageSetUpInformation* pageSetUpInformation;
 	PreviewForm* previewForm;
 	PrintInformation* printInformation;
 	Glyph* note;

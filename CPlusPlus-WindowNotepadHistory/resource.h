@@ -3,45 +3,25 @@
 // Notepad20210203+Menu.rc에서 사용되고 있습니다.
 //
 #define IDR_MENU1                       101
-#define IDD_PAGESETUPFORM               106
 #define IDC_BUTTON_FIND                 1002
 #define IDC_BUTTON_CANCLE               1003
 #define IDC_BUTTON_SWAP                 1003
 #define IDC_BUTTON_CANCEL               1004
+#define IDC_EDIT_HEADER                 1005
+#define IDC_EDIT_FOOTER                 1006
 #define IDC_BUTTON_REPLACE              1024
 #define IDC_BUTTON_REPLACEALL           1025
 #define IDC_CHECKBOX_MATCH              1041
 #define IDC_CHECKBOX_MATCHCASE          1041
 #define IDC_CHECKBOX_WRAPAROUND         1042
 #define IDC_RADIO_UP                    1056
-#define IDC_STATIC_BLANK                1056
 #define IDC_RADIO_DOWN                  1057
-#define IDC_STATIC_LEFT                 1057
-#define IDC_EDIT_LEFT                   1058
-#define IDC_STATIC_RIGHT                1059
-#define IDC_EDIT_RIGHT                  1060
 #define IDC_GROUPBOX_DIRECTION          1072
-#define IDC_STATIC_PAPER                1072
-#define IDC_STATIC_SIZE                 1073
-#define IDC_COMBO_SIZE                  1074
-#define IDC_STATIC_TOP                  1088
-#define IDC_EDIT_TOP                    1089
-#define IDC_STATIC_BOTTOM               1090
-#define IDC_EDIT_BOTTOM                 1091
-#define IDC_STATIC_PREVIEW              1092
-#define IDC_STATIC_HEADER               1093
-#define IDC_STATIC_FOOTER               1094
-#define IDC_EDIT_HEADER                 1095
-#define IDC_EDIT_FOOTER                 1096
 #define IDC_EDIT_FINDINGCONTENT         1152
-#define IDC_STATIC_SOURCE               1152
 #define IDC_EDIT_REPLACINGCONTENT       1153
-#define IDC_COMBO_SOURCE                1153
-#define IDC_STATIC_DIRECTION            1154
-#define IDC_RADIO_VERTICAL              1155
-#define IDC_RADIO_HORIZONTAL            1156
 #define IDD_FINDINGDIALOG               1540
 #define IDD_REPLACINGDIALOG             1541
+#define IDD_PAGESETUPDIALOG             1546
 #define ID_40001                        40001
 #define IDM_FILE_OPEN                   40003
 #define IDM_FILE_                       40004
@@ -109,9 +89,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        107
+#define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40053
-#define _APS_NEXT_CONTROL_VALUE         1005
+#define _APS_NEXT_CONTROL_VALUE         1007
 #define _APS_NEXT_SYMED_VALUE           111
 #endif
 #endif

@@ -7,6 +7,7 @@
 #include "PrintingVisitor.h"
 #include "PrintInformation.h"
 #include "PreviewForm.h"
+#include "PageSetUpInformation.h"
 
 //생성자
 FilePreviewCommand::FilePreviewCommand(NotepadForm* notepadForm)
@@ -43,19 +44,51 @@ void FilePreviewCommand::Execute()
 	ASSERT(hdc);
 	//6. 프린트 다이얼로그의 hdc에서 cdc를 구한다.
 	CDC* cdc = CDC::FromHandle(hdc);
-	//7. 프린트 비율로 글꼴의 비율을 맞춰준다.
+	//7. CPrintDialog의 정보를 가지고 있는 devmode구조체를 구한다.
+	DEVMODE* devmode = dlg.GetDevMode();
+	//8. 페이지 설정정보가 있으면
+	if (this->notepadForm->pageSetUpInformation != 0)
+	{
+		//8.1 페이지 설정에서 설정한 용지방향 정보를 devmode에 저장한다.
+		devmode->dmOrientation = this->notepadForm->pageSetUpInformation->GetOrientation();
+		//8.2 페이지 설정에서 설정한 용지크기 정보를 devmode에 저장한다.
+		devmode->dmPaperSize = this->notepadForm->pageSetUpInformation->GetPaperSize();
+	}
+	//9. 페이지 설정정보가 없으면
+	else
+	{
+		//9.1 세로 방향을 디폴트로 설정한다.
+		devmode->dmOrientation = 1;
+		//9.2 A4용지 크기를 devmode에 저장한다.
+		devmode->dmPaperSize = 9;
+	}
+	//10. devmode의 정보를 반영해서 cdc를 reset(update)한다.
+	cdc->ResetDCA(devmode);
+	//11. 프린트 비율로 글꼴의 비율을 맞춰준다.
 	LOGFONT printLogFont = this->notepadForm->font.GetLogFont();
 	printLogFont.lfHeight = -MulDiv(this->notepadForm->font.GetSize() / 10, 600, 72);
 	CFont font;
 	HFONT oldFont;
 	font.CreateFontIndirect(&printLogFont);
 	oldFont = (HFONT)cdc->SelectObject(font);
-	//8. 프린트정보를 저장할 클래스를 생성한다.
-	this->notepadForm->printInformation = new PrintInformation(this->notepadForm,
-		printLogFont, hdc);
-	//9. NotepadForm의 멤버인 previewForm에 미리보기 폼을 생성한다.
+	//12. 페이지 설정 정보가 있으면
+	if (this->notepadForm->pageSetUpInformation != 0)
+	{
+		//12.1 페이지 설정에서 설정한 프린트가 가능한 크기를 반영해 프린트정보를 저장할 클래스를 생성한다.
+		this->notepadForm->printInformation = new PrintInformation(this->notepadForm,
+			printLogFont, hdc, this->notepadForm->pageSetUpInformation->GetPrintableRect());
+	}
+	//13. 페이지 설정 정보가 없으면
+	else
+	{
+		//13.1 기본적으로 프린트가 가능한 크기를 반영해 프린트정보를 저장할 클래스를 생성한다.
+		this->notepadForm->printInformation = new PrintInformation(this->notepadForm,
+			printLogFont, hdc,
+			CRect(0, 0, cdc->GetDeviceCaps(HORZRES), cdc->GetDeviceCaps(VERTRES)));
+	}
+	//14. NotepadForm의 멤버인 previewForm에 미리보기 폼을 생성한다.
 	this->notepadForm->previewForm = new PreviewForm(this->notepadForm);
-	CRect rect(0, 0, cdc->GetDeviceCaps(HORZRES) / 3, cdc->GetDeviceCaps(VERTRES) / 9);
+	CRect rect(0, 0, 4958 / 3, 7016 / 9);//미리보기폼의 초기 생성시 출력되는 화면 고정
 	this->notepadForm->previewForm->Create(NULL, "미리보기", WS_OVERLAPPEDWINDOW,
 		rect, NULL, NULL, 0, NULL);
 	this->notepadForm->previewForm->ShowWindow(SW_SHOW);

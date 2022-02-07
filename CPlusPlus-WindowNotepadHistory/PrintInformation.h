@@ -12,20 +12,21 @@ class PrintInformation {
 public:
 	NotepadForm* notepadForm;
 public:
-	PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFont, HDC hdc);
+	PrintInformation(NotepadForm* notepadForm, LOGFONT printLogFont, HDC hdc,
+		CRect printableRect);
 	~PrintInformation();
 	//인라인함수
 	Glyph* GetPrintNote() const;
 	LOGFONT& GetPrintLogFont() const;
 	HDC GetHDC() const;
 	Long GetPageRowCount() const;
-	Long GetPrintableAreaHeight() const;
+	CRect& GetPrintableRect() const;
 private:
 	Glyph* printNote;
 	LOGFONT printLogFont;
 	HDC hdc;
 	Long pageRowCount;
-	Long printableAreaHeight;
+	CRect printableRect;
 };
 
 inline Glyph* PrintInformation::GetPrintNote() const
@@ -44,8 +45,8 @@ inline Long PrintInformation::GetPageRowCount() const
 {
 	return this->pageRowCount;
 }
-inline Long PrintInformation::GetPrintableAreaHeight() const
+inline CRect& PrintInformation::GetPrintableRect() const
 {
-	return this->printableAreaHeight;
+	return const_cast<CRect&>(this->printableRect);
 }
 #endif // !_PRINTINFORMATION_H
