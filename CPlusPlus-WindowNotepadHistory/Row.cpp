@@ -99,35 +99,35 @@ void Row::Accept(GlyphVisitor* glyphVisitor)
 //줄에 단어단위로 끼워넣기
 void Row::AddWord(string word)
 {
-	//1. 현재 글자의 위치를 구한다.
+	//3. 현재 글자의 위치를 구한다.
 	Long currentLetterIndex = this->GetCurrent();
 	currentLetterIndex--;
-	//2. word의 글자 개수를 구한다.
-	Long wordLength = word.length();
-	//3. word의 글자 개수보다 작은동안 반복한다.
+	//4. keyword의 글자 개수를 구한다.
+	Long keywordLength = word.length();
+	//5. keyword의 글자 개수보다 작은동안 반복한다.
 	Long i = 0;
 	Glyph* letter = 0;
 	string koreanLetter;
-	while (i < wordLength)
+	while (i < keywordLength)
 	{
-		//3.1 한글이면
+		//6.1 한글이면
 		if ((word[i] & 0x80))
 		{
-			//3.1.1 DoubleByteLetter를 생성한다.
+			//6.1.1 DoubleByteLetter를 생성한다.
 			koreanLetter = word[i];
 			i++;
 			koreanLetter += word[i];
 			letter = new DoubleByteLetter((char*)koreanLetter.c_str(), false);
 		}
-		//3.2 한글이 아니면
+		//6.2 한글이 아니면
 		else
 		{
-			//3.2.1 SingleByteLetter를 생성한다.
+			//6.2.1 SingleByteLetter를 생성한다.
 			letter = new SingleByteLetter(word[i], false);
 		}
-		//3.3 현재 줄에 글자를 추가한다.
+		//6.3 현재 줄에 글자를 추가한다.
 		currentLetterIndex = this->Add(currentLetterIndex + 1, letter);
-		//3.4 keyword의 다음 글자로 이동한다.
+		//6.4 keyword의 다음 글자로 이동한다.
 		i++;
 	}
 }

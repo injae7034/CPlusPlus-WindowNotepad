@@ -22,8 +22,6 @@
 #include "CtrlDeleteKeyActionCommand.h"
 #include "ShiftCtrlBackSpaceKeyActionCommand.h"
 #include "ShiftCtrlDeleteKeyActionCommand.h"
-#include "OnReplaceButtonClickedCommand.h"
-#include "OnReplaceAllButtonClickedCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -123,14 +121,6 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == ID_SHIFTCTRLDELETEKEYACTIONCOMMAND)
 	{
 		command = new ShiftCtrlDeleteKeyActionCommand(this->notepadForm);
-	}
-	else if (nId == ID_ONREPLACEBUTTONCLICKEDCOMMAND)
-	{
-		command = new OnReplaceButtonClickedCommand(this->notepadForm);
-	}
-	else if (nId == ID_ONREPLACEALLBUTTONCLICKEDCOMMAND)
-	{
-		command = new OnReplaceAllButtonClickedCommand(this->notepadForm);
 	}
 
 	return command;

@@ -5,7 +5,6 @@
 #define IDR_MENU1                       101
 #define IDC_BUTTON_FIND                 1002
 #define IDC_BUTTON_CANCLE               1003
-#define IDC_BUTTON_SWAP                 1003
 #define IDC_BUTTON_CANCEL               1004
 #define IDC_BUTTON_REPLACE              1024
 #define IDC_BUTTON_REPLACEALL           1025
@@ -61,8 +60,6 @@
 #define IDM_NOTE_UNDO                   40042
 #define ID_40043                        40043
 #define IDM_NOTE_REDO                   40044
-#define ID_ONREPLACEALLBUTTONCLICKEDCOMMAND 40991
-#define ID_ONREPLACEBUTTONCLICKEDCOMMAND 40992
 #define ID_SHIFTCTRLDELETEKEYACTIONCOMMAND 40993
 #define ID_SHIFTCTRLBACKSPACEKEYACTIONCOMMAND 40994
 #define ID_CTRLDELETEKEYACTIONCOMMAND   40995
@@ -81,6 +78,6 @@
 #define _APS_NEXT_RESOURCE_VALUE        106
 #define _APS_NEXT_COMMAND_VALUE         40045
 #define _APS_NEXT_CONTROL_VALUE         1005
-#define _APS_NEXT_SYMED_VALUE           111
+#define _APS_NEXT_SYMED_VALUE           109
 #endif
 #endif
