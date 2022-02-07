@@ -66,6 +66,18 @@ bool Command::IsSelectedTextsRemoved()
 	return -1;
 }
 
+//시작하는 줄의 위치구하기
+Long Command::GetStartRowIndex()
+{
+	return - 1;
+}
+
+//시작하는 글자의 위치구하기
+Long Command::GetStartLetterIndex()
+{
+	return -1;
+}
+
 //줄의 위치구하기
 Long Command::GetRowIndex()
 {
@@ -74,6 +86,18 @@ Long Command::GetRowIndex()
 
 //글자 위치구하기
 Long Command::GetLetterIndex()
+{
+	return -1;
+}
+
+//선택이 시작되는 글자의 위치구하기
+Long Command::GetSelectedStartXPos()
+{
+	return -1;
+}
+
+//선택이 시작되는 줄의 위치구하기
+Long Command::GetSelectedStartYPos()
 {
 	return -1;
 }

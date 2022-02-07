@@ -36,7 +36,9 @@ public:
 	virtual Long Next() { return 0; }
 	virtual Long Move(Long index) { return 0; }
 	virtual Long NextWord() { return 0; }
+	virtual void NextWordOnRowAutoChange(Long currentRowIndex, Long currentLetterIndex) {}
 	virtual Long PreviousWord() { return 0; }
+	virtual void PreviousWordOnRowAutoChange(Long currentRowIndex, Long currentLetterIndex) {}
 	virtual void Accept(GlyphVisitor* glyphVisitor) {}
 	virtual void AddWord(string word) {}
 	//인라인함수(여기에 자식들의 인라인함수도 선언을 해야 Glyph*에서 사용할 수 있음)

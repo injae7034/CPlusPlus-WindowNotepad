@@ -187,6 +187,7 @@ void BackSpaceKeyActionCommand::Execute()
 //실행취소
 void BackSpaceKeyActionCommand::Unexecute()
 {
+	//1. 선택된 영역을 지우지 않았으면
 	if (this->isSelectedTextsRemoved == false)
 	{
 		//1. RowAutoChange를 생성한다.
@@ -359,37 +360,6 @@ bool BackSpaceKeyActionCommand::IsSelectedTextsRemoved()
 //소멸자 정의
 BackSpaceKeyActionCommand::~BackSpaceKeyActionCommand()
 {
-#if 0
-	//1. glyph가 Row이면
-	if (dynamic_cast<Row*>(this->glyph))
-	{
-		Glyph* letter = 0;
-		Long i = 0;
-		while (i < this->glyph->GetLength())
-		{
-			letter = this->glyph->GetAt(i);
-			if (letter != 0)
-			{
-				delete letter;
-			}
-			i++;
-		}
-		if (this->glyph != 0)
-		{
-			delete this->glyph;
-		}
-	}
-	//2. glyph가 letter이면
-	else
-	{
-		if (this->glyph != 0)
-		{
-			delete this->glyph;
-		}
-	}
-#endif
-	//위에처럼 할필요가 없음 letter면 letter만 지우면 되기 때문이고, Row라도 Composite소멸자가 호출되어
-	//자신이 저장하고 있는 배열요소 각각을 전부 할당해제하기때문에 delete this->glyph한줄이면 충분하다.
 	if (this->glyph != 0)
 	{
 		delete this->glyph;

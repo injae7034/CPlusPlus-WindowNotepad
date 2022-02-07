@@ -33,6 +33,9 @@
 #include "CtrlDeleteKeyAction.h"
 #include "CtrlZKeyAction.h"
 #include "CtrlYKeyAction.h"
+#include "CtrlXKeyAction.h"
+#include "CtrlCKeyAction.h"
+#include "CtrlVKeyAction.h"
 
 //디폴트생성자
 KeyActionCreator::KeyActionCreator(NotepadForm* notepadForm)
@@ -158,6 +161,24 @@ KeyAction* KeyActionCreator::Create(UINT nChar)
 	ctrlPressedCheck & 0x8000 && nChar == 'Y')
 	{
 	keyAction = new CtrlYKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 알파벳 'x'를 누르면(잘라내기)
+	else if (ctrlPressedCheck & 0x8000 && nChar == 'x' ||
+	ctrlPressedCheck & 0x8000 && nChar == 'X')
+	{
+	keyAction = new CtrlXKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 알파벳 'c'를 누르면(복사하기)
+	else if (ctrlPressedCheck & 0x8000 && nChar == 'c' ||
+	ctrlPressedCheck & 0x8000 && nChar == 'C')
+	{
+	keyAction = new CtrlCKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 알파벳 'v'를 누르면(붙여넣기)
+	else if (ctrlPressedCheck & 0x8000 && nChar == 'v' ||
+	ctrlPressedCheck & 0x8000 && nChar == 'V')
+	{
+	keyAction = new CtrlVKeyAction(this->notepadForm);
 	}
 	//Ctrl키를 누른 채 BackSpace키를 눌렀으면
 	//(캐럿이 있는 곳에서 왼쪽으로 단어단위로 글자들을 지워버림)

@@ -147,6 +147,16 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	this->findReplaceDialog = 0;
 	//24. CommandHistory를 생성한다.
 	this->commandHistory = new CommandHistory(this);
+	//25. 자동개행여부를 프로그램이 꺼져도 저장하기 위해서 레지스트리에 NotepadSection파일을 만들고
+	//IsRowAutoChanging 값을 저장함.
+	this->isRowAutoChanging = (bool)!AfxGetApp()->GetProfileInt(
+		"NotepadSection", "IsRowAutoChanging", 1);
+	//26. 레지스트리에 NotepadSection파일에 저장된 IsRowAutoChanging 값으로 RowAutoChange에
+	//메세지를 보낼 지 말지 결정함.
+	if (this->isRowAutoChanging == true)
+	{
+		this->SendMessage(WM_COMMAND, IDM_ROW_AUTOCHANGE);
+	}
 
 	return 0;
 }
@@ -334,7 +344,7 @@ void NotepadForm::OnCommand(UINT nId)
 		//3.1 ConcreteCommand의 execute 함수를 실행한다.
 		command->Execute();
 		//3.2 글자를 입력하는 command이면 
-		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND)
+		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND || nId == IDM_NOTE_PASTE)
 		{
 			//3.2.1.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);
@@ -345,7 +355,7 @@ void NotepadForm::OnCommand(UINT nId)
 		else if (nId == ID_BACKSPACEKEYACTIONCOMMAND || nId == ID_DELETEKEYACTIONCOMMAND
 			|| nId == ID_CTRLBACKSPACEKEYACTIONCOMMAND || nId == ID_CTRLDELETEKEYACTIONCOMMAND
 			|| nId == ID_SHIFTCTRLBACKSPACEKEYACTIONCOMMAND ||
-			nId == ID_SHIFTCTRLDELETEKEYACTIONCOMMAND || nId == IDM_NOTE_REMOVE)
+			nId == ID_SHIFTCTRLDELETEKEYACTIONCOMMAND)
 		{
 			//3.3.1 Command에 변경사항이 있으면
 			if (command->IsDirty() == true)
@@ -364,6 +374,16 @@ void NotepadForm::OnCommand(UINT nId)
 					delete command;
 				}
 			}
+		}
+		//3.4 선택영역을 지우거나 선택영역을 잘라내는 command이면
+		else if (nId == IDM_NOTE_REMOVE || nId == IDM_NOTE_CUT)
+		{
+			//3.3.1.1 command를 멈추게하는 표시를 한다.
+			command->SetUndoMacroEnd();
+			//3.3.1.2 UndoList에 추가한다.
+			this->commandHistory->PushUndoList(command);
+			//3.3.1.3 redoList를 초기화시킨다.
+			this->commandHistory->MakeRedoListEmpty();
 		}
 		//3.3 글자를 입력하는 command나 글자를 지우는 command가 아니면
 		//undoList에 들어간 command가 아니면 따로 할당해제를 해줘야 메모리 누수가 안생긴다.
@@ -646,6 +666,9 @@ void NotepadForm::OnClose()
 	//3. 메세지박스에서 CANCEL을 선택하지 않았거나 변경된 사항이 없으면
 	if (messageBoxButton != IDCANCEL || this->isDirty == false)
 	{
+		//프로그램을 종료하기 전에 지금 자동개행이 진행 중인지 아닌지 여부를 레지스트리에 저장함.
+		AfxGetApp()->WriteProfileInt("NotepadSection", "IsRowAutoChanging",
+			!this->isRowAutoChanging);
 		//3.1 메모장을 지운다.
 		if (this->note != NULL)
 		{
