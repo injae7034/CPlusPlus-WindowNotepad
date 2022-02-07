@@ -54,7 +54,7 @@ void FileSetupCommand::Execute()
         //새로운 페이지 설정 정보를 만든다.
         this->notepadForm->pageSetUpInformation = new PageSetUpInformation(printableRect,
             devmode->dmPaperSize, pageSetupDialog.GetHeader(), 
-            pageSetupDialog.GetFooter(), devmode->dmOrientation);
+            pageSetupDialog.GetFooter(), devmode->dmOrientation, devmode->dmDeviceName);
     }
 }
 

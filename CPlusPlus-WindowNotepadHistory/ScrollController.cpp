@@ -68,7 +68,7 @@ void ScrollController::Update()
 	//6. 자동개행이 진행중이 아니면
 	if (this->notepadForm->isRowAutoChanging == false)
 	{
-		//6.1 현재 화면크기로 설정한다.(그래거 현재줄의 max값이 현재 화면의 가로 길이를 벗어나면
+		//6.1 현재 화면크기로 설정한다.(현재줄의 max값이 현재 화면의 가로 길이를 벗어나면
 		//스크롤이 생성됨)
 		scrollInfo.nPage = this->scroll[0]->pageSize;
 	}

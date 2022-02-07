@@ -1,5 +1,4 @@
 #include "CtrlBackSpaceKeyAction.h"
-#include "Glyph.h"
 
 //디폴트생성자
 CtrlBackSpaceKeyAction::CtrlBackSpaceKeyAction(NotepadForm* notepadForm)

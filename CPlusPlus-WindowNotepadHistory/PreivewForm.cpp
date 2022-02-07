@@ -281,7 +281,7 @@ void PreviewForm::OnSize(UINT nType, int cx, int cy)
 		this->pageCancelButton.SetFont(&this->controlFont);
 	}
 	//4. 변경사항을 갱신한다.
-	this->Invalidate(TRUE);
+	this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 //최소사이즈설정하기
@@ -380,6 +380,7 @@ void PreviewForm::OnPageSetUpButtonClicked()
 		{
 			//3.2.1 기존에 있는 프린트 정보를 없앤다.
 			delete this->notepadForm->printInformation;
+			this->notepadForm->printInformation = 0;
 		}
 		//3.3 페이지 설정 대화상자에서 hdc를 구한다.
 		HDC hdc = pageSetupDialog.CreatePrinterDC();
@@ -420,7 +421,7 @@ void PreviewForm::OnPageSetUpButtonClicked()
 		//새로운 페이지 설정 정보를 만든다.
 		this->notepadForm->pageSetUpInformation = new PageSetUpInformation(printableRect,
 			devmode->dmPaperSize, pageSetupDialog.GetHeader(),
-			pageSetupDialog.GetFooter(), devmode->dmOrientation);
+			pageSetupDialog.GetFooter(), devmode->dmOrientation, devmode->dmDeviceName);
 		//3.12 프린트정보를 저장할 클래스를 생성한다.
 		this->notepadForm->printInformation = new PrintInformation(this->notepadForm,
 			printLogFont, hdc, this->notepadForm->pageSetUpInformation->GetPrintableRect());
@@ -464,7 +465,7 @@ void PreviewForm::OnPageSetUpButtonClicked()
 		//3.21 총 페이지 수를 스태틱 컨트롤에 출력한다.
 		this->totalPageCountStatic.SetWindowText(_T(to_string(this->totalPageCount).c_str()));
 		//3.22 변경사항을 갱신한다.
-		this->Invalidate(TRUE);
+		this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 	}
 	GlobalFree(pageSetupDialog.m_psd.hDevMode);
 	GlobalFree(pageSetupDialog.m_psd.hDevNames);
@@ -487,6 +488,7 @@ void PreviewForm::OnPagePrintButtonClicked()
 		{
 			//2.1.1 기존에 있는 printInformation을 할당해제한다.
 			delete this->notepadForm->printInformation;
+			this->notepadForm->printInformation = 0;
 		}
 		//2.2 프린트 다이얼로그에서 hdc를 구한다.
 		HDC hdc = dlg.CreatePrinterDC();
@@ -495,24 +497,40 @@ void PreviewForm::OnPagePrintButtonClicked()
 		CDC* cdc = CDC::FromHandle(hdc);
 		//2.4 프린트 다이얼로그에서 devmode를 구한다.
 		DEVMODE* devmode = dlg.GetDevMode();
-		 //2.5 페이지 설정 정보가 있으면
-        if (this->notepadForm->pageSetUpInformation != 0)
-        {
-            //2.5.1 페이지 설정에서 설정한 용지방향 정보를 devmode에 저장한다.
-            devmode->dmOrientation = this->notepadForm->pageSetUpInformation->GetOrientation();
-            //2.5.2 페이지 설정 정보에서 정한 용지크기 정보를 devmode에 저장한다.
-            devmode->dmPaperSize = this->notepadForm->pageSetUpInformation->GetPaperSize();
-        }
-        //2.6 페이지 설정 정보가 없으면
-        else
-        {
-            //2.6.1 세로 방향을 디폴트로 설정한다.
-            devmode->dmOrientation = 1;
-            //2.6.2 A4용지크기를 devmode에 저장한다.
-            devmode->dmPaperSize = 9;
-        }
+		//2.5 페이지 설정 정보가 있으면
+		if (this->notepadForm->pageSetUpInformation != 0)
+		{
+			//2.5.1 페이지 설정에서 설정한 용지방향 정보를 devmode에 저장한다.
+			devmode->dmOrientation = this->notepadForm->pageSetUpInformation->GetOrientation();
+			//2.5.2 디바이스 이름이 같으면
+			if (this->notepadForm->pageSetUpInformation->GetDevName().
+				Compare((LPCTSTR)devmode->dmDeviceName) == 0)
+			{
+				//2.5.2.1 페이지 설정 정보에서 정한 용지크기 정보를 devmode에 저장한다.
+				devmode->dmPaperSize = this->notepadForm->pageSetUpInformation->GetPaperSize();
+			}
+			//2.5.3 이름이 다르면
+			else
+			{
+				//2.5.3.1 페이지 설정정보를 없앤다.
+				delete this->notepadForm->pageSetUpInformation;
+				this->notepadForm->pageSetUpInformation = 0;
+			}
+		}
+		//9. 페이지 설정정보가 없으면
+		else
+		{
+			//9.1 세로 방향을 디폴트로 설정한다.
+			devmode->dmOrientation = AfxGetApp()->GetProfileInt("NotepadSection",
+				"PaperOrientation", 1);
+			//9.3.1 A4용지 크기를 devmode에 저장한다.
+			devmode->dmPaperSize = AfxGetApp()->GetProfileInt("NotepadSection", "PaperSize",
+				DMPAPER_A4);
+		}
 		//2.7 devmode에 정보를 반영해서 cdc를 reste(upadate)해준다.
 		cdc->ResetDCA(devmode);
+
+		//hdc = (HDC)cdc;
 		//2.8 프린트할 문서 정보를 담을 공간을 선언한다.
 		DOCINFO docinfo;
 		//2.9 프린트할 문서 정보를 담을 공간을 초기화시켜준다.
@@ -550,6 +568,8 @@ void PreviewForm::OnPagePrintButtonClicked()
 		this->notepadForm->printInformation->GetPrintNote()->Accept(&printingVisitor);
 		//2.17 프린트를 끝낸다.
 		cdc->EndDoc();
+		//2.18 미리보기 폼을 종료한다.
+		this->PostMessage(WM_CLOSE);
 	}
 	//3. 다음페이지 버튼에 포커스를 없앤다.
 	this->nextPageButton.SendMessage(WM_KILLFOCUS);
@@ -610,7 +630,7 @@ void PreviewForm::OnCommand()
 		i++;
 	}
 	//6. 변경사항을 갱신한다.
-	this->Invalidate(TRUE);
+	this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 //소멸자

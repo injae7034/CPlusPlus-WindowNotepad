@@ -1,5 +1,4 @@
 #include "CtrlDeleteKeyAction.h"
-#include "Glyph.h"
 
 //디폴트생성자
 CtrlDeleteKeyAction::CtrlDeleteKeyAction(NotepadForm* notepadForm)

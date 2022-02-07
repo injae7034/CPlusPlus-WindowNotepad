@@ -22,10 +22,12 @@
 #include "PrintInformation.h"
 #include "CommandHistory.h"
 #include "TextingOutVisitor.h"
-#include "SelectingVisitor.h"
 #include "SelectingTexts.h"
 #include "PreviewForm.h"
 #include "GlyphFinder.h"
+
+//#include <htmlhelp.h>
+//#pragma comment(lib, "htmlhelp")
 
 HHOOK hSaveMessageBoxHook;//전역변수 선언
 
@@ -90,6 +92,8 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	CFrameWnd::OnCreate(lpCreateStruct);
 	this->icon = AfxGetApp()->LoadIcon(IDI_ICON1); ///< 변경된 아이콘
 	this->SetIcon(this->icon, ICON_SMALL);
+	//HWND hwnd = (HWND)HtmlHelpA(GetDesktopWindow(), "notepad.chm", HH_DISPLAY_TOPIC, NULL);
+	//HWND hwnd = (HWND)HtmlHelpA(this->GetSafeHwnd(), "notepad.chm", HH_DISPLAY_TOPIC, NULL);
 
 	//1. glyphCreator를 만든다.
 	GlyphCreator glyphCreator;
@@ -148,27 +152,18 @@ int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//기본생성자로 생성된 this->font에 매개변수 5개생성자로 치환(=)시킴
 	CFont font;
 	CDC* dc = this->GetDC();
-	Long size = 500;
-	font.CreatePointFont(size, "궁서체", dc);
+	Long size = AfxGetApp()->GetProfileInt("NotepadSection", "FontSize", 200);
+	CString style = AfxGetApp()->GetProfileString("NotepadSection", "FontStyle", "맑은 고딕");
+	font.CreatePointFont(size, style, dc);
 	LOGFONT logFont;
 	font.GetLogFont(&logFont);
 	this->font = Font(logFont, size, RGB(0, 0, 0));
 	//13. textExtent를 힙에 할당한다.
 	this->textExtent = new TextExtent(this);
-	////14. 선택한 메모장의 노트(내용)를 불러온다.
-	//File file;
-	//string path = "test.txt";
-	//file.Load(this, path);
-	//15. 처음 만들어지는 메모장 이름을 정한다.
+	//14. 처음 만들어지는 메모장 이름을 정한다.
 	string name = this->fileName;
 	name += " - 메모장";
 	SetWindowText(CString(name.c_str()));
-	////16. 캐럿의 현재 세로 위치를 제일 처음으로 보낸다.
-	//rowIndex = this->note->First();
-	////17. 현재 줄의 위치를 다시 저장한다.
-	//this->current = this->note->GetAt(rowIndex);
-	////18. 캐럿의 현재 가로 위치를 제일 처음으로 보낸다.
-	//Long letterIndex = this->current->First();
 	//19. scrollController를 생성한다.
 	this->scrollController = new ScrollController(this);
 	//21. pageMoveController를 생성한다.
@@ -233,15 +228,11 @@ void NotepadForm::OnPaint()
 	HBITMAP oldBMP = (HBITMAP)dcTemp.SelectObject(hbmp);
 	dcTemp.FillRect(&rect, CBrush::FromHandle((HBRUSH)GetStockObject(WHITE_BRUSH)));
 	
-	//2. 선택 안된 범위를 출력할 연산을 생성한다.
+	//2. 메모장에 텍스트를 출력할 클래스를 생성한다.
 	TextingOutVisitor textingOutVisitor = TextingOutVisitor(this, &dcTemp, 0, 0);
-	//3. 선택된 범위를 출력할 연산을 생성한다.
-	SelectingVisitor selectingVisitor = SelectingVisitor(this, &dcTemp, 0, 0);
-	//4. 선택이 안된 범위를 출력한다.
+	//3. 메모장에 텍스트를 출력한다.
 	this->note->Accept(&textingOutVisitor);
-	//5. 선택된 범위를 출력한다.
-	this->note->Accept(&selectingVisitor);
-
+	
 	// 더블버퍼링을 막기 위한 조치
 	dc.BitBlt(0, 0, rect.right, rect.bottom, &dcTemp, 0, 0, SRCCOPY);
 	dcTemp.SelectObject(oldBMP);
@@ -325,7 +316,7 @@ LRESULT NotepadForm::OnComposition(WPARAM wParam, LPARAM lParam)
 	//10. 메모장에 변경사항이 있음을 저장한다.
 	this->isDirty = true;
 	//11. 갱신한다.
-	Invalidate(TRUE);
+	this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 
 	return ::DefWindowProc(this->m_hWnd, WM_IME_COMPOSITION, wParam, lParam);
 }
@@ -510,7 +501,7 @@ void NotepadForm::OnCommand(UINT nId)
 	}
 	//4. 변화를 메모장에 갱신한다.
 	this->Notify();
-	this->Invalidate();
+	this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 //메모장에서 키보드로 이동하기
@@ -552,7 +543,7 @@ void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 		//Notify를 호출해 캐럿이 있는 곳으로 스크롤이 이동하지 않는다. OnKeyDown은 키보드키 중 어떠한
 		//키가 눌려져도 호출되기 때문에 원하는 keyAction이 아닌경우 Notify가 실행되지 않게 해야한다!
 		this->Notify();
-		this->Invalidate();
+		this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 	}
 }
 
@@ -587,7 +578,7 @@ void NotepadForm::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	}
 	//5. 변경사항을 옵저버들에게 알린다.
 	this->Notify();
-	this->Invalidate();	
+	this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 	//6. pageMoveController가 할당해제되어있으면
 	if (this->pageMoveController == 0)
 	{
@@ -627,7 +618,7 @@ void NotepadForm::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 	}
 	//5. 변경사항을 옵저버들에게 알린다.
 	this->Notify();
-	this->Invalidate();
+	this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 	//6. pageMoveController가 할당해제되어있으면
 	if (this->pageMoveController == 0)
 	{
@@ -691,7 +682,7 @@ BOOL NotepadForm::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	}
 	//7. 변경사항을 옵저버들에게 알린다.
 	this->Notify();
-	this->Invalidate();
+	this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 	//8. pageMoveController가 할당해제되어있으면
 	if (this->pageMoveController == 0)
 	{
@@ -855,7 +846,7 @@ void NotepadForm::OnLButtonDown(UINT nFlags, CPoint point)
 
 	//16. 변경사항을 옵저버들에게 알린다.
 	this->Notify();
-	this->Invalidate();
+	this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 //왼쪽 마우스 버튼을 더블 클릭했을 때
@@ -953,7 +944,7 @@ void NotepadForm::OnLButtonDblClk(UINT nFlags, CPoint point)
 		this->mouseRButtonMenu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
 		//12.3 변경사항을 옵저버들에게 알린다.
 		this->Notify();
-		this->Invalidate();
+		this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 	}	
 }
 
@@ -1097,7 +1088,7 @@ void NotepadForm::OnMouseMove(UINT nFlags, CPoint point)
 			}
 			//10.5 변경사항을 옵저버들에게 알린다.
 			this->Notify();
-			this->Invalidate();
+			this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 		}
 	}
 	
@@ -1168,7 +1159,9 @@ void NotepadForm::OnSize(UINT nType, int cx, int cy)
 		//2.3 캐럿의 위치와 스크롤 정보가 변경되었음을 알린다.
 		this->Notify();
 		//2.4 변경사항을 갱신한다.
-		this->Invalidate(TRUE);
+		//Invalidate하면 변경을 예약하는거라서 실시간 반응이 늦는데 
+		//RedrawWindow를 이용하면 실시간으로 반응해서 마우스 커서 이동이 훨씬 빠르다
+		this->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 	}
 }
 
@@ -1266,6 +1259,10 @@ void NotepadForm::OnClose()
 		//프로그램을 종료하기 전에 지금 자동개행이 진행 중인지 아닌지 여부를 레지스트리에 저장함.
 		AfxGetApp()->WriteProfileInt("NotepadSection", "IsRowAutoChanging",
 			!this->isRowAutoChanging);
+		//프로그램을 종료하기 전에 지금 글꼴 정보를 레지스트리에 저장함.
+		AfxGetApp()->WriteProfileInt("NotepadSection", "FontSize", this->font.GetSize());
+		string style = this->font.GetLogFont().lfFaceName;
+		AfxGetApp()->WriteProfileString("NotepadSection", "FontStyle", style.c_str());
 		//3.1 메모장을 지운다.
 		if (this->note != NULL)
 		{

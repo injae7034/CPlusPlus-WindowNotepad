@@ -35,7 +35,7 @@ BOOL ReplacingDialog::PreTranslateMessage(MSG* pMsg)
 {
 	if (pMsg->message == WM_KEYDOWN)
 	{
-		if (pMsg->wParam == VK_RETURN || pMsg->wParam == VK_ESCAPE)
+		if (pMsg->wParam == VK_ESCAPE)
 		{
 			return this->PostMessage(WM_CLOSE);
 		}
@@ -58,10 +58,18 @@ BOOL ReplacingDialog::OnInitDialog()
 	this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(0);
 	this->GetDlgItem(IDC_BUTTON_REPLACE)->EnableWindow(0);
 	this->GetDlgItem(IDC_BUTTON_REPLACEALL)->EnableWindow(0);
-	//1. '대/소문자 구분' 체크박스를 선택한다.
-	((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->SetCheck(BST_CHECKED);
-	//2. '주위에 배치' 체크박스를 선택하지 않는다.
-	((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->SetCheck(BST_UNCHECKED);
+	//레지스트리에 저장된 라디오버튼과 체크박스 정보를 가져와서 정보를 표시한다.
+	int matchCaseChecked = AfxGetApp()->GetProfileInt("NotepadSection",
+		"ReplacingDialogMatchCaseChecked", BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->SetCheck(matchCaseChecked);
+	int wrapAroundChecked = AfxGetApp()->GetProfileInt("NotepadSection",
+		"ReplacingDialogWrapAroundChecked", BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->SetCheck(wrapAroundChecked);
+	//레지스트리에 저장된 바꾸기 단어를 가져온다.
+	CString replacingWord = AfxGetApp()->GetProfileString("NotepadSection", "ReplacingWord",
+		"");
+	//레지스트리에 저장된 글자를 에디트컨트롤에 붙여넣는다.
+	this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->SetWindowText(replacingWord);
 	//3. 메모장에서 선택된 글자가 있으면
 	if (this->notepadForm->isSelecting == true)
 	{
@@ -213,7 +221,22 @@ BOOL ReplacingDialog::OnInitDialog()
 		this->GetDlgItem(IDC_BUTTON_REPLACE)->EnableWindow(1);
 		this->GetDlgItem(IDC_BUTTON_REPLACEALL)->EnableWindow(1);
 	}
-	//4. 끝내다.
+	//4. 선택된 글자가 없으면
+	else
+	{
+		//4.1 레지스트리에 저장된 글자를 읽는다.
+		CString registerKeyword = AfxGetApp()->GetProfileString("NotepadSection",
+			"ReplacingDialogFindingWord", "");
+		//4.2 레지스트리에 저장된 글자가 있으면
+		if (registerKeyword.Compare("") != 0)
+		{
+			//4.2.1 저장된 글자를 에디트컨트롤에 붙여넣는다.
+			this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->SetWindowText(registerKeyword);
+			//4.2.2 저장된 글자가 있기 때문에 찾기 버튼을 활성화 시킨다.
+			this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(1);
+		}
+	}
+	//5. 끝내다.
 	return FALSE;
 }
 
@@ -266,9 +289,22 @@ void ReplacingDialog::OnFindButtonClicked()
 	//2. 찾기 에디트컨트롤에 적혀있는 글자를 읽는다.
 	CString keyword;
 	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(keyword);
+	//에디트컨트롤에 적혀 있는 글자를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileString("NotepadSection", "ReplacingDialogFindingWord", keyword);
+	//2. 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+	CString replacingKeyword;
+	this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(replacingKeyword);
+	this->replacingKeyword = replacingKeyword;
+	//에디트컨트롤에 적혀 있는 글자를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileString("NotepadSection", "ReplacingWord", replacingKeyword);
 	//3. 선택된 체크박스를 읽는다.
 	int wrapAroundChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->GetCheck();
 	this->matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
+	//선택된 체크박스와 라디오버튼의 정보를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileInt("NotepadSection", "ReplacingDialogWrapAroundChecked",
+		wrapAroundChecked);
+	AfxGetApp()->WriteProfileInt("NotepadSection", "ReplacingDialogMatchCaseChecked",
+		this->matchCaseChecked);
 
 	Long findingStartRowIndex = 0;
 	Long findingStartLetterIndex = 0;
@@ -381,7 +417,7 @@ void ReplacingDialog::OnFindButtonClicked()
 	//10. 캐럿의 위치가 변경되었음을 알린다.
 	this->notepadForm->Notify();
 	//11. 변경사항을 갱신한다.
-	this->notepadForm->Invalidate(TRUE);
+	this->notepadForm->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 //5. 바꾸기 버튼을 클릭했을 떄
@@ -490,9 +526,18 @@ void ReplacingDialog::OnReplacedButtonClicked()
 		bool isMatched = false;
 		CString keyword;
 		this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(keyword);
+		//에디트컨트롤에 적혀 있는 글자를 레지스트리에 저장한다.
+		AfxGetApp()->WriteProfileString("NotepadSection", "ReplacingDialogFindingWord",
+			keyword);
 		string word(keyword);
-		// 대/소문자 구분 선택된 체크박스를 읽는다.
+		//3. 선택된 체크박스를 읽는다.
+		int wrapAroundChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->GetCheck();
 		this->matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
+		//선택된 체크박스와 라디오버튼의 정보를 레지스트리에 저장한다.
+		AfxGetApp()->WriteProfileInt("NotepadSection", "ReplacingDialogWrapAroundChecked",
+			wrapAroundChecked);
+		AfxGetApp()->WriteProfileInt("NotepadSection", "ReplacingDialogMatchCaseChecked", 
+			this->matchCaseChecked);
 		// 대/소문자 구분이 체크되어 있으면
 		if (this->matchCaseChecked == true)
 		{
@@ -510,18 +555,20 @@ void ReplacingDialog::OnReplacedButtonClicked()
 				isMatched = true;
 			}
 		}
+		//2.8.1 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+		CString replacingWord;
+		this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(replacingWord);
+		this->replacingKeyword = (LPCTSTR)replacingWord;
+		//에디트컨트롤에 적혀 있는 글자를 레지스트리에 저장한다.
+		AfxGetApp()->WriteProfileString("NotepadSection", "ReplacingWord", replacingWord);
 		//선택되어 있는 글자와 찾는 글자가 서로 일치하면
 		if (isMatched == true)
 		{
-			//2.8.1 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
-			CString word;
-			this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(word);
-			this->replacingKeyword = (LPCTSTR)word;
-			//2.8.2 OnReplaceButtonClikedCommand로 메세지를 보낸다.
+			//2.8.1 OnReplaceButtonClikedCommand로 메세지를 보낸다.
 			this->notepadForm->SendMessage(WM_COMMAND, ID_ONREPLACEBUTTONCLICKEDCOMMAND);
-			//2.8.3 바꿀 단어를 바꿨기 때문에 메모장의 바꿀 단어를 초기화해준다.
+			//2.8.2 바꿀 단어를 바꿨기 때문에 메모장의 바꿀 단어를 초기화해준다.
 			this->replacingKeyword = "";
-			//2.8.4 '찾기 버튼을 클릭했을 때'로 메세지를 보낸다.
+			//2.8.3 '찾기 버튼을 클릭했을 때'로 메세지를 보낸다.
 			//윈도우에서 버튼을 클릭했을 때 메세지는 WM_COMMAND이다
 			this->SendMessage(WM_COMMAND, IDC_BUTTON_FIND);
 		}
@@ -542,12 +589,23 @@ void ReplacingDialog::OnReplaceAllButtonClicked()
 	CString findingKeyword;
 	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(findingKeyword);
 	this->findingKeyword = findingKeyword;
+	//에디트컨트롤에 적혀 있는 글자를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileString("NotepadSection", "ReplacingDialogFindingWord",
+		findingKeyword);
 	//2. 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
 	CString replacingKeyword;
 	this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(replacingKeyword);
 	this->replacingKeyword = replacingKeyword;
-	//3. 대/소문자 구분 체크박스를 읽는다.
+	//에디트컨트롤에 적혀 있는 글자를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileString("NotepadSection", "ReplacingWord", replacingKeyword);
+	//3. 선택된 체크박스를 읽는다.
+	int wrapAroundChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->GetCheck();
 	this->matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
+	//선택된 체크박스와 라디오버튼의 정보를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileInt("NotepadSection", "ReplacingDialogWrapAroundChecked",
+		wrapAroundChecked);
+	AfxGetApp()->WriteProfileInt("NotepadSection", "ReplacingDialogMatchCaseChecked",
+		this->matchCaseChecked);
 	//4. OnReplaceAllButtonClikedCommand로 메세지를 보낸다.
 	this->notepadForm->SendMessage(WM_COMMAND, ID_ONREPLACEALLBUTTONCLICKEDCOMMAND);
 }
@@ -567,6 +625,28 @@ void ReplacingDialog::OnCancelButtonClicked()
 //7.닫기버튼을 클릭했을 때
 void ReplacingDialog::OnClose()
 {
+	//1. 찾기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+	CString findingKeyword;
+	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(findingKeyword);
+	this->findingKeyword = findingKeyword;
+	//에디트컨트롤에 적혀 있는 글자를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileString("NotepadSection", "ReplacingDialogFindingWord",
+		findingKeyword);
+	//2. 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+	CString replacingKeyword;
+	this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(replacingKeyword);
+	this->replacingKeyword = replacingKeyword;
+	//에디트컨트롤에 적혀 있는 글자를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileString("NotepadSection", "ReplacingWord", replacingKeyword);
+	//3. 선택된 체크박스를 읽는다.
+	int wrapAroundChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->GetCheck();
+	this->matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
+	//선택된 체크박스와 라디오버튼의 정보를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileInt("NotepadSection", "ReplacingDialogWrapAroundChecked",
+		wrapAroundChecked);
+	AfxGetApp()->WriteProfileInt("NotepadSection", "ReplacingDialogMatchCaseChecked",
+		this->matchCaseChecked);
+
 	this->notepadForm->findReplaceDialog = 0;
 	//1. 바꾸기 다이얼로그를 닫는다.
 	CFindReplaceDialog::OnClose();

@@ -46,28 +46,41 @@ void FilePreviewCommand::Execute()
 	CDC* cdc = CDC::FromHandle(hdc);
 	//7. CPrintDialog의 정보를 가지고 있는 devmode구조체를 구한다.
 	DEVMODE* devmode = dlg.GetDevMode();
-	//8. 페이지 설정정보가 있으면
+	//2.5 페이지 설정 정보가 있으면
 	if (this->notepadForm->pageSetUpInformation != 0)
 	{
-		//8.1 페이지 설정에서 설정한 용지방향 정보를 devmode에 저장한다.
+		//2.5.1 페이지 설정에서 설정한 용지방향 정보를 devmode에 저장한다.
 		devmode->dmOrientation = this->notepadForm->pageSetUpInformation->GetOrientation();
-		//8.2 페이지 설정에서 설정한 용지크기 정보를 devmode에 저장한다.
-		devmode->dmPaperSize = this->notepadForm->pageSetUpInformation->GetPaperSize();
+		//2.5.2 디바이스 이름이 같으면
+		if (this->notepadForm->pageSetUpInformation->GetDevName().
+			Compare((LPCTSTR)devmode->dmDeviceName) == 0)
+		{
+			//2.5.2.1 페이지 설정 정보에서 정한 용지크기 정보를 devmode에 저장한다.
+			devmode->dmPaperSize = this->notepadForm->pageSetUpInformation->GetPaperSize();
+		}
+		//2.5.3 이름이 다르면
+		else
+		{
+			//2.5.3.1 페이지 설정정보를 없앤다.
+			delete this->notepadForm->pageSetUpInformation;
+			this->notepadForm->pageSetUpInformation = 0;
+		}
 	}
 	//9. 페이지 설정정보가 없으면
 	else
 	{
 		//9.1 세로 방향을 디폴트로 설정한다.
-		devmode->dmOrientation = 1;
-		//9.2 A4용지 크기를 devmode에 저장한다.
-		devmode->dmPaperSize = 9;
+		devmode->dmOrientation = AfxGetApp()->GetProfileInt("NotepadSection",
+			"PaperOrientation", 1);
+		//9.3.1 A4용지 크기를 devmode에 저장한다.
+		devmode->dmPaperSize = AfxGetApp()->GetProfileInt("NotepadSection", "PaperSize",
+			DMPAPER_A4);
 	}
 	//10. devmode의 정보를 반영해서 cdc를 reset(update)한다.
 	cdc->ResetDCA(devmode);
 	//11. 프린트 비율로 글꼴의 비율을 맞춰준다.
 	LOGFONT printLogFont = this->notepadForm->font.GetLogFont();
 	printLogFont.lfHeight = -MulDiv(this->notepadForm->font.GetSize() / 10, 600, 72);
-	//LOGFONT printLogFont = this->notepadForm->font.FindPrintingLogFont(cdc);
 	CFont font;
 	HFONT oldFont;
 	font.CreateFontIndirect(&printLogFont);

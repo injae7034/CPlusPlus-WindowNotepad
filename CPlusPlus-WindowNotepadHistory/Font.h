@@ -12,8 +12,6 @@ public:
 	Font();//디폴트생성자
 	Font(LOGFONT logFont, Long size, COLORREF color);//매개변수를 2개 생성자
 	Font(const Font& source);//복사생성자
-	LOGFONT FindPrintingLogFont(CDC* printerDC);
-	LOGFONT FindPreviewLogFont(CDC* previewDC);
 	~Font();//소멸자
 	Font& operator=(const Font& source);//치환연산자
 	//인라인함수

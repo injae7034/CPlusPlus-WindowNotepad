@@ -181,10 +181,6 @@ void DeleteKeyActionCommand::Execute()
 				//OnSize에서 부분자동개행을 하도록 한다. 
 				//가짜줄이 있다는게 자동개행이 진행중이라는 의미임.
 				this->notepadForm->SendMessage(WM_SIZE);
-				//2.8.2.5 글자 위치를 다시 현재 줄 마지막 글자로 조정해준다.
-				currentRowPos = this->notepadForm->note->Move(currentRowPos - 1);
-				this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
-				currentLetterPos = this->notepadForm->current->Last();
 			}
 			//2.8.3 Command에 변경 사항이 있음을 표시한다.
 			this->isDirty = true;

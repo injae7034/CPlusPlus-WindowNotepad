@@ -1,7 +1,4 @@
 #include "CtrlYKeyAction.h"
-#include "Glyph.h"
-#include "SelectingTexts.h"
-#include "CommandHistory.h"
 
 //디폴트생성자
 CtrlYKeyAction::CtrlYKeyAction(NotepadForm* notepadForm)

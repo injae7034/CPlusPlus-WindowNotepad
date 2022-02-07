@@ -30,43 +30,34 @@ TextingOutVisitor& TextingOutVisitor::operator=(const TextingOutVisitor& source)
 //Note
 void TextingOutVisitor::VisitNote(Glyph* note)
 {
-	//1. 선택된 범위를 구한다.
-	Long startingRowPos = 0;
-	Long startingLetterPos = 0;
-	Long endingRowPos = 0;
-	Long endingLetterPos = 0;
-	note->CalculateSelectedRange(&startingRowPos,
-		&startingLetterPos, &endingRowPos, &endingLetterPos);
-	//2. 메모장에서 선택이 안된 texts를 출력한다.
-	//2.1 메모장의 첫 줄부터 선택된 시작되는 줄까지 반복한다.
+	//1. 수직스크롤의 현재 위치를 구한다.
+	Long currentScrollYPos = this->notepadForm->GetScrollPos(SB_VERT);
+	//2. 현재 글자의 높이를 구한다.
+	Long letterHeight = this->notepadForm->textExtent->GetHeight();
+	//3. 화면에서 출력이 시작되는 줄의 위치를 구한다.
+	Long startRowIndex = currentScrollYPos / letterHeight;
+	//4. 현재 화면의 크기를 구한다.
+	CRect rect;
+	this->notepadForm->GetClientRect(&rect);
+	//5. 화면에서 출력이 끝나는 줄의 위치를 구한다.
+	Long endRowIndex = (currentScrollYPos + rect.Height()) / letterHeight;
+	//6. 수평스크롤의 현재 위치를 구한다.
+	Long currentScollXPos = this->notepadForm->GetScrollPos(SB_HORZ);
+	//7. 화면에서 출력이 시작되는 줄이 노트의 줄의 개수보다 작은동안 그리고
+	//화면에서 출력이 끝나는 줄의 위치보다 작거나 같은동안 반복한다.
 	Glyph* row = 0;
-	Long rowIndex = 0;
-	while (rowIndex <= startingRowPos)
+	Long i = startRowIndex;
+	while (i < note->GetLength() && i <= endRowIndex)
 	{
-		//2.1.1 현재 줄을 구한다.
-		row = note->GetAt(rowIndex);
-		//2.1.2 출력될 부분의 위치를 업데이트해준다.
-		this->glyphXPos = 0;
-		this->glyphYPos = rowIndex;
-		//2.1.3 줄에서 선택이 안된 texts를 출력한다.
+		//7.1 줄을 구한다.
+		row = note->GetAt(i);
+		//7.2 출력될 부분의 위치를 업데이트해준다.
+		this->glyphXPos = currentScollXPos;
+		this->glyphYPos = i;
+		//7.3  줄에서 선택이 안된 texts를 출력한다.
 		row->Accept(this);
-		//2.1.4 줄의 위치를 증가시킨다.
-		rowIndex++;
-	}
-	//2.2 줄의 위치를 선택이 끝나는 줄로 이동시킨다.
-	rowIndex = endingRowPos;
-	//2.3 선택이 끝나는 줄부터 메모장의 마지막줄까지 반복한다.
-	while (rowIndex < note->GetLength())
-	{
-		//2.3.1 현재 줄을 구한다.
-		row = note->GetAt(rowIndex);
-		//2.3.2 출력될 부분의 위치를 업데이트해준다.
-		this->glyphXPos = 0;
-		this->glyphYPos = rowIndex;
-		//2.3.3  줄에서 선택이 안된 texts를 출력한다.
-		row->Accept(this);
-		//2.3.4 줄의 위치를 증가시킨다.
-		rowIndex++;
+		//7.4 줄의 위치를 증가시킨다.
+		i++;
 	}
 }
 
@@ -150,10 +141,21 @@ void TextingOutVisitor::VisitSingleByteLetter(Glyph* singleByteLetter)
 		//7.2 글꼴정보를 받아 글자색을 정한다.
 		this->dc->SetTextColor(this->notepadForm->font.GetColor());
 		//7.3 글자를 출력한다.
-		this->dc->TextOut(this->glyphXPos - currentXPos, this->glyphYPos * text.tmHeight
+		this->dc->TextOut(this->glyphXPos - currentXPos * 2, this->glyphYPos * text.tmHeight
 			- currentYPos, content);
 	}
-	//8. font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음.
+	//8. 현재 글자가 선택이 되어있으면
+	else
+	{
+		//8.1 배경색을 청색으로 설정한다.
+		this->dc->SetBkColor(GetSysColor(COLOR_HIGHLIGHT));//red, green, blue 세개 색깔 
+		//8.2 글자색을 흰색으로 설정한다.
+		this->dc->SetTextColor(RGB(255, 255, 255));
+		//8.3 글자를 출력한다.
+		this->dc->TextOut(this->glyphXPos - currentXPos * 2, this->glyphYPos * text.tmHeight
+			- currentYPos, content);
+	}
+	//9. font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음.
 	this->dc->SelectObject(oldFont);
 	font.DeleteObject();
 }
@@ -183,10 +185,21 @@ void TextingOutVisitor::VisitDoubleByteLetter(Glyph* doubleByteLetter)
 		//6.2 글꼴정보를 받아 글자색을 정한다.
 		this->dc->SetTextColor(this->notepadForm->font.GetColor());
 		//6.3 글자를 출력한다.
-		this->dc->TextOut(this->glyphXPos - currentXPos, this->glyphYPos * text.tmHeight
+		this->dc->TextOut(this->glyphXPos - currentXPos * 2, this->glyphYPos * text.tmHeight
 			- currentYPos, content);
 	}
-	//7. font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음.
+	//7. 현재 글자가 선택이 되어있으면
+	else
+	{
+		//7.1 배경색을 청색으로 설정한다.
+		this->dc->SetBkColor(GetSysColor(COLOR_HIGHLIGHT));//red, green, blue 세개 색깔 
+		//7.2 글자색을 흰색으로 설정한다.
+		this->dc->SetTextColor(RGB(255, 255, 255));
+		//7.3 글자를 출력한다.
+		this->dc->TextOut(this->glyphXPos - currentXPos * 2, this->glyphYPos * text.tmHeight
+			- currentYPos, content);
+	}
+	//8. font가 폰트공통대화상자에서 변경되었을때 기존 font를 지워야 새로 변경된 font로 적용할 수 있음.
 	this->dc->SelectObject(oldFont);
 	font.DeleteObject();
 }

@@ -29,6 +29,8 @@
 #include "FilePreviewCommand.h"
 #include "FileExitCommand.h"
 #include "FileCloseAndOpenNewCommand.h"
+#include "HelpCommand.h"
+#include "FeedBackCommand.h"
 
 //디폴트 생성자
 CommandCreator::CommandCreator(NotepadForm *notepadForm)
@@ -156,6 +158,14 @@ Command* CommandCreator::Create(UINT nId)
 	else if (nId == IDM_FILE_CLOSEANDOPENNEW)
 	{
 		command = new FileCloseAndOpenNewCommand(this->notepadForm);
+	}
+	else if (nId == IDM_HELP_SEEING)
+	{
+		command = new HelpCommand(this->notepadForm);
+	}
+	else if (nId == IDM_FEEDBACK_SENDING)
+	{
+		command = new FeedBackCommand(this->notepadForm);
 	}
 
 	return command;

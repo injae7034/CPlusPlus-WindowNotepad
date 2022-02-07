@@ -30,7 +30,7 @@ BOOL FindingDialog::PreTranslateMessage(MSG* pMsg)
 {
 	if (pMsg->message == WM_KEYDOWN)
 	{
-		if (pMsg->wParam == VK_RETURN || pMsg->wParam == VK_ESCAPE)
+		if (pMsg->wParam == VK_ESCAPE)
 		{
 			return this->PostMessage(WM_CLOSE);
 		}
@@ -49,14 +49,17 @@ BOOL FindingDialog::OnInitDialog()
 	this->GetDlgItem(IDC_CHECKBOX_WRAPAROUND)->EnableWindow(1);
 	//찾기 버튼을 글자가 없으면 수행이 안되기 때문에 디폴트값으로 비활성화 시킨다.
 	this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(0);
-	//1. '위로' 라디오버튼을 선택하지 않는다.
-	((CButton*)GetDlgItem(IDC_RADIO_UP))->SetCheck(BST_UNCHECKED);
-	//2. '아래로' 라디오버튼을 선택한다.
-	((CButton*)GetDlgItem(IDC_RADIO_DOWN))->SetCheck(BST_CHECKED);
-	//3. '대/소문자 구분' 체크박스를 선택한다.
-	((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->SetCheck(BST_CHECKED);
-	//4. '주위에 배치' 체크박스를 선택하지 않는다.
-	((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->SetCheck(BST_UNCHECKED);
+	//레지스트리에 저장된 라디오버튼과 체크박스 정보를 가져와서 정보를 표시한다.
+	int upChecked = AfxGetApp()->GetProfileInt("NotepadSection", "UpChecked", BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_RADIO_UP))->SetCheck(upChecked);
+	int downChecked = AfxGetApp()->GetProfileInt("NotepadSection", "DownChecked", BST_CHECKED);
+	((CButton*)GetDlgItem(IDC_RADIO_DOWN))->SetCheck(downChecked);
+	int matchCaseChecked = AfxGetApp()->GetProfileInt("NotepadSection", "MatchCaseChecked",
+		BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->SetCheck(matchCaseChecked);
+	int wrapAroundChecked = AfxGetApp()->GetProfileInt("NotepadSection", "WrapAroundChecked",
+		BST_UNCHECKED);
+	((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->SetCheck(wrapAroundChecked);
 	//2. 메모장에서 선택된 글자가 있으면
 	if (this->notepadForm->isSelecting == true)
 	{
@@ -205,7 +208,22 @@ BOOL FindingDialog::OnInitDialog()
 		//선택된 texts가 있기 때문에 찾기 버튼을 활성화 시킨다.
 		this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(1);
 	}
-	//3. 끝내다.
+	//3. 선택된 글자가 없으면
+	else
+	{
+		//3.1 레지스트리에 저장된 글자를 읽는다.
+		CString registerKeyword = AfxGetApp()->GetProfileString("NotepadSection", "FindingWord",
+			"");
+		//3.2 레지스트리에 저장된 글자가 있으면
+		if (registerKeyword.Compare("") != 0)
+		{
+			//3.2.1 저장된 글자를 에디트컨트롤에 붙여넣는다.
+			this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->SetWindowText(registerKeyword);
+			//3.2.2 저장된 글자가 있기 때문에 찾기 버튼을 활성화 시킨다.
+			this->GetDlgItem(IDC_BUTTON_FIND)->EnableWindow(1);
+		}
+	}
+	//4. 끝내다.
 	return FALSE;
 }
 
@@ -237,11 +255,18 @@ void FindingDialog::OnFindButtonClicked()
 	//2. 에디트컨트롤에 적혀있는 글자를 읽는다.
 	CString keyword;
 	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(keyword);
+	//에디트컨트롤에 적혀 있는 글자를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileString("NotepadSection", "FindingWord", keyword);
 	//3. 선택된 체크박스와 라디오버튼을 읽는다.
 	int wrapAroundChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->GetCheck();
 	int matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
 	int upChecked = ((CButton*)GetDlgItem(IDC_RADIO_UP))->GetCheck();
 	int downChecked = ((CButton*)GetDlgItem(IDC_RADIO_DOWN))->GetCheck();
+	//선택된 체크박스와 라디오버튼의 정보를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileInt("NotepadSection", "WrapAroundChecked", wrapAroundChecked);
+	AfxGetApp()->WriteProfileInt("NotepadSection", "MatchCaseChecked", matchCaseChecked);
+	AfxGetApp()->WriteProfileInt("NotepadSection", "UpChecked", upChecked);
+	AfxGetApp()->WriteProfileInt("NotepadSection", "DownChecked", downChecked);
 	Long findingStartRowIndex = 0;
 	Long findingStartLetterIndex = 0;
 	Long findingEndRowIndex = 0;
@@ -454,7 +479,7 @@ void FindingDialog::OnFindButtonClicked()
 	//14. 캐럿의 위치가 변경되었음을 알린다.
 	this->notepadForm->Notify();
 	//15. 변경사항을 갱신한다.
-	this->notepadForm->Invalidate(TRUE);
+	this->notepadForm->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
 //4. 취소 버튼을 클릭했을 때
@@ -472,6 +497,20 @@ void FindingDialog::OnCancelButtonClicked()
 //5.닫기버튼을 클릭했을 때
 void FindingDialog::OnClose()
 {
+	//1. 찾기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+	CString findingKeyword;
+	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(findingKeyword);
+	AfxGetApp()->WriteProfileString("NotepadSection", "FindingWord", findingKeyword);
+	//3. 선택된 체크박스와 라디오버튼을 읽는다.
+	int wrapAroundChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_WRAPAROUND))->GetCheck();
+	int matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
+	int upChecked = ((CButton*)GetDlgItem(IDC_RADIO_UP))->GetCheck();
+	int downChecked = ((CButton*)GetDlgItem(IDC_RADIO_DOWN))->GetCheck();
+	//선택된 체크박스와 라디오버튼의 정보를 레지스트리에 저장한다.
+	AfxGetApp()->WriteProfileInt("NotepadSection", "WrapAroundChecked", wrapAroundChecked);
+	AfxGetApp()->WriteProfileInt("NotepadSection", "MatchCaseChecked", matchCaseChecked);
+	AfxGetApp()->WriteProfileInt("NotepadSection", "UpChecked", upChecked);
+	AfxGetApp()->WriteProfileInt("NotepadSection", "DownChecked", downChecked);
 	this->notepadForm->findReplaceDialog = 0;
 	//1. 찾기 다이얼로그를 닫는다.
 	CFindReplaceDialog::OnClose();

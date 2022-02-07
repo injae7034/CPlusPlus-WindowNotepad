@@ -42,6 +42,7 @@
 #include "CtrlPKeyAction.h"
 #include "CtrlFKeyAction.h"
 #include "CtrlHKeyAction.h"
+#include "CtrlNKeyAction.h"
 
 //디폴트생성자
 KeyActionCreator::KeyActionCreator(NotepadForm* notepadForm)
@@ -221,6 +222,12 @@ KeyAction* KeyActionCreator::Create(UINT nChar)
 	ctrlPressedCheck & 0x8000 && nChar == 'H')
 	{
 		keyAction = new CtrlHKeyAction(this->notepadForm);
+	}
+	//Ctrl키를 누른 채 알파벳 'n'을 누르면(새로 열기)
+	else if (ctrlPressedCheck & 0x8000 && nChar == 'n' ||
+	ctrlPressedCheck & 0x8000 && nChar == 'N')
+	{
+		keyAction = new CtrlNKeyAction(this->notepadForm);
 	}
 	//Ctrl키를 누른 채 BackSpace키를 눌렀으면
 	//(캐럿이 있는 곳에서 왼쪽으로 단어단위로 글자들을 지워버림)

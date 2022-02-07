@@ -1,7 +1,4 @@
 #include "CtrlCKeyAction.h"
-#include "Glyph.h"
-#include "SelectingTexts.h"
-#include "CommandHistory.h"
 
 //디폴트생성자
 CtrlCKeyAction::CtrlCKeyAction(NotepadForm* notepadForm)
