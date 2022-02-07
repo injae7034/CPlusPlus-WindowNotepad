@@ -73,13 +73,21 @@ void OnReplaceButtonClickedCommand::Execute()
 		currentRowPos = this->notepadForm->note->GetCurrent();
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//2.8 자동 줄 바꿈 메뉴가 체크되어 있으면(선택영역이 삭제 됬기 때문에 자동개행을 다시해줘야함)
+		//2.8 선택된 단어를 지웠기 때문에 다시 시작하는 줄의 위치와 글자위치를 갱신한다.
+		this->startYPos = currentRowPos;
+		this->startXPos = currentLetterPos;
+		//2.9 자동 줄 바꿈 메뉴가 체크되어 있으면(선택영역이 삭제 됬기 때문에 자동개행을 다시해줘야함)
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//2.8.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//2.9.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
-			//2.8.2 자동개행을 안한 상태의 선택하기가 시작되는 진짜 줄의 위치와 글자위치를 구한다.
+			//2.9.2 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
+			//있기 때문에 시작하는 줄의 위치를 현재 줄의 위치와 글자위치로 재갱신해줘야한다.
+			this->startYPos = this->notepadForm->note->GetCurrent();
+			this->startXPos = this->notepadForm->current->GetCurrent();
+			//2.9.3 지금 현재 startYPos와 startXPos의 위치는 자동개행이 적용된 상태의 위치이기 때문에
+			//자동개행을 안한 상태에서 선택하기가 시작되는 진짜 줄의 위치와 글자위치를 구한다.
 			changedRowPos = this->startYPos;
 			changedLetterPos = this->startXPos;
 			originRowPos = 0;
@@ -88,15 +96,6 @@ void OnReplaceButtonClickedCommand::Execute()
 				&originRowPos);
 			this->startYPos = originRowPos;
 			this->startXPos = originLetterPos;
-			//2.8.3 자동개행을 안한 상태의 선택하기가 끝나는 진짜 줄의 위치와 글자위치를 구한다.
-			changedRowPos = this->selectedEndYPos;
-			changedLetterPos = this->selectedEndXPos;
-			originRowPos = 0;
-			originLetterPos = 0;
-			rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
-				&originRowPos);
-			this->selectedEndYPos = originRowPos;
-			this->selectedEndXPos = originLetterPos;
 		}
 	}
 	//3. OnReplaceButtonClickedCommand가 다시 실행되면
@@ -152,12 +151,30 @@ void OnReplaceButtonClickedCommand::Execute()
 		currentRowPos = this->notepadForm->note->GetCurrent();
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//3.5 자동 줄 바꿈 메뉴가 체크되어 있으면(선택영역이 삭제 됬기 때문에 자동개행을 다시해줘야함)
+		//3.5 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
+		//있기 때문에 시작하는 줄의 위치를 현재 줄의 위치와 글자위치로 재갱신해줘야한다.
+		this->startYPos = this->notepadForm->note->GetCurrent();
+		this->startXPos = this->notepadForm->current->GetCurrent();
+		//3.6 자동 줄 바꿈 메뉴가 체크되어 있으면(선택영역이 삭제 됬기 때문에 자동개행을 다시해줘야함)
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//3.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//3.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
+			//2.6.2 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
+			//있기 때문에 시작하는 줄의 위치를 현재 줄의 위치와 글자위치로 재갱신해줘야한다.
+			this->startYPos = this->notepadForm->note->GetCurrent();
+			this->startXPos = this->notepadForm->current->GetCurrent();
+			//3.6.3 지금 현재 startYPos와 startXPos의 위치는 자동개행이 적용된 상태의 위치이기 때문에
+			//자동개행을 안한 상태에서 선택하기가 시작되는 진짜 줄의 위치와 글자위치를 구한다.
+			changedRowPos = this->startYPos;
+			changedLetterPos = this->startXPos;
+			originRowPos = 0;
+			originLetterPos = 0;
+			rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+				&originRowPos);
+			this->startYPos = originRowPos;
+			this->startXPos = originLetterPos;
 		}
 	}
 	//4. 메모장에서 선택된 단어를 지웠기 때문에 메모장에서 선택이 안된 상태로 바꾼다.
@@ -183,7 +200,10 @@ void OnReplaceButtonClickedCommand::Execute()
 		//11.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 		//OnSize에서 부분자동개행을 하도록 한다. 
 		this->notepadForm->SendMessage(WM_SIZE);
-		//11.2 자동개행을 안한 상태의 붙여넣기가 끝나는 진짜 줄의 위치와 글자위치를 구한다.
+		//11.2 글자를 추가하고 자동개행이 적용된 뒤에 붙여넣기가 끝나는 줄의 위치와 글자위치를 저장한다.
+		this->pastingEndYPos = this->notepadForm->note->GetCurrent();
+		this->pastingEndXPos = this->notepadForm->current->GetCurrent();
+		//11.3 자동개행을 안한 상태의 붙여넣기가 끝나는 진짜 줄의 위치와 글자위치를 구한다.
 		changedRowPos = this->pastingEndYPos;
 		changedLetterPos = this->pastingEndXPos;
 		originRowPos = 0;
@@ -274,39 +294,85 @@ void OnReplaceButtonClickedCommand::Unexecute()
 	currentRowPos = this->notepadForm->note->GetCurrent();
 	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 	currentLetterPos = this->notepadForm->current->GetCurrent();
-	//7. 자동 줄 바꿈 메뉴가 체크되어 있으면
+	//7. 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
+	//있기 때문에 시작하는 줄의 위치를 현재 줄의 위치와 글자위치로 재갱신해줘야한다.
+	this->startYPos = this->notepadForm->note->GetCurrent();
+	this->startXPos = this->notepadForm->current->GetCurrent();
+	//8. 자동 줄 바꿈 메뉴가 체크되어 있으면
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
-		//7.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+		//8.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 		//OnSize에서 부분자동개행을 하도록 한다. 
 		this->notepadForm->SendMessage(WM_SIZE);
+		//8.2 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
+		//있기 때문에 시작하는 줄의 위치를 현재 줄의 위치와 글자위치로 재갱신해줘야한다.
+		this->startYPos = this->notepadForm->note->GetCurrent();
+		this->startXPos = this->notepadForm->current->GetCurrent();
+		//8.3 지금 현재 startYPos와 startXPos의 위치는 자동개행이 적용된 상태의 위치이기 때문에
+		//자동개행을 안한 상태에서 선택하기가 시작되는 진짜 줄의 위치와 글자위치를 구한다.
+		changedRowPos = this->startYPos;
+		changedLetterPos = this->startXPos;
+		originRowPos = 0;
+		originLetterPos = 0;
+		rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+			&originRowPos);
+		this->startYPos = originRowPos;
+		this->startXPos = originLetterPos;
 	}
-
+	//9. 바꾼단어를 지웠고 이제 선택영역을 다시 복원하기 때문에 현재 줄과 글자의 위치를
+	//선택영역을 시작 줄과 글자 위치로 설정한다.
+	currentRowPos = this->notepadForm->note->GetCurrent();
+	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+	currentLetterPos = this->notepadForm->current->GetCurrent();
 	this->notepadForm->selectedStartYPos = currentRowPos;
 	this->notepadForm->selectedStartXPos = currentLetterPos;
-	//11. 메모장에서 선택된 texts를 다시 복구하기 때문에 메모장에서 선택이 된 상태로 바꾼다.
+	//10. 메모장에서 선택된 texts를 다시 복구하기 때문에 메모장에서 선택이 된 상태로 바꾼다.
 	this->notepadForm->isSelecting = true;
-	//12. 선택영역이 다시 생겼기 때문에 복사하기, 잘라내기, 삭제 메뉴를 활성화 시킨다.
+	//11. 선택영역이 다시 생겼기 때문에 복사하기, 잘라내기, 삭제 메뉴를 활성화 시킨다.
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
-
-	//8. 바꾼 단어를 지운 위치에 아까 지웠던 선택영역 content를 삽입한다.
+	//12. 바꾼 단어를 지운 위치에 아까 지웠던 선택영역 content를 삽입한다.
 	Long rowIndex = this->notepadForm->note->
 		InsertTexts(currentRowPos, currentLetterPos, this->note);
-	//9. 메모장의 현재 줄을 저장한다.
-	this->notepadForm->current = this->notepadForm->note->GetAt(rowIndex);
-	//10. 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
+	//13. 메모장의 현재 줄을 저장한다.
+	currentRowPos = this->notepadForm->note->GetCurrent();
+	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+	currentLetterPos = this->notepadForm->current->GetCurrent();
+	//14. 메모장에 선택영역이 복원되었기 때문에 선택이 끝나는 줄과 글자위치를 갱신한다.
+	this->selectedEndYPos = currentRowPos;
+	this->selectedEndXPos = currentLetterPos;
+	//15. 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
-		//10.1 부분자동개행을 한다.
+		//15.1 부분자동개행을 한다.(마지막 줄은 제외하고 자동개행함)
 		Long endPastedRowPos = rowAutoChange.DoPartRows(currentRowPos, rowIndex);
-		//10.2 붙여넣기가 끝나는 줄로 이동시킨다.
+		//15.2 붙여넣기가 끝나는 줄로 이동시킨다.
 		//붙여넣기가 끝나는 줄은 OnSize에서 부분자동개행을 해서 처리되기 때문에 캐럿의 위치만 조정해주면 됨!
 		currentRowPos = this->notepadForm->note->Move(endPastedRowPos);
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		currentLetterPos = this->notepadForm->current->GetCurrent();
 		this->notepadForm->current->Move(currentLetterPos);
+		//3.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//OnSize에서 부분자동개행을 하도록 한다. (마지막 줄을 자동개행시킴)
+		this->notepadForm->SendMessage(WM_SIZE);
+		//13. 메모장의 현재 줄을 저장한다.
+		currentRowPos = this->notepadForm->note->GetCurrent();
+		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+		currentLetterPos = this->notepadForm->current->GetCurrent();
+		//15.3 메모장에 선택영역이 복원되었고, 자동개행인 반영된 선택이 끝나는 줄과 글자위치를 저장한다. 
+		this->selectedEndYPos = currentRowPos;
+		this->selectedEndXPos = currentLetterPos;
+		//15.4 지금 현재 선택이 끝나는 줄과 글자 위치는 자동개행이 적용된 상태의 위치이기 때문에
+			//자동개행을 안한 상태에서 선택하기가 끝나는 진짜 줄의 위치와 글자위치를 구한다.
+		changedRowPos = this->selectedEndYPos;
+		changedLetterPos = this->selectedEndXPos;
+		originRowPos = 0;
+		originLetterPos = 0;
+		rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+			&originRowPos);
+		this->selectedEndYPos = originRowPos;
+		this->selectedEndXPos = originLetterPos;
 	}
 }
 

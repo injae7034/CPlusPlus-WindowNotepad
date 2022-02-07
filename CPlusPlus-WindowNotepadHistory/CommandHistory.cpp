@@ -12,6 +12,7 @@
 #include "RemoveCommand.h"
 #include "CutCommand.h"
 #include "OnReplaceButtonClickedCommand.h"
+#include "OnReplaceAllButtonClickedCommand.h"
 
 //디폴트 생성자 정의
 CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
@@ -196,7 +197,8 @@ Long CommandHistory::PushUndoList(Command* command)
 			dynamic_cast<ShiftCtrlDeleteKeyActionCommand*>(lastCommand) ||
 			dynamic_cast<RemoveCommand*>(lastCommand) ||
 			dynamic_cast<CutCommand*>(lastCommand) ||
-			dynamic_cast<OnReplaceButtonClickedCommand*>(lastCommand))
+			dynamic_cast<OnReplaceButtonClickedCommand*>(lastCommand) ||
+			dynamic_cast<OnReplaceAllButtonClickedCommand*>(lastCommand))
 		{
 			//2.3.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 			lastCommand->SetUndoMacroEnd();

@@ -6,6 +6,7 @@
 #include "SelectingTexts.h"
 #include "RowAutoChange.h"
 #include "Row.h"
+#include "DummyRow.h"
 
 BEGIN_MESSAGE_MAP(ReplacingDialog, CFindReplaceDialog)
 	ON_EN_CHANGE(IDC_EDIT_FINDINGCONTENT, OnFindingContentEditTyped)
@@ -319,26 +320,24 @@ void ReplacingDialog::OnFindButtonClicked()
 	if (findingStartRowIndex != findingEndRowIndex ||
 		findingStartLetterIndex != findingEndLetterIndex)
 	{
-		//8.1 선택이 처음 시작되면
-		if (this->notepadForm->isSelecting == false)
+		//8.1 선택이 진행되고 있는 중이었으면
+		if (this->notepadForm->isSelecting == true)
 		{
-			//8.1.1 선택이 진행되고 있는 중으로 상태를 바꾼다.
-			this->notepadForm->isSelecting = true;
-		}
-		//8.2 이미 선택된 texts가 있으면
-		else
-		{
-			//8.2.1 선택된 텍스트를 선택해제한다.(선택을 끝낸다)
+			//8.1.1 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
 			this->notepadForm->selectingTexts->Undo();
-			//8.2.2 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+			//8.1.2 선택이 끝난 상태로 바꾼다.
+			this->notepadForm->isSelecting = false;
+			//8.1.3 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
 			this->notepadForm->selectedStartXPos = 0;
-			//8.2.3 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+			//8.1.4 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
 			this->notepadForm->selectedStartYPos = 0;
 		}
-		//8.3 선택이 시작되는 캐럿의 x좌표를 저장한다.
+		//8.2 선택이 시작되는 캐럿의 x좌표를 저장한다.
 		this->notepadForm->selectedStartXPos = findingStartLetterIndex;
-		//8.4 선택이 시작되는 캐럿의 y좌표를 저장한다.
+		//8.3 선택이 시작되는 캐럿의 y좌표를 저장한다.
 		this->notepadForm->selectedStartYPos = findingStartRowIndex;
+		//8.4 선택이 다시 시작되기 때문에 선택이 다시 시작됨을 표시한다.
+		this->notepadForm->isSelecting = true;
 		//8.5 찾은 글자를 선택한다.
 		this->notepadForm->selectingTexts->DoNext(findingStartRowIndex,
 			findingStartLetterIndex, findingEndRowIndex, findingEndLetterIndex);
@@ -384,30 +383,121 @@ void ReplacingDialog::OnReplacedButtonClicked()
 	//2. 선택된 texts가 있으면
 	else
 	{
-		//2.1 현재 글자위치와 줄의 위치를 선택이 시작하는 줄의 위치와 글자 위치로 이동하기 전에 저장한다.
-		Long previousRowIndex = this->notepadForm->note->GetCurrent();
-		Long previousLetterIndex = this->notepadForm->current->GetCurrent();
-		//선택영역이 지금 찾은 글자와 일치하지 않는 경우 그 글자는 바꾸면 안되기 때문에 선택영역이 있으면
-		//우선 선택영역의 시작줄의 위치와 글자위치로 이동시키고, 그다음에 선택영역을 무효화시키고,
-		//다시 찾을 단어와 일치하는지 확인해서 일치하면 선택하고 일치하지 않으면 선택하지 않는다.
-		//그래야 선택영역과 찾을 단어가 일치 하지 않는데 선택영역의 단어가 바꿀 단어로 바뀌는 일이 생기지 X
-		//2.2 현재 글자위치와 줄의 위치를 선택이 시작하는 줄의 위치와 글자위치로 이동시킨다.
-		Long currentRowIndex = this->notepadForm->note->Move(this->notepadForm->selectedStartYPos);
-		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
-		this->notepadForm->current->Move(this->notepadForm->selectedStartXPos);
-		//2.3 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
-		this->notepadForm->selectingTexts->Undo();
-		//2.4 선택이 끝난 상태로 바꾼다.
-		this->notepadForm->isSelecting = false;
-		//2.5 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
-		this->notepadForm->selectedStartXPos = 0;
-		//2.6 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
-		this->notepadForm->selectedStartYPos = 0;
-		//2.7 '찾기 버튼을 클릭했을 때'로 메세지를 보낸다.
-		//윈도우에서 버튼을 클릭했을 때 메세지는 WM_COMMAND이다
-		this->SendMessage(WM_COMMAND, IDC_BUTTON_FIND);
-		//2.8 선택된 영역이 있으면(찾은 단어가 있으면)
-		if (this->notepadForm->isSelecting == true)
+		// 선택된 texts를 읽는다.
+		Long i = 0;
+		string content = "";
+		//현재 줄의 위치와 글자위치를 구한다.
+		Long currentRowIndex = this->notepadForm->note->GetCurrent();
+		Long currentLetterIndex = this->notepadForm->current->GetCurrent();
+		Long nextRowIndex = 0;
+		Glyph* row = 0;
+		Glyph* letter = 0;
+		//선택이 시작되는 줄과 선택이 끝나는 줄을 비교한다.
+		if (this->notepadForm->selectedStartYPos < currentRowIndex)
+		{
+			//선택이 시작되는 줄을 구한다.
+			row = this->notepadForm->note->GetAt(this->notepadForm->selectedStartYPos);
+			//선택이 시작되는 줄의 선택이 시작되는 글자부터 끝까지 content를 읽어서 누적시킨다.
+			i = this->notepadForm->selectedStartXPos;
+			while (i < row->GetLength())
+			{
+				//글자를 구한다.
+				letter = row->GetAt(i);
+				//content를 누적시킨다.
+				content += letter->GetContent();
+				//다음 글자로 이동한다.
+				i++;
+			}
+			//다음 줄로 이동한다.
+			nextRowIndex = this->notepadForm->selectedStartYPos + 1;
+			//다음 줄이 현재 줄의 위치보다 작은동안 반복한다.
+			while (nextRowIndex < currentRowIndex)
+			{
+				//줄을 구한다.
+				row = this->notepadForm->note->GetAt(nextRowIndex);
+				//줄이 진짜 줄이면
+				if (!dynamic_cast<DummyRow*>(row))
+				{
+					//다음 줄의 content를 추가하기 전에 content에 개행문자를 추가한다.
+					content += '\n';
+				}
+				//다음 줄의 마지막 글자까지 반복한다.
+				i = 0;
+				while (i < row->GetLength())
+				{
+					//글자를 구한다.
+					letter = row->GetAt(i);
+					//content를 누적시킨다.
+					content += letter->GetContent();
+					//다음 글자로 이동한다.
+					i++;
+				}
+				//다음 줄로 이동한다.
+				nextRowIndex++;
+			}
+			//선택이 끝나는 줄을 구한다.
+			row = this->notepadForm->note->GetAt(currentRowIndex);
+			//선택이 끝나는 줄이 진짜 줄이면
+			if (!dynamic_cast<DummyRow*>(row))
+			{
+				//다음 줄의 content를 추가하기 전에 content에 개행문자를 추가한다.
+				content += '\n';
+			}
+			//선택이 끝나는 줄의 처음 글자부터 선택이 끝나는 글자까지 반복한다.
+			i = 0;
+			while (i < currentLetterIndex)
+			{
+				//글자를 구한다.
+				letter = row->GetAt(i);
+				//content를 누적시킨다.
+				content += letter->GetContent();
+				//다음 글자로 이동한다.
+				i++;
+			}
+		}
+		//선택이 시작되는 줄과 선택이 끝나는 줄의 위치가 같으면
+		else
+		{
+			//선택이 시작되는 줄을 구한다.
+			row = this->notepadForm->note->GetAt(this->notepadForm->selectedStartYPos);
+			//선택이 시작되는 줄의 선택이 시작되는 글자부터 선택이 끝나는 글자까지 content를 읽어서 누적시킨다
+			i = this->notepadForm->selectedStartXPos;
+			while (i < currentLetterIndex)
+			{
+				//글자를 구한다.
+				letter = row->GetAt(i);
+				//content를 누적시킨다.
+				content += letter->GetContent();
+				//다음 글자로 이동한다.
+				i++;
+			}
+		}
+		// 찾기 에디트컨트롤에 적혀있는 글자를 읽는다.
+		bool isMatched = false;
+		CString keyword;
+		this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(keyword);
+		string word(keyword);
+		// 대/소문자 구분 선택된 체크박스를 읽는다.
+		this->matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
+		// 대/소문자 구분이 체크되어 있으면
+		if (this->matchCaseChecked == true)
+		{
+			if (content.compare(word) == 0)
+			{
+				isMatched = true;
+			}
+		}
+		//대/소문자 구분이 체크 안되어 있으면
+		else
+		{
+			//8.4.5.1 대/소문자 구분없이 비교해준다.
+			if (_stricmp(content.c_str(), word.c_str()) == 0)
+			{
+				isMatched = true;
+			}
+		}
+		//선택되어 있는 글자와 찾는 글자가 서로 일치하면
+		if (isMatched == true)
 		{
 			//2.8.1 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
 			CString word;
@@ -421,16 +511,12 @@ void ReplacingDialog::OnReplacedButtonClicked()
 			//윈도우에서 버튼을 클릭했을 때 메세지는 WM_COMMAND이다
 			this->SendMessage(WM_COMMAND, IDC_BUTTON_FIND);
 		}
-		//2.9 선택된 영역이 없으면(찾은 단어가 없으면)
+		// 선택되어 있는 글자와 찾는 글자가 서로 일치하지 않으면
 		else
 		{
-			//2.9.1 다시 이전 줄과 글자 위치를 이동시킨다.
-			currentRowIndex = this->notepadForm->note->Move(previousRowIndex);
-			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowIndex);
-			this->notepadForm->current->Move(previousLetterIndex);
-			//2.9.2 변화를 메모장에 갱신한다.
-			this->notepadForm->Notify();
-			this->notepadForm->Invalidate();
+			//2.8.4 '찾기 버튼을 클릭했을 때'로 메세지를 보낸다.
+			//윈도우에서 버튼을 클릭했을 때 메세지는 WM_COMMAND이다
+			this->SendMessage(WM_COMMAND, IDC_BUTTON_FIND);
 		}
 	}
 }
@@ -438,33 +524,17 @@ void ReplacingDialog::OnReplacedButtonClicked()
 //6. 모두 바꾸기 버튼을 클릭했을 떄
 void ReplacingDialog::OnReplaceAllButtonClicked()
 {
-	//1. 선택이 진행되고 있는 중이었으면
-	if (this->notepadForm->isSelecting == true)
-	{
-		//1.1. 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
-		this->notepadForm->selectingTexts->Undo();
-		//1.2 선택이 끝난 상태로 바꾼다.
-		this->notepadForm->isSelecting = false;
-		//1.3 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
-		this->notepadForm->selectedStartXPos = 0;
-		//1.4 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
-		this->notepadForm->selectedStartYPos = 0;
-		//1.5 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
-		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-	}
-	//2. 찾기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+	//1. 찾기 에디트 컨트롤에 적혀있는 글자를 읽는다.
 	CString findingKeyword;
 	this->GetDlgItem(IDC_EDIT_FINDINGCONTENT)->GetWindowText(findingKeyword);
 	this->findingKeyword = findingKeyword;
-	//3. 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
+	//2. 바꾸기 에디트 컨트롤에 적혀있는 글자를 읽는다.
 	CString replacingKeyword;
 	this->GetDlgItem(IDC_EDIT_REPLACINGCONTENT)->GetWindowText(replacingKeyword);
 	this->replacingKeyword = replacingKeyword;
-	//4. 대/소문자 구분 체크박스를 읽는다.
+	//3. 대/소문자 구분 체크박스를 읽는다.
 	this->matchCaseChecked = ((CButton*)GetDlgItem(IDC_CHECKBOX_MATCHCASE))->GetCheck();
-	//5. OnReplaceAllButtonClikedCommand로 메세지를 보낸다.
+	//4. OnReplaceAllButtonClikedCommand로 메세지를 보낸다.
 	this->notepadForm->SendMessage(WM_COMMAND, ID_ONREPLACEALLBUTTONCLICKEDCOMMAND);
 }
 

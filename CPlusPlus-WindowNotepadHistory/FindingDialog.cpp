@@ -394,26 +394,24 @@ void FindingDialog::OnFindButtonClicked()
 	if (findingStartRowIndex != findingEndRowIndex ||
 		findingStartLetterIndex != findingEndLetterIndex)
 	{
-		//12.1 선택이 처음 시작되면
-		if (this->notepadForm->isSelecting == false)
+		//12.1 선택이 진행되고 있는 중이었으면
+		if (this->notepadForm->isSelecting == true)
 		{
-			//12.1.1 선택이 진행되고 있는 중으로 상태를 바꾼다.
-			this->notepadForm->isSelecting = true;
-		}
-		//12.2 이미 선택된 texts가 있으면
-		else
-		{
-			//12.2.1 선택된 텍스트를 선택해제한다.(선택을 끝낸다)
+			//12.1.1 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
 			this->notepadForm->selectingTexts->Undo();
-			//12.2.2 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+			//12.1.2 선택이 끝난 상태로 바꾼다.
+			this->notepadForm->isSelecting = false;
+			//12.1.3 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
 			this->notepadForm->selectedStartXPos = 0;
-			//12.2.3 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+			//12.1.4 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
 			this->notepadForm->selectedStartYPos = 0;
 		}
-		//12.3 선택이 시작되는 캐럿의 x좌표를 저장한다.
+		//12.2 선택이 시작되는 캐럿의 x좌표를 저장한다.
 		this->notepadForm->selectedStartXPos = findingStartLetterIndex;
-		//12.4 선택이 시작되는 캐럿의 y좌표를 저장한다.
+		//12.3 선택이 시작되는 캐럿의 y좌표를 저장한다.
 		this->notepadForm->selectedStartYPos = findingStartRowIndex;
+		//12.4 선택이 다시 시작되기 때문에 선택이 다시 시작됨을 표시한다.
+		this->notepadForm->isSelecting = true;
 		//12.5 찾은 글자를 선택한다.
 		this->notepadForm->selectingTexts->DoNext(findingStartRowIndex,
 			findingStartLetterIndex, findingEndRowIndex, findingEndLetterIndex);
@@ -460,17 +458,6 @@ void FindingDialog::OnCancelButtonClicked()
 //5.닫기버튼을 클릭했을 때
 void FindingDialog::OnClose()
 {
-#if 0
-	// 찾기 프레임 윈도우를 띄우기 전에 찾기 프레암 윈도우가 있는지 확인하고 있으면 할당해제한다.
-	if (this->notepadForm->findReplaceDialog != 0)
-	{
-		//CFindReplaceDialog를 할당해제할때는 delete대신에 DestroyWindow를 이용하자!
-		this->notepadForm->findReplaceDialog->DestroyWindow();
-		//delete this->notepadForm->findingDialog;
-		//댕글링 포인터를 0으로 안바꿔주면 할당해제가 됬는데 다시 할당해제를 하러 들어와서 에러가난다.
-		//this->notepadForm->findReplaceDialog = 0;
-	}
-#endif
 	this->notepadForm->findReplaceDialog = 0;
 	//1. 찾기 다이얼로그를 닫는다.
 	CFindReplaceDialog::OnClose();
