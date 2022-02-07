@@ -28,7 +28,7 @@ CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
 void CommandHistory::Undo()
 {
 	//1. UndoList가 비어있지 않으면
-	if (this->notepadForm->commandHistory->IsUndoListEmpty() == false)
+	if (this->notepadForm->commandHistory->undoListLength > 0)
 	{
 		//1.1 undoList에서 마지막 배열 요소(command)를 꺼낸다.
 		Command* command = this->PopUndoList();
@@ -43,8 +43,10 @@ void CommandHistory::Undo()
 		{
 			isStop = false;
 		}
-		//1.5 previousCommand가 null이 아니고 undoMacroEnd가 아닌동안 반복한다.
-		while (isStop == false && previousCommand->IsUndoMacroEnd() == false)
+		//1.5 previousCommand가 null이 아니고 undoMacroEnd가 아닌동안
+		//그리고 command가 선택영역을 지우지 않은동안 반복한다.
+		while (isStop == false && previousCommand->IsUndoMacroEnd() == false
+			&& command->IsSelectedTextsRemoved() == false)
 		{
 			//1.5.1 undoList의 할당량을 감소시킨다.
 			this->undoListCapacity--;
@@ -58,24 +60,19 @@ void CommandHistory::Undo()
 			command = previousCommand;
 			//1.5.6 undoList에서 마지막 배열 요소를 꺼낸다.
 			previousCommand = this->undoList.Pop();
-			if (previousCommand == 0 || command->IsSelectedTextsRemoved() == true)
+			//1.5.7 undoList에 더이상 배열요소가 없으면
+			if (previousCommand == 0)
 			{
+				//1.5.7.1 멈춘다고 표시한다.
 				isStop = true;
 			}
 		}
 		//1.6 previousCommand가 undoMacroEnd이면
-		if (isStop == false)
+		if (isStop == false && previousCommand->IsUndoMacroEnd() == true
+			|| command->IsSelectedTextsRemoved() == true)
 		{
 			//1.6.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
 			this->undoList.Push(previousCommand);
-		}
-		if (isStop == true && command->IsSelectedTextsRemoved() == true)
-		{
-			if (previousCommand != 0)
-			{
-				//1.6.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
-				this->undoList.Push(previousCommand);
-			}
 		}
 	}
 }
@@ -84,7 +81,7 @@ void CommandHistory::Undo()
 void CommandHistory::Redo()
 {
 	//1. RedoList가 비어있지 않으면
-	if (this->notepadForm->commandHistory->IsRedoListEmpty() == false)
+	if (this->notepadForm->commandHistory->redoListLength > 0)
 	{
 		//1.1 redoList의 마지막 배열 요소를 꺼낸다.
 		Command* command = this->PopRedoList();
@@ -270,33 +267,43 @@ Long CommandHistory::PushRedoList(Command* command)
 		//3.2 lastCommand와 command의 줄의 위치가 같으면
 		else if (lastCommand->GetRowIndex() == command->GetRowIndex())
 		{
-			//3.2.1 lastCommand와 command의 글자 위치를 비교해 차이가 안나면
-			//Unexecute를 실행했으면 글자위치 차이가 1이 날텐데, Unexecute하기 전에
-			//먼저 PushRedoList가 실행되기 때문에 글자위치 차이가 안나는 것으로 비교해야 한다!
-			if (lastCommand->GetLetterIndex() != command->GetLetterIndex())
+			//3.2.1 lastCommand가 선택영역을 지우지 않았으면
+			if (lastCommand->IsSelectedTextsRemoved() == false)
 			{
-				//3.2.1.1 매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
-				command->SetRedoMacroEnd();
+				//3.2.1.1 lastCommand와 command의 글자 위치를 비교해 차이가 안나면
+				//Unexecute를 실행했으면 글자위치 차이가 1이 날텐데, Unexecute하기 전에
+				//먼저 PushRedoList가 실행되기 때문에 글자위치 차이가 안나는 것으로 비교해야 한다!
+				if (lastCommand->GetLetterIndex() != command->GetLetterIndex())
+				{
+					//3.2.1.1.1 매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
+					command->SetRedoMacroEnd();
+				}
+			}
+			//3.2.2 lastCommand가 선택영역을 지웠으면
+			else
+			{
+				//3.2.2.1 lastCommand를 redoMacro 출력이 끝나는 지점으로 표시한다.
+				lastCommand->SetRedoMacroEnd();
 			}
 		}
-		//3.2.1 lastCommand와 command의 줄의 위치가 서로 다르면
+		//3.3 lastCommand와 command의 줄의 위치가 서로 다르면
 		else if (lastCommand->GetRowIndex() != command->GetRowIndex())
 		{
-			//3.2.1.1  매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
+			//3.3.1  매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
 			command->SetRedoMacroEnd();
 		}
 	}
-	//2. redoList의 사용량이 할당량보다 크거나 같으면
+	//4. redoList의 사용량이 할당량보다 크거나 같으면
 	if (this->redoListLength >= this->redoListCapacity)
 	{
-		//2.1 redoList의 할당량을 증가시킨다.
+		//4.1 redoList의 할당량을 증가시킨다.
 		this->redoListCapacity++;
 	}
-	//3. redoList의 마지막 배열 요소 다음에 매개변수로 입력받은 command를 추가한다.
+	//5. redoList의 마지막 배열 요소 다음에 매개변수로 입력받은 command를 추가한다.
 	Long index = this->redoList.Push(command);
-	//4. redoList의 사용량을 증가시킨다.
+	//6. redoList의 사용량을 증가시킨다.
 	this->redoListLength++;
-	//5. redoList에 추가한 마지막 배열요소의 위치를 반환한다.
+	//7. redoList에 추가한 마지막 배열요소의 위치를 반환한다.
 	return index;
 }
 
@@ -330,7 +337,7 @@ Command* CommandHistory::PopRedoList()
 void CommandHistory::MakeRedoListEmpty()
 {
 	Command* redoCommand = 0;
-	while (this->notepadForm->commandHistory->IsRedoListEmpty() == false)
+	while (this->notepadForm->commandHistory->redoListLength > 0)
 	{
 		redoCommand = this->notepadForm->commandHistory->PopRedoList();
 		if (redoCommand != 0)

@@ -19,7 +19,6 @@ OnImeCharCommand::OnImeCharCommand(NotepadForm* notepadForm, Glyph* glyph)
 	this->selectedStartXPos = 0;
 	this->selectedStartYPos = 0;
 	this->isSelectedTextsRemoved = false;//처음에 생성될 때는 선택영역이 안지워졌으므로 false가 디폴트값
-
 }
 
 //실행
@@ -55,13 +54,9 @@ void OnImeCharCommand::Execute()
 		//3.3 한글을 입력할 때 메모장에서 선택된 영역을 지웠으면
 		if (this->note != 0)
 		{
-			//3.3.1 다시 실행이면
-			if (this->isRedone == true)
-			{
-				//3.3.1.1 notepadForm의 선택이 시작되는 줄의 위치와 글자 위치를 재설정해준다. 
-				this->notepadForm->selectedStartYPos = this->selectedStartYPos;
-				this->notepadForm->selectedStartXPos = this->selectedStartXPos;
-			}
+			//3.3.1 notepadForm의 선택이 시작되는 줄의 위치와 글자 위치를 재설정해준다. 
+			this->notepadForm->selectedStartYPos = this->selectedStartYPos;
+			this->notepadForm->selectedStartXPos = this->selectedStartXPos;
 			//3.3.2 선택이 시작되는 줄과 글자 위치, 선택이 끝나는 줄과 글자 위치를 저장한다.
 			Long selectedStartRowPos = this->notepadForm->selectedStartYPos;//선택이 시작되는 줄
 			Long selectedStartLetterPos = this->notepadForm->selectedStartXPos;//선택이 시작되는 글자
@@ -84,11 +79,13 @@ void OnImeCharCommand::Execute()
 			}
 			//3.3.6 메모장에서 선택된 texts를 다 지웠기 때문에 메모장에서 선택이 안된 상태로 바꾼다.
 			this->notepadForm->isSelecting = false;
-			//3.3.7 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+			//3.3.7 선택된 texts를 지웠기 때문에 command가 선택된 영역을 지웠다고 표시한다.
+			this->isSelectedTextsRemoved = true;
+			//3.3.8 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
 			this->notepadForm->selectedStartXPos = 0;
-			//3.3.8 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+			//3.3.9 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
 			this->notepadForm->selectedStartYPos = 0;
-			//3.3.9 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
+			//3.3.10 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
 			this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 			this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 			this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
@@ -102,6 +99,12 @@ void OnImeCharCommand::Execute()
 		this->notepadForm->current->Remove(currentLetterPos - 1);
 		//4.2 갱신된 current의 위치를 index에 저장한다.
 		currentLetterPos = this->notepadForm->current->GetCurrent();
+		//4.3 한글을 입력할 때 메모장에서 선택된 영역을 지웠으면
+		if (this->note != 0)
+		{
+			//4.3.1 선택된 texts를 지웠기 때문에 command가 선택된 영역을 지웠다고 표시한다.
+			this->isSelectedTextsRemoved = true;
+		}
 	}
 	//5. currentRowPos가 현재 줄의 length와 같으면
 	if (currentLetterPos == this->notepadForm->current->GetLength())
@@ -215,11 +218,9 @@ void OnImeCharCommand::Unexecute()
 		//11. 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//11.1 자동개행클래스를 생성한다.
-			RowAutoChange rowAutoChange(this->notepadForm);
-			//11.2 부분자동개행을 한다.
+			//11.1 부분자동개행을 한다.
 			Long endPastedRowPos = rowAutoChange.DoPartRows(currentRowPos, rowIndex);
-			//11.3 붙여넣기가 끝나는 줄로 이동시킨다.
+			//11.2 붙여넣기가 끝나는 줄로 이동시킨다.
 			//붙여넣기가 끝나는 줄은 OnSize에서 부분자동개행을 해서 처리되기 때문에 캐럿의 위치만 조정해주면 됨!
 			currentRowPos = this->notepadForm->note->Move(endPastedRowPos);
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);

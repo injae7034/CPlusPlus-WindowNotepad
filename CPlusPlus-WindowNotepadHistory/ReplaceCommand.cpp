@@ -23,7 +23,6 @@ void ReplaceCommand::Execute()
 		//댕글링 포인터를 0으로 안바꿔주면 할당해제가 됬는데 다시 할당해제를 하러 들어와서 에러가난다.
 		this->notepadForm->findReplaceDialog = 0;
 	}
-
 	// 바꾸기 프레임 윈도우를 띄운다.
 	// 바꾸기 프레임 윈도우는 무조건 힙에 할당해서 생성해줘야 한다.
 	// NotepadForm의 멤버인 findDialog에 FindDialog를 할당한다.

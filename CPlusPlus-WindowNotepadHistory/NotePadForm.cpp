@@ -402,8 +402,10 @@ void NotepadForm::OnCommand(UINT nId)
 				}
 			}
 		}
-		//3.4 선택영역을 지우거나 선택영역을 잘라내는 command이면
-		else if (nId == IDM_NOTE_REMOVE || nId == IDM_NOTE_CUT)
+		//3.4 선택영역을 지우거나 선택영역을 잘라내거나 바꾸는 command이면
+		else if (nId == IDM_NOTE_REMOVE || nId == IDM_NOTE_CUT
+			|| nId == ID_ONREPLACEBUTTONCLICKEDCOMMAND
+			|| nId == ID_ONREPLACEALLBUTTONCLICKEDCOMMAND)
 		{
 			//3.4.1.1 UndoList에 추가한다.
 			this->commandHistory->PushUndoList(command);
@@ -430,52 +432,38 @@ void NotepadForm::OnCommand(UINT nId)
 //메모장에서 키보드로 이동하기
 void NotepadForm::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	//글자가 아무것도 없는 첫줄 첫번째 글자위치에서 shift누르고 이동하면 선택할게 없는데 선택이 되어서
-	//그걸 막으려고 OnKeyDown에서 조건문으로 처음부터 못들어가게 막았는데 이렇게 되면 나중에 글자가 하나도
-	//없을 경우 실행취소(CtrlZKeyAction)나 다시 실행(CtrlYKeyAction) 역시 안들어가는 문제가 발생함!
-	//이렇게 처음부터 막지 말고 차라리 shift들어가서 실질적으로 이동이 있으면 선택을 해주고,
-	//이동이 없으면 선택을 안하고 그냥 빠져나가게 하는게 훨씬 더 깔끔하다.
-	//1. 메모장의 노트에서 줄의 개수를 구한다.
-	//Long rowCountOfNote = this->note->GetLength();
-	//2. 메모장의 노트의 마지막 줄의 글자 개수를 구한다.
-	//Long letterCountOfFirstRow = this->note->GetAt(rowCountOfNote - 1)->GetLength();
-	//3. 메모장의 노트에 줄의 개수가 하나있는데 그 줄의 글자가 하나도 없는 경우가 아니라면
-	//글자가 하나도 없고 줄만 2개이상 있는 경우부터는 선택이 가능하기 떄문에 복사, 잘라내기, 삭제가 가능하다.
-	//if (rowCountOfNote != 1 || letterCountOfFirstRow != 0)
-	//{
-		//3.1 KeyActionCreator를 생성한다.
-		KeyActionCreator keyActionCreator(this);
-		//3.2 ConcreteKeyAction을 생성한다.
-		KeyAction* keyAction = keyActionCreator.Create(nChar);
-		//3.3 keyAction이 NULL이 아니면
-		if (keyAction != NULL)
+	//3.1 KeyActionCreator를 생성한다.
+	KeyActionCreator keyActionCreator(this);
+	//3.2 ConcreteKeyAction을 생성한다.
+	KeyAction* keyAction = keyActionCreator.Create(nChar);
+	//3.3 keyAction이 NULL이 아니면
+	if (keyAction != NULL)
+	{
+		//3.3.1 ConcreteKeyAction의 OnKeyDown 함수를 실행한다.
+		keyAction->OnKeyDown(nChar, nRepCnt, nFlags);
+		//3.3.2 keyAction을 할당해제한다.
+		delete keyAction;
+		//3.3.3 메모장에 선택이 안되어 있으면
+		if (this->isSelecting == false)
 		{
-			//3.3.1 ConcreteKeyAction의 OnKeyDown 함수를 실행한다.
-			keyAction->OnKeyDown(nChar, nRepCnt, nFlags);
-			//3.3.2 keyAction을 할당해제한다.
-			delete keyAction;
-			//3.3.3 메모장에 선택이 안되어 있으면
-			if (this->isSelecting == false)
-			{
-				this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-				this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-			}
-			//3.3.4 메모장에 선택이 되어 있으면
-			else
-			{
-				this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
-				this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
-				this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
-			}
-			//3.3.5 변화를 메모장에 갱신한다.
-			//if 구조안에서 Notify를 해줘야 Ctrl이나 Shift, Alt Capslock과 같은 특수기능키가 눌렸을 때
-			//Notify를 호출해 캐럿이 있는 곳으로 스크롤이 이동하지 않는다. OnKeyDown은 키보드키 중 어떠한
-			//키가 눌려져도 호출되기 때문에 원하는 keyAction이 아닌경우 Notify가 실행되지 않게 해야한다!
-			this->Notify();
-			this->Invalidate();	
+			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
+			this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		}
-	//}
+		//3.3.4 메모장에 선택이 되어 있으면
+		else
+		{
+			this->menu.EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
+			this->menu.EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
+			this->menu.EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
+		}
+		//3.3.5 변화를 메모장에 갱신한다.
+		//if 구조안에서 Notify를 해줘야 Ctrl이나 Shift, Alt Capslock과 같은 특수기능키가 눌렸을 때
+		//Notify를 호출해 캐럿이 있는 곳으로 스크롤이 이동하지 않는다. OnKeyDown은 키보드키 중 어떠한
+		//키가 눌려져도 호출되기 때문에 원하는 keyAction이 아닌경우 Notify가 실행되지 않게 해야한다!
+		this->Notify();
+		this->Invalidate();
+	}
 }
 
 //메모장에서 세로 스크롤을 클릭할 때

@@ -177,11 +177,9 @@ void RemoveCommand::Unexecute()
 	//11. 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
-		//11.1 자동개행클래스를 생성한다.
-		RowAutoChange rowAutoChange(this->notepadForm);
-		//11.2 부분자동개행을 한다.
+		//11.1 부분자동개행을 한다.
 		Long endPastedRowPos = rowAutoChange.DoPartRows(currentRowPos, rowIndex);
-		//11.3 붙여넣기가 끝나는 줄로 이동시킨다.
+		//11.2 붙여넣기가 끝나는 줄로 이동시킨다.
 		//붙여넣기가 끝나는 줄은 OnSize에서 부분자동개행을 해서 처리되기 때문에 캐럿의 위치만 조정해주면 됨!
 		currentRowPos = this->notepadForm->note->Move(endPastedRowPos);
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);

@@ -28,10 +28,8 @@ public:
 	//인라인함수
 	Long GetUndoListCapacity() const;
 	Long GetUndoListLength() const;
-	bool IsUndoListEmpty() const;
 	Long GetRedoListCapacity() const;
 	Long GetRedoListLength() const;
-	bool IsRedoListEmpty() const;
 private:
 	Stack<Command*> undoList;
 	Long undoListCapacity;
@@ -50,10 +48,6 @@ inline Long CommandHistory::GetUndoListLength() const
 {
 	return this->undoListLength;
 }
-inline bool CommandHistory::IsUndoListEmpty() const
-{
-	return this->undoList.IsEmpty();
-}
 inline Long CommandHistory::GetRedoListCapacity() const
 {
 	return this->undoListCapacity;
@@ -61,9 +55,5 @@ inline Long CommandHistory::GetRedoListCapacity() const
 inline Long CommandHistory::GetRedoListLength() const
 {
 	return this->undoListLength;
-}
-inline bool CommandHistory::IsRedoListEmpty() const
-{
-	return this->redoList.IsEmpty();
 }
 #endif // !_COMMANDHISTORY_H
