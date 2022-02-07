@@ -178,7 +178,7 @@ void DeleteKeyActionCommand::Execute()
 			//5.3.1 content를 복사하고 지운다.
 			this->glyph = this->notepadForm->note->CopySelectedTextsAndRemove(selectedStartRowPos,
 				selectedStartLetterPos, selectedEndRowPos, selectedEndLetterPos);
-		//5.3.2 Command에 변경 사항이 있음을 표시한다.
+			//5.3.2 Command에 변경 사항이 있음을 표시한다.
 			this->isDirty = true;
 		}
 		//5.4 다시 실행이면

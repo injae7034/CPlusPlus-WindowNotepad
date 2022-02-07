@@ -17,7 +17,7 @@ public:
 		Long redoListCapacity = 256);//디폴트생성자
 	Command* GetUndoListTop();//UndoList의 제일 마지막 배열 요소 구하기
 	Command* GetRedoListTop();//RedoList의 제일 마지막 배열 요소 구하기
-	Long PushUndoList(Command* command);
+	Long PushUndoList(Command* command, bool isStop);
 	Long PushRedoList(Command* command);
 	Command* PopUndoList();
 	Command* PopRedoList();

@@ -332,39 +332,41 @@ void OnReplaceButtonClickedCommand::Unexecute()
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
-	//12. 바꾼 단어를 지운 위치에 아까 지웠던 선택영역 content를 삽입한다.
-	Long rowIndex = this->notepadForm->note->
+	//12. 바꾼 단어를 삽입하기 전에 줄의 위치를 저장한다.
+	Long previousRowIndex = currentRowPos;
+	//13. 바꾼 단어를 지운 위치에 아까 지웠던 선택영역 content를 삽입하고 현재 줄의 위치를 반환받는다.
+	currentRowPos = this->notepadForm->note->
 		InsertTexts(currentRowPos, currentLetterPos, this->note);
-	//13. 메모장의 현재 줄을 저장한다.
-	currentRowPos = this->notepadForm->note->GetCurrent();
+	//14. 메모장의 현재 줄을 저장한다.
 	this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 	currentLetterPos = this->notepadForm->current->GetCurrent();
-	//14. 메모장에 선택영역이 복원되었기 때문에 선택이 끝나는 줄과 글자위치를 갱신한다.
+	//15. 메모장에 선택영역이 복원되었기 때문에 선택이 끝나는 줄과 글자위치를 갱신한다.
 	this->selectedEndYPos = currentRowPos;
 	this->selectedEndXPos = currentLetterPos;
-	//15. 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
+	//16. 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
-		//15.1 부분자동개행을 한다.(마지막 줄은 제외하고 자동개행함)
-		Long endPastedRowPos = rowAutoChange.DoPartRows(currentRowPos, rowIndex);
-		//15.2 붙여넣기가 끝나는 줄로 이동시킨다.
+		//16.1 부분자동개행을 한다.(마지막 줄은 제외하고 자동개행함)
+		//바꾼 단어를 삽입하기 전에 현재 줄의 위치부터 바꾼 단어를 삽입한 후에 현재 줄의 위치까지 자동개행
+		Long endPastedRowPos = rowAutoChange.DoPartRows(previousRowIndex, currentRowPos);
+		//16.2 붙여넣기가 끝나는 줄로 이동시킨다.
 		//붙여넣기가 끝나는 줄은 OnSize에서 부분자동개행을 해서 처리되기 때문에 캐럿의 위치만 조정해주면 됨!
 		currentRowPos = this->notepadForm->note->Move(endPastedRowPos);
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		currentLetterPos = this->notepadForm->current->GetCurrent();
 		this->notepadForm->current->Move(currentLetterPos);
-		//3.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+		//16.3 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. (마지막 줄을 자동개행시킴)
 		this->notepadForm->SendMessage(WM_SIZE);
-		//13. 메모장의 현재 줄을 저장한다.
+		//16.4 메모장의 현재 줄을 저장한다.
 		currentRowPos = this->notepadForm->note->GetCurrent();
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//15.3 메모장에 선택영역이 복원되었고, 자동개행인 반영된 선택이 끝나는 줄과 글자위치를 저장한다. 
+		//16.5 메모장에 선택영역이 복원되었고, 자동개행인 반영된 선택이 끝나는 줄과 글자위치를 저장한다. 
 		this->selectedEndYPos = currentRowPos;
 		this->selectedEndXPos = currentLetterPos;
-		//15.4 지금 현재 선택이 끝나는 줄과 글자 위치는 자동개행이 적용된 상태의 위치이기 때문에
-			//자동개행을 안한 상태에서 선택하기가 끝나는 진짜 줄의 위치와 글자위치를 구한다.
+		//16.6 지금 현재 선택이 끝나는 줄과 글자 위치는 자동개행이 적용된 상태의 위치이기 때문에
+		//자동개행을 안한 상태에서 선택하기가 끝나는 진짜 줄의 위치와 글자위치를 구한다.
 		changedRowPos = this->selectedEndYPos;
 		changedLetterPos = this->selectedEndXPos;
 		originRowPos = 0;
@@ -382,12 +384,12 @@ bool OnReplaceButtonClickedCommand::IsRedone()
 	return this->isRedone;
 }
 
-//현재 줄의 위치구하기
+//시작하는 줄의 위치구하기
 Long OnReplaceButtonClickedCommand::GetStartYPos()
 {
 	return this->startYPos;
 }
-//현재 글자의 위치구하기
+//시작하는 글자의 위치구하기
 Long OnReplaceButtonClickedCommand::GetStartXPos()
 {
 	return this->startXPos;

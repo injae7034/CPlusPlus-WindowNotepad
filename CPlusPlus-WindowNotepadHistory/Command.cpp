@@ -120,6 +120,11 @@ Long Command::GetPastingEndXPos()
 {
 	return -1;
 }
+//command가 가지고 있는 Glyph 구하기
+Glyph* Command::GetGlyph()
+{
+	return 0;
+}
 
 //소멸자
 Command::~Command()

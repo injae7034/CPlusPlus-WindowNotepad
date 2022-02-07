@@ -365,6 +365,7 @@ void NotepadForm::OnCommand(UINT nId)
 	CommandCreator commandCreator(this);
 	//2. ConcreteCommand를 생성한다.
 	Command* command = commandCreator.Create(nId);
+	bool isStop = false;
 	//3. command가 NULL이 아니면
 	if (command != NULL)
 	{
@@ -373,9 +374,11 @@ void NotepadForm::OnCommand(UINT nId)
 		//3.2 글자를 입력하는 command이면 
 		if (nId == ID_ONCHARCOMMAND || nId == ID_ONIMECHARCOMMAND)
 		{
-			//3.2.1.1 UndoList에 추가한다.
-			this->commandHistory->PushUndoList(command);
-			//3.2.1.2 redoList를 초기화시킨다.
+			//3.2.1 text를 입력하는 command는 멈추지 않는다는 표시를 한다.
+			isStop = false;
+			//3.2.2 UndoList에 추가한다.
+			this->commandHistory->PushUndoList(command, isStop);
+			//3.2.3 redoList를 초기화시킨다.
 			this->commandHistory->MakeRedoListEmpty();
 		}
 		//3.3 글자를 지우는 command이거나 붙여넣기 command이면
@@ -384,18 +387,20 @@ void NotepadForm::OnCommand(UINT nId)
 			|| nId == ID_SHIFTCTRLBACKSPACEKEYACTIONCOMMAND ||
 			nId == ID_SHIFTCTRLDELETEKEYACTIONCOMMAND || nId == IDM_NOTE_PASTE)
 		{
-			//3.3.1 Command에 변경사항이 있으면
+			//3.3.1 멈춘다는 표시를 한다.
+			isStop = true;
+			//3.3.2 Command에 변경사항이 있으면
 			if (command->IsDirty() == true)
 			{
-				//3.3.1.1 UndoList에 추가한다.
-				this->commandHistory->PushUndoList(command);
-				//3.3.1.2 redoList를 초기화시킨다.
+				//3.3.2.1 UndoList에 추가한다.
+				this->commandHistory->PushUndoList(command, isStop);
+				//3.3.2.2 redoList를 초기화시킨다.
 				this->commandHistory->MakeRedoListEmpty();
 			}
-			//3.3.2 Command에 변경사항이 없으면
+			//3.3.3 Command에 변경사항이 없으면
 			else
 			{
-				//3.3.2.1 command를 할당해제한다.
+				//3.3.3.1 command를 할당해제한다.
 				if (command != 0)
 				{
 					delete command;
@@ -407,9 +412,11 @@ void NotepadForm::OnCommand(UINT nId)
 			|| nId == ID_ONREPLACEBUTTONCLICKEDCOMMAND
 			|| nId == ID_ONREPLACEALLBUTTONCLICKEDCOMMAND)
 		{
-			//3.4.1.1 UndoList에 추가한다.
-			this->commandHistory->PushUndoList(command);
-			//3.4.1.2 redoList를 초기화시킨다.
+			//3.4.1 멈춘다는 표시를 한다.
+			isStop = true;
+			//3.4.2 UndoList에 추가한다.
+			this->commandHistory->PushUndoList(command, isStop);
+			//3.4.3 redoList를 초기화시킨다.
 			this->commandHistory->MakeRedoListEmpty();
 		}
 		//3.5 글자를 입력하는 command나 글자를 지우는 command가 아니면

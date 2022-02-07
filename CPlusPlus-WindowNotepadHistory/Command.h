@@ -1,6 +1,7 @@
 #ifndef _COMMAND_H
 #define _COMMAND_H
 
+class Glyph;
 class NotepadForm;//주소로 이용되기 때문에 전방선언이 필요함!
 typedef signed long int Long;
 
@@ -27,6 +28,7 @@ public:
 	virtual Long GetSelectedEndYPos();//선택이 끝나는 줄의 위치구하기
 	virtual Long GetPastingEndXPos();//붙여넣기가 끝나는 글자의 위치구하기
 	virtual Long GetPastingEndYPos();//붙여넣기가 끝나는 줄의 위치구하기
+	virtual Glyph* GetGlyph();//command가 가지고 있는 Glyph구하기
 	virtual ~Command() = 0;//추상클래스 소멸자
 	//인라인함수정의
 	NotepadForm* GetNotepadForm() const;

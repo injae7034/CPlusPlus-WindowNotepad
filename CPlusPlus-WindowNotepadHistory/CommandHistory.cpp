@@ -1,18 +1,7 @@
 #include "CommandHistory.h"
 #include "NotepadForm.h"
 #include "Command.h"
-#include "OnCharCommand.h"
 #include "Row.h"
-#include "BackSpaceKeyActionCommand.h"
-#include "DeleteKeyActionCommand.h"
-#include "CtrlBackSpaceKeyActionCommand.h"
-#include "CtrlDeleteKeyActionCommand.h"
-#include "ShiftCtrlBackSpaceKeyActionCommand.h"
-#include "ShiftCtrlDeleteKeyActionCommand.h"
-#include "RemoveCommand.h"
-#include "CutCommand.h"
-#include "OnReplaceButtonClickedCommand.h"
-#include "OnReplaceAllButtonClickedCommand.h"
 
 //디폴트 생성자 정의
 CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
@@ -87,6 +76,7 @@ void CommandHistory::Redo()
 	{
 		//1.1 redoList의 마지막 배열 요소를 꺼낸다.
 		Command* command = this->PopRedoList();
+
 		//1.2 undoList의 사용량이 할당량보다 크거나 같으면
 		if (this->undoListLength >= this->undoListCapacity)
 		{
@@ -97,6 +87,7 @@ void CommandHistory::Redo()
 		this->undoList.Push(command);
 		//1.4 undoList의 사용량을 증가시킨다.
 		this->undoListLength++;
+
 		//1.5 꺼낸 command가 Execute 되기 전에 다시 실행이라는 표시를 한다.
 		command->SetRedone();
 		//1.6 꺼낸 command를 execute한다.
@@ -157,75 +148,50 @@ Command* CommandHistory::GetRedoListTop()
 	return this->redoList.GetTop();
 }
 
-//UndoList의 제일 마지막 배열 요소 다음에 추가하기
-Long CommandHistory::PushUndoList(Command* command)
+//OnCharCommand, OnImeCharCommand와 같이 메모장에 텍스트를 입력하는 command를 undoList에 넣기
+Long CommandHistory::PushUndoList(Command* command, bool isStop)
 {
-	Long lastCommandLetterIndex = 0;
-	//1. 현재 undoList에서 마지막 값을 구한다.
-	Command* lastCommand = this->undoList.GetTop();
-	bool isDone = false;
-	//2. undoList에서 lastCommand가 있으면(undoList에 저장된 command가 한 개라도 있으면)
-	if (lastCommand != 0)
+	//1. isStop이 false이면
+	if (isStop == false)
 	{
-		//2.1 lastCommand가 다시 실행된 Command이면
-		if (lastCommand->IsRedone() == true)
+		//1.1 glyph를 구한다.
+		Glyph* glyph = command->GetGlyph();
+		//1.2 매개변수로 입력받은 command가 개행문자를 가지고 있으면
+		if (dynamic_cast<Row*>(glyph))
 		{
-			//2.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
-			lastCommand->SetUndoMacroEnd();
-			//2.1.2  표시가 끝났음을 나타낸다.
-			isDone = true;
+			//1.2.1 command를 undoMacro출력이 끝나는 지점으로 표시한다.
+			command->SetUndoMacroEnd();
 		}
-		//2.2 lastCommand가 OnCharCommand이면
-		else if (dynamic_cast<OnCharCommand*>(lastCommand))
+		Long lastCommandLetterIndex = 0;
+		//1.3 현재 undoList에서 마지막 값을 구한다.
+		Command* lastCommand = this->undoList.GetTop();
+		//1.4 undoList에서 lastCommand가 있으면(undoList에 저장된 command가 한 개라도 있으면)
+		if (lastCommand != 0)
 		{
-			Glyph* glyph = dynamic_cast<OnCharCommand*>(lastCommand)->GetGlyph();
-			//2.2.1 개행문자이면
-			if (dynamic_cast<Row*>(glyph))
+			//1.4.2 lastCommand와 command의 줄의 위치가 같으면
+			if (lastCommand->GetPastingEndYPos() == command->GetPastingEndYPos())
 			{
-				//2.2.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
-				lastCommand->SetUndoMacroEnd();
-				//2.2.1.2  표시가 끝났음을 나타낸다.
-				isDone = true;
-			}
-		}
-		//2.3 lastCommand가 지우기 관련 Command이거나 잘라내기 또는 바꾸기 command이면
-		else if (dynamic_cast<BackSpaceKeyActionCommand*>(lastCommand) ||
-			dynamic_cast<DeleteKeyActionCommand*>(lastCommand) ||
-			dynamic_cast<CtrlBackSpaceKeyActionCommand*>(lastCommand) ||
-			dynamic_cast<CtrlDeleteKeyActionCommand*>(lastCommand) ||
-			dynamic_cast<ShiftCtrlBackSpaceKeyActionCommand*>(lastCommand) ||
-			dynamic_cast<ShiftCtrlDeleteKeyActionCommand*>(lastCommand) ||
-			dynamic_cast<RemoveCommand*>(lastCommand) ||
-			dynamic_cast<CutCommand*>(lastCommand) ||
-			dynamic_cast<OnReplaceButtonClickedCommand*>(lastCommand) ||
-			dynamic_cast<OnReplaceAllButtonClickedCommand*>(lastCommand))
-		{
-			//2.3.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
-			lastCommand->SetUndoMacroEnd();
-			//2.3.2 표시가 끝났음을 나타낸다.
-			isDone = true;
-		}
-		//2.4 표시가 아직 안되었으면
-		if (isDone == false)
-		{
-			//2.4.1 lastCommand와 command의 줄의 위치가 같으면
-			if (lastCommand->GetRowIndex() == command->GetRowIndex())
-			{
-				//2.4.1.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
-				lastCommandLetterIndex = lastCommand->GetLetterIndex() + 1;
-				if (lastCommandLetterIndex != command->GetLetterIndex())
+				//1.4.2.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
+				lastCommandLetterIndex = lastCommand->GetPastingEndXPos() + 1;
+				if (lastCommandLetterIndex != command->GetPastingEndXPos())
 				{
-					//2.4.1.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+					//1.4.2.1.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 					lastCommand->SetUndoMacroEnd();
 				}
 			}
-			//2.4.2 lastCommand와 command의 줄의 위치가 서로 다르면
-			else if (lastCommand->GetRowIndex() != command->GetRowIndex())
+			//1.4.3 lastCommand와 command의 줄의 위치가 서로 다르면
+			else if (lastCommand->GetPastingEndYPos() != command->GetPastingEndYPos())
 			{
-				//2.4.2.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
+				//1.4.3.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 				lastCommand->SetUndoMacroEnd();
 			}
 		}
+	}
+	//2. isStop이 true이면
+	else
+	{
+		//2.1 command를 끝나는 지점으로 표시한다.
+		command->SetUndoMacroEnd();
 	}
 	//3. undoList의 사용량이 할당량보다 크거나 같으면
 	if (this->undoListLength >= this->undoListCapacity)
@@ -244,70 +210,66 @@ Long CommandHistory::PushUndoList(Command* command)
 //RedoList의 제일 마지막 배열 요소 다음에 추가하기(Undo(실행취소)가 될 때, OnCharCommand들이 추가됨)
 Long CommandHistory::PushRedoList(Command* command)
 {
-	//1. 매개변수로 입력받은 command가 OnCharCommand이면
-	if (dynamic_cast<OnCharCommand*>(command))
+	//1. Glyph를 구한다.
+	Glyph* glyph = command->GetGlyph();
+	//2. 매개변수로 입력박은 command가 개행문자를 가지고 있으면
+	if (dynamic_cast<Row*>(glyph))
 	{
-		Glyph* glyph = dynamic_cast<OnCharCommand*>(command)->GetGlyph();
-		//1.1 매개변수로 입력박은 command가 개행문자이면
-		if (dynamic_cast<Row*>(glyph))
-		{
-			//1.1.1 command를 redoMacro출력이 끝나는 지점으로 표시한다.
-			command->SetRedoMacroEnd();
-		}
+		//2.1 command를 redoMacro출력이 끝나는 지점으로 표시한다.
+		command->SetRedoMacroEnd();
 	}
-	//2. 현재 redoList에서 마지막 배열요소를 구한다.
+	//3. 현재 redoList에서 마지막 배열요소를 구한다.
 	Command* lastCommand = this->redoList.GetTop();
 	Long lastCommandLetterIndex = 0;
-	//3. redoList의 마지막 배열요소가 있으면(redoList에 저장된 command가 한 개라도 있으면)
+	//4. redoList의 마지막 배열요소가 있으면(redoList에 저장된 command가 한 개라도 있으면)
 	if (lastCommand != 0)
 	{
-		//3.1 매개변수로 입력받은 command가 undoMacro출력의 끝나는 지점이면
+		//4.1 매개변수로 입력받은 command가 undoMacro출력의 끝나는 지점이면
 		if (command->IsUndoMacroEnd() == true)
 		{
-			//3.1.1  redoList에서 마지막 배열요소(lastCommand)를
+			//4.1.1  redoList에서 마지막 배열요소(lastCommand)를
 			//redoMacro출력이 끝나는 지점으로 표시한다.
 			lastCommand->SetRedoMacroEnd();
 		}
-		//3.2 lastCommand와 command의 줄의 위치가 같으면
-		else if (lastCommand->GetRowIndex() == command->GetRowIndex())
+		//4.2 lastCommand와 command의 줄의 위치가 같으면
+		else if (lastCommand->GetStartYPos() == command->GetStartYPos())
 		{
-			//3.2.1 lastCommand가 선택영역을 지우지 않았으면
+			//4.2.1 lastCommand가 선택영역을 지우지 않았으면
 			if (lastCommand->IsSelectedTextsRemoved() == false)
 			{
-				//3.2.1.1 lastCommand와 command의 글자 위치를 비교해 차이가 안나면
-				//Unexecute를 실행했으면 글자위치 차이가 1이 날텐데, Unexecute하기 전에
-				//먼저 PushRedoList가 실행되기 때문에 글자위치 차이가 안나는 것으로 비교해야 한다!
-				if (lastCommand->GetLetterIndex() != command->GetLetterIndex())
+				//1.4.1.1 lastCommand와 command의 글자 위치를 비교해 한 칸 차이가 안나면
+				lastCommandLetterIndex = command->GetStartXPos() + 1;
+				if (lastCommandLetterIndex != lastCommand->GetStartXPos())
 				{
-					//3.2.1.1.1 매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
-					command->SetRedoMacroEnd();
+					//4.2.1.1.1 매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
+					lastCommand->SetRedoMacroEnd();
 				}
 			}
-			//3.2.2 lastCommand가 선택영역을 지웠으면
+			//4.2.2 lastCommand가 선택영역을 지웠으면
 			else
 			{
-				//3.2.2.1 lastCommand를 redoMacro 출력이 끝나는 지점으로 표시한다.
+				//4.2.2.1 lastCommand를 redoMacro 출력이 끝나는 지점으로 표시한다.
 				lastCommand->SetRedoMacroEnd();
 			}
 		}
-		//3.3 lastCommand와 command의 줄의 위치가 서로 다르면
-		else if (lastCommand->GetRowIndex() != command->GetRowIndex())
+		//4.3 lastCommand와 command의 줄의 위치가 서로 다르면
+		else if (lastCommand->GetStartYPos() != command->GetStartYPos())
 		{
-			//3.3.1  매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
+			//4.3.1  매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
 			command->SetRedoMacroEnd();
 		}
 	}
-	//4. redoList의 사용량이 할당량보다 크거나 같으면
+	//5. redoList의 사용량이 할당량보다 크거나 같으면
 	if (this->redoListLength >= this->redoListCapacity)
 	{
-		//4.1 redoList의 할당량을 증가시킨다.
+		//5.1 redoList의 할당량을 증가시킨다.
 		this->redoListCapacity++;
 	}
-	//5. redoList의 마지막 배열 요소 다음에 매개변수로 입력받은 command를 추가한다.
+	//6. redoList의 마지막 배열 요소 다음에 매개변수로 입력받은 command를 추가한다.
 	Long index = this->redoList.Push(command);
-	//6. redoList의 사용량을 증가시킨다.
+	//7. redoList의 사용량을 증가시킨다.
 	this->redoListLength++;
-	//7. redoList에 추가한 마지막 배열요소의 위치를 반환한다.
+	//8. redoList에 추가한 마지막 배열요소의 위치를 반환한다.
 	return index;
 }
 
