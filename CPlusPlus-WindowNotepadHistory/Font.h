@@ -12,6 +12,8 @@ public:
 	Font();//디폴트생성자
 	Font(LOGFONT logFont, Long size, COLORREF color);//매개변수를 2개 생성자
 	Font(const Font& source);//복사생성자
+	LOGFONT FindPrintingLogFont(CDC* printerDC);
+	LOGFONT FindPreviewLogFont(CDC* previewDC);
 	~Font();//소멸자
 	Font& operator=(const Font& source);//치환연산자
 	//인라인함수
@@ -22,7 +24,6 @@ public:
 private:
 	LOGFONT logFont;
 	Long size;
-	//string faceName;
 	COLORREF color;
 };
 
@@ -37,12 +38,6 @@ inline Long Font::GetSize() const
 	return this->size;
 }
 
-#if 0
-inline string& Font::GetFaceName() const
-{
-	return const_cast<string&>(this->faceName);
-}
-#endif
 inline COLORREF Font::GetColor() const
 {
 	return this->color;

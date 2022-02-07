@@ -3,6 +3,8 @@
 
 #include "GlyphVisitor.h"
 
+typedef signed long int Long;
+
 class PreviewVisitor :public GlyphVisitor
 {
 public:
@@ -18,5 +20,7 @@ public:
 	~PreviewVisitor();//¼Ò¸êÀÚ
 private:
 	CDC* tempDC;
+	Long maxRowWidth;
+	bool isRowWidthOverRectWidth;
 };
 #endif // !_PREVIEWVISITOR_H

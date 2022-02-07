@@ -19,9 +19,25 @@ PageSetupDialog::PageSetupDialog(CWnd* pParentWnd)
 	this->m_psd.lpPageSetupTemplateName = MAKEINTRESOURCE(PageSetupDialog::IDD);
 	//배열을 힙에 할당하고 주소를 멤버에 저장함.
 	this->header = new char[512];
+	this->header[0] = '\0';
 	this->footer = new char[512];
+	this->footer[0] = '\0';
 }
 
+//FileSetUpCommand함수 스택에서 PageSetupDialog가 생성되어 호출되기 때문에 FileSetUpCommand함수 스택이
+//종료될 때 자동으로 PageSetupDialog의 소멸자가 호출된다.
+PageSetupDialog::~PageSetupDialog()
+{
+	//힙에 할당한 문자배열을 할당해제해줌.
+	if (this->header != 0)
+	{
+		delete[] this->header;
+	}
+	if (this->footer != 0)
+	{
+		delete[] this->footer;
+	}
+}
 
 BOOL PageSetupDialog::OnInitDialog() 
 {
@@ -77,6 +93,8 @@ void PageSetupDialog::OnOK()
 		printLogFont = dynamic_cast<NotepadForm*>(this->notepadForm)->font.GetLogFont();
 		printLogFont.lfHeight = -MulDiv(dynamic_cast<NotepadForm*>(this->notepadForm)->
 			font.GetSize() / 10, 600, 72);
+		/*printLogFont = dynamic_cast<NotepadForm*>(this->notepadForm)
+			->font.FindPrintingLogFont(cdc);*/
 	}
 	//11. PageSetUpDialog의 부모 윈도우가 PreviewForm이면
 	else if (dynamic_cast<PreviewForm*>(this->notepadForm))
@@ -87,8 +105,6 @@ void PageSetupDialog::OnOK()
 		printLogFont.lfHeight = -MulDiv(dynamic_cast<PreviewForm*>(this->notepadForm)
 			->notepadForm->font.GetSize() / 10, 600, 72);
 	}
-	
-	
 	CFont font;
 	HFONT oldFont;
 	font.CreateFontIndirect(&printLogFont);
@@ -122,15 +138,6 @@ void PageSetupDialog::OnOK()
 	if (pageWidth > letterMaxWidth && pageRowCount > 0
 		&& pageWidth > headerWidth && pageWidth > footerWidth)
 	{
-		//힙에 할당한 문자배열을 할당해제해줌.
-		if (this->header != 0)
-		{
-			delete[] this->header;
-		}
-		if (this->footer != 0)
-		{
-			delete[] this->footer;
-		}
 		//13.1 페이지 설정 대화상자에서 페이지 설정 정보를 반영하고 페이지 대화상자를 닫는다.
 		CPageSetupDialog::OnOK();
 	}

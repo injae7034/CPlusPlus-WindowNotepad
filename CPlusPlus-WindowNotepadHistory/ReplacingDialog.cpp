@@ -31,6 +31,20 @@ ReplacingDialog::ReplacingDialog(CWnd* parent)
 
 }
 
+BOOL ReplacingDialog::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg->message == WM_KEYDOWN)
+	{
+		if (pMsg->wParam == VK_RETURN || pMsg->wParam == VK_ESCAPE)
+		{
+			return this->PostMessage(WM_CLOSE);
+		}
+	}
+
+	return CDialog::PreTranslateMessage(pMsg);
+}
+
+
 //1. 바꾸기 프레임 윈도우가 생성될 때
 BOOL ReplacingDialog::OnInitDialog()
 {

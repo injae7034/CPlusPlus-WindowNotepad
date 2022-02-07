@@ -67,6 +67,7 @@ void FilePreviewCommand::Execute()
 	//11. 프린트 비율로 글꼴의 비율을 맞춰준다.
 	LOGFONT printLogFont = this->notepadForm->font.GetLogFont();
 	printLogFont.lfHeight = -MulDiv(this->notepadForm->font.GetSize() / 10, 600, 72);
+	//LOGFONT printLogFont = this->notepadForm->font.FindPrintingLogFont(cdc);
 	CFont font;
 	HFONT oldFont;
 	font.CreateFontIndirect(&printLogFont);

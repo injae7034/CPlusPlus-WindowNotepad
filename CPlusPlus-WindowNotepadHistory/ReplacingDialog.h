@@ -21,6 +21,7 @@ public:
 	ReplacingDialog(CWnd* parent = NULL);//생성자, NULL이 디폴트값
 	virtual BOOL OnInitDialog();
 protected://#
+	BOOL PreTranslateMessage(MSG* pMsg);
 	afx_msg void OnFindingContentEditTyped();
 	afx_msg void OnSwapButtonClicked();
 	afx_msg void OnFindButtonClicked();

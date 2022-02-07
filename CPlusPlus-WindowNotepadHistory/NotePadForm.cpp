@@ -82,10 +82,6 @@ NotepadForm::NotepadForm()
 	this->previewForm = NULL;
 	this->pageSetUpInformation = NULL;
 	this->caretController = 0;
-
-	//this->m_hIcon = AfxGetApp()->LoadIcon(IDI_ICON1); ///< 변경된 아이콘
-	
-
 }
 
 //메모장 윈도우가 생성될 때
@@ -207,7 +203,7 @@ void NotepadForm::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//단어단위로 왼쪽으로 지울 때, OnKeyDown에 SendMessage를 보낼 때, 인위적으로 Ctrl키를 누른 채로
 	//VK_BACK을 보냈기 때문에, 여기서 OnCharCommand가 실행되지 않도록 막기 위해서
 	//ctrlPressedCheck & 0x8000 && nChar != VK_BACK 조건문이 필요하다.
-	if (nChar != VK_BACK)
+	if (nChar != VK_BACK && nChar != 27)
 	{
 		if (!(ctrlPressedCheck & 0x80))
 		{
