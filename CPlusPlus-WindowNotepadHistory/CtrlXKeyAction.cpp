@@ -13,8 +13,12 @@ CtrlXKeyAction::CtrlXKeyAction(NotepadForm* notepadForm)
 //전략패턴
 void CtrlXKeyAction::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	//1. OnCommand로 메세지를 보낸다.
-	this->notepadForm->SendMessage(WM_COMMAND, IDM_NOTE_CUT);
+	//1. 선택영역이 있으면
+	if (this->notepadForm->isSelecting == true)
+	{
+		//1.1 OnCommand로 메세지를 보낸다.
+		this->notepadForm->SendMessage(WM_COMMAND, IDM_NOTE_CUT);
+	}
 }
 
 //소멸자

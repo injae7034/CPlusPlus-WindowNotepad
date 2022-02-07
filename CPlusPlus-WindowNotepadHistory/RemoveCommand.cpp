@@ -57,67 +57,68 @@ void RemoveCommand::Execute()
 		this->notepadForm->selectedStartYPos = this->selectedStartYPos;
 		this->notepadForm->selectedStartXPos = this->selectedStartXPos;
 	}
+	//5. 선택이 시작되는 줄과 글자 위치, 선택이 끝나는 줄과 글자 위치를 저장한다.
 	Long selectedStartRowPos = this->notepadForm->selectedStartYPos;//선택이 시작되는 줄
 	Long selectedStartLetterPos = this->notepadForm->selectedStartXPos;//선택이 시작되는 글자
 	Long selectedEndRowPos = currentRowPos;//선택이 끝나는 줄
 	Long selectedEndLetterPos = currentLetterPos;//선택이 끝나는 글자
-	//5. 처음 실행이면
+	//6. 처음 실행이면
 	if (this->isRedone == false)
 	{
-		//5.1 content를 복사하고 지운다.
+		//6.1 content를 복사하고 지운다.
 		this->glyph = this->notepadForm->note->CopySelectedTextsAndRemove(selectedStartRowPos,
 			selectedStartLetterPos, selectedEndRowPos, selectedEndLetterPos);
+		//6.2 메모장 제목에 *를 추가한다.
+		string name = this->notepadForm->fileName;
+		name.insert(0, "*");
+		name += " - 메모장";
+		this->notepadForm->SetWindowText(CString(name.c_str()));
+		//6.3 메모장에 변경사항이 있음을 저장한다.
+		this->notepadForm->isDirty = true;
 	}
-	//6. 다시 실행이면
+	//7. 다시 실행이면
 	else
 	{
-		//6.1 content를 지운다.
+		//7.1 content를 지운다.
 		this->notepadForm->note->RemoveSelectedTexts(selectedStartRowPos,
 			selectedStartLetterPos, selectedEndRowPos, selectedEndLetterPos);
 	}
-	//7. 연산이 끝났기 때문에 현재 줄의 위치를 다시 조정해준다.(note의연산안에서 현재 줄의 위치와 글자 위치는
+	//8. 연산이 끝났기 때문에 현재 줄의 위치를 다시 조정해준다.(note의연산안에서 현재 줄의 위치와 글자 위치는
 	//조정이 되지만 notepadForm의 current(현재줄)는 조정할 수 없어서 notepadForm에서 해준다.)
 	this->notepadForm->current = this->notepadForm->note->
 		GetAt(this->notepadForm->note->GetCurrent());
-	//8. 메모장 제목에 *를 추가한다.
-	string name = this->notepadForm->fileName;
-	name.insert(0, "*");
-	name += " - 메모장";
-	this->notepadForm->SetWindowText(CString(name.c_str()));
-	//9. 메모장에 변경사항이 있음을 저장한다.
-	this->notepadForm->isDirty = true;
-	//10. 자동 줄 바꿈 메뉴가 체크되어 있으면
+	//9. 자동 줄 바꿈 메뉴가 체크되어 있으면
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
-		//10.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+		//9.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 		//OnSize에서 부분자동개행을 하도록 한다. 
 		this->notepadForm->SendMessage(WM_SIZE);
 	}
-	//11. 메모장에서 선택된 texts를 다 지웠기 때문에 메모장에서 선택이 안된 상태로 바꾼다.
+	//10. 메모장에서 선택된 texts를 다 지웠기 때문에 메모장에서 선택이 안된 상태로 바꾼다.
 	this->notepadForm->isSelecting = false;
-	//12. 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+	//11. 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
 	this->notepadForm->selectedStartXPos = 0;
-	//13. 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+	//12. 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
 	this->notepadForm->selectedStartYPos = 0;
-	//14. 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
+	//13. 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-	//15. 글자를 지운 후에 현재 줄의 위치와 글자위치를 command에 다시 저장한다.
+	//14. 글자를 지운 후에 현재 줄의 위치와 글자위치를 command에 다시 저장한다.
 	this->rowIndex = this->notepadForm->note->GetCurrent();
 	this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
 	this->letterIndex = this->notepadForm->current->GetCurrent();
-	//16. 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
+	//15. 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
 		Long changedRowPos = this->rowIndex;
 		Long changedLetterPos = this->letterIndex;
 		Long originRowPos = 0;
 		Long originLetterPos = 0;
-		//16.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+		//15.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
 		rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
 			&originRowPos);
-		//16.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+		//15.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
 		this->rowIndex = originRowPos;
 		this->letterIndex = originLetterPos;
 	}
@@ -173,28 +174,6 @@ void RemoveCommand::Unexecute()
 		InsertTexts(currentRowPos, currentLetterPos, this->glyph);
 	//10. 메모장의 현재 줄을 저장한다.
 	this->notepadForm->current = this->notepadForm->note->GetAt(rowIndex);
-	//6.7 자동 줄 바꿈이 진행중이면
-	if (this->notepadForm->isRowAutoChanging == true)
-	{
-		//6.7.1 texts를 삽입하기전의 줄의 위치와 삽입한 후의 줄의 위치가 서로 다르면
-		if (currentRowPos < rowIndex)
-		{
-			//6.7.1.1 currentRowPos가 rowIndex보다 작은동안반복한다.
-			while (currentRowPos < rowIndex)
-			{
-				this->notepadForm->note->Move(currentRowPos);
-				//6.7.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-				//OnSize에서 부분자동개행을 하도록 한다. 
-				this->notepadForm->SendMessage(WM_SIZE);
-				currentRowPos++;
-			}
-		}
-		this->notepadForm->note->Move(currentRowPos);
-		//6.7.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
-		//OnSize에서 부분자동개행을 하도록 한다. 
-		this->notepadForm->SendMessage(WM_SIZE);
-	}
-#if 0
 	//11. 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
 	if (this->notepadForm->isRowAutoChanging == true)
 	{
@@ -209,7 +188,6 @@ void RemoveCommand::Unexecute()
 		currentLetterPos = this->notepadForm->current->GetCurrent();
 		this->notepadForm->current->Move(currentLetterPos);
 	}	
-#endif
 	//12. 선택영역이 다시 생겼기 때문에 복사하기, 잘라내기, 삭제 메뉴를 활성화 시킨다.
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
 	this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);

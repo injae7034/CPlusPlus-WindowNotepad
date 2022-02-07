@@ -10,8 +10,7 @@
 #include "ShiftCtrlBackSpaceKeyActionCommand.h"
 #include "ShiftCtrlDeleteKeyActionCommand.h"
 #include "RemoveCommand.h"
-#include "OnImeCharCommand.h"
-#include "PasteCommand.h"
+#include "CutCommand.h"
 
 //디폴트 생성자 정의
 CommandHistory::CommandHistory(NotepadForm* notepadForm, Long undoListCapacity,
@@ -59,7 +58,7 @@ void CommandHistory::Undo()
 			command = previousCommand;
 			//1.5.6 undoList에서 마지막 배열 요소를 꺼낸다.
 			previousCommand = this->undoList.Pop();
-			if (previousCommand == 0)
+			if (previousCommand == 0 || command->IsSelectedTextsRemoved() == true)
 			{
 				isStop = true;
 			}
@@ -67,8 +66,16 @@ void CommandHistory::Undo()
 		//1.6 previousCommand가 undoMacroEnd이면
 		if (isStop == false)
 		{
-			//1.6.1.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
+			//1.6.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
 			this->undoList.Push(previousCommand);
+		}
+		if (isStop == true && command->IsSelectedTextsRemoved() == true)
+		{
+			if (previousCommand != 0)
+			{
+				//1.6.1 꺼낸 previousCommand를 undoList의 마지막 배열 요소에 다시 추가한다.
+				this->undoList.Push(previousCommand);
+			}
 		}
 	}
 }
@@ -96,44 +103,44 @@ void CommandHistory::Redo()
 		//1.6 꺼낸 command를 execute한다.
 		command->Execute();
 		bool isStop = true;
-		//1.8 previousCommand를 구한다.(command를 뺐기 때문에 previousCommand가 마지막이됨)
+		//1.7 previousCommand를 구한다.(command를 뺐기 때문에 previousCommand가 마지막이됨)
 		Command* previousCommand = this->redoList.Pop();
 		if (previousCommand != 0)
 		{
 			isStop = false;
 		}
-		//1.9 previousCommand가 null이 아니고 RedoMacroEnd인동안 반복한다.
+		//1.8 previousCommand가 null이 아니고 RedoMacroEnd인동안 반복한다.
 		while (isStop == false && previousCommand->IsRedoMacroEnd() == false)
 		{
-			//1.9.1 redoList의 할당량을 감소시킨다.
+			//1.8.1 redoList의 할당량을 감소시킨다.
 			this->redoListCapacity--;
-			//1.9.2 redoList의 사용량을 감소시킨다.
+			//1.8.2 redoList의 사용량을 감소시킨다.
 			this->redoListLength--;
-			//1.9.3 undoList의 사용량이 할당량보다 크거나 같으면
+			//1.8.3 undoList의 사용량이 할당량보다 크거나 같으면
 			if (this->undoListLength >= this->undoListCapacity)
 			{
-				//1.9.3.1 undoList의 할당량을 증가시킨다.
+				//1.8.3.1 undoList의 할당량을 증가시킨다.
 				this->undoListCapacity++;
 			}
-			//1.9.4 undoList의 마지막 배열 요소 다음에 추가한다.
+			//1.8.4 undoList의 마지막 배열 요소 다음에 추가한다.
 			this->undoList.Push(previousCommand);
-			//1.9.5 undoList의 사용량을 증가시킨다.
+			//1.8.5 undoList의 사용량을 증가시킨다.
 			this->undoListLength++;
-			//1.9.6 previousCommand가 Execute되기 전에 다시 실행이라는 표시를 한다.
+			//1.8.6 previousCommand가 Execute되기 전에 다시 실행이라는 표시를 한다.
 			previousCommand->SetRedone();
-			//1.9.7 previousCommand를 Execute한다.
+			//1.8.7 previousCommand를 Execute한다.
 			previousCommand->Execute();
-			//1.9.8 redoList에서 마지막 배열 요소를 꺼낸다.
+			//1.8.8 redoList에서 마지막 배열 요소를 꺼낸다.
 			previousCommand = this->redoList.Pop();
 			if (previousCommand == 0)
 			{
 				isStop = true;
 			}
 		}
-		//1.10 previousCommand가 RedoMacroEnd이면
+		//1.9 previousCommand가 RedoMacroEnd이면
 		if (isStop == false)
 		{
-			//1.10.1 꺼냈던 previousCommand를 redoList에 다시 넣어준다.
+			//1.9.1 꺼냈던 previousCommand를 redoList에 다시 넣어준다.
 			this->redoList.Push(previousCommand);
 		}
 	}
@@ -189,7 +196,8 @@ Long CommandHistory::PushUndoList(Command* command)
 			dynamic_cast<CtrlDeleteKeyActionCommand*>(lastCommand) ||
 			dynamic_cast<ShiftCtrlBackSpaceKeyActionCommand*>(lastCommand) ||
 			dynamic_cast<ShiftCtrlDeleteKeyActionCommand*>(lastCommand) ||
-			dynamic_cast<RemoveCommand*>(lastCommand))
+			dynamic_cast<RemoveCommand*>(lastCommand) ||
+			dynamic_cast<CutCommand*>(lastCommand))
 		{
 			//2.3.1 lastCommand를 undoMacro출력이 끝나는 지점으로 표시한다.
 			lastCommand->SetUndoMacroEnd();
@@ -277,7 +285,6 @@ Long CommandHistory::PushRedoList(Command* command)
 			//3.2.1.1  매개변수로 입력박은 command를 redoMacro출력이 끝나는 지점으로 표시한다.
 			command->SetRedoMacroEnd();
 		}
-
 	}
 	//2. redoList의 사용량이 할당량보다 크거나 같으면
 	if (this->redoListLength >= this->redoListCapacity)

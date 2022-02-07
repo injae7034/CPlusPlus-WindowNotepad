@@ -21,6 +21,7 @@ BackSpaceKeyActionCommand::BackSpaceKeyActionCommand(NotepadForm* notepadForm)
 	this->isDirty = false;//처음에 생성될 때는 변경사항이 없으므로 false가 디폴트값임.
 	this->selectedStartXPos = 0;
 	this->selectedStartYPos = 0;
+	this->isSelectedTextsRemoved = false;//처음에 생성될 때는 선택영역이 안지워졌으므로 false가 디폴트값
 }
 
 //실행
@@ -54,8 +55,8 @@ void BackSpaceKeyActionCommand::Execute()
 			currentLetterPos = this->notepadForm->current->Move(changedLetterPos);
 		}
 	}
-	//4. 메모장에서 선택된 texts가 없으면
-	if (this->notepadForm->isSelecting == false)
+	//4. 메모장에서 선택된 texts가 없고, 선택된 영역을 안지웠으면
+	if (this->notepadForm->isSelecting == false && this->isSelectedTextsRemoved == false)
 	{
 		//4.1 현재 줄을 구한다.
 		Glyph* currentRow = this->notepadForm->note->GetAt(currentRowPos);
@@ -146,8 +147,8 @@ void BackSpaceKeyActionCommand::Execute()
 			this->isDirty = true;
 		}
 	}
-	//5. 메모장에서 선택된 texts가 있으면
-	else
+	//5. 메모장에서 선택된 texts가 있거나 또는 선택된 영역을 지웠으면
+	else if (this->notepadForm->isSelecting == true || this->isSelectedTextsRemoved == true)
 	{
 		//5.1 다시 실행이면
 		if (this->isRedone == true)
@@ -156,47 +157,50 @@ void BackSpaceKeyActionCommand::Execute()
 			this->notepadForm->selectedStartYPos = this->selectedStartYPos;
 			this->notepadForm->selectedStartXPos = this->selectedStartXPos;
 		}
+		//5.2 선택이 시작되는 줄과 글자 위치, 선택이 끝나는 줄과 글자 위치를 저장한다.
 		Long selectedStartRowPos = this->notepadForm->selectedStartYPos;//선택이 시작되는 줄
 		Long selectedStartLetterPos = this->notepadForm->selectedStartXPos;//선택이 시작되는 글자
 		Long selectedEndRowPos = currentRowPos;//선택이 끝나는 줄
 		Long selectedEndLetterPos = currentLetterPos;//선택이 끝나는 글자
-		//5.2 처음 실행이면
+		//5.3 처음 실행이면
 		if (this->isRedone == false)
 		{
-			//5.2.1 content를 복사하고 지운다.
+			//5.3.1 content를 복사하고 지운다.
 			this->glyph = this->notepadForm->note->CopySelectedTextsAndRemove(selectedStartRowPos,
 				selectedStartLetterPos, selectedEndRowPos, selectedEndLetterPos);
+			//5.3.2 Command에 변경 사항이 있음을 표시한다.
+			this->isDirty = true;
 		}
-		//5.3 다시 실행이면
+		//5.4 다시 실행이면
 		else
 		{
-			//5.3.1 content를 지운다.
+			//5.4.1 content를 지운다.
 			this->notepadForm->note->RemoveSelectedTexts(selectedStartRowPos,
 				selectedStartLetterPos, selectedEndRowPos, selectedEndLetterPos);
 		}
-		//5.4 연산이 끝났기 때문에 현재 줄의 위치를 다시 조정해준다.(note의연산안에서 현재 줄의 위치와 글자 위치는
+		//5.5 연산이 끝났기 때문에 현재 줄의 위치를 다시 조정해준다.(note의연산안에서 현재 줄의 위치와 글자 위치는
 		//조정이 되지만 notepadForm의 current(현재줄)는 조정할 수 없어서 notepadForm에서 해준다.)
 		this->notepadForm->current = this->notepadForm->note->
 			GetAt(this->notepadForm->note->GetCurrent());
-		//5.5 자동 줄 바꿈 메뉴가 체크되어 있으면
+		//5.6 자동 줄 바꿈 메뉴가 체크되어 있으면
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//5.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//5.6.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
 		}
 		//5.6 메모장에서 선택된 texts를 다 지웠기 때문에 메모장에서 선택이 안된 상태로 바꾼다.
 		this->notepadForm->isSelecting = false;
-		//5.7 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+		//5.7 선택된 texts를 지웠기 때문에 command가 선택된 영역을 지웠다고 표시한다.
+		this->isSelectedTextsRemoved = true;
+		//5.8 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
 		this->notepadForm->selectedStartXPos = 0;
-		//5.8 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+		//5.9 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
 		this->notepadForm->selectedStartYPos = 0;
-		//5.9 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
+		//5.10 복사하기, 잘라내기, 삭제 메뉴를 비활성화 시킨다.
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-		//5.10 Command에 변경 사항이 있음을 표시한다.
-		this->isDirty = true;
 	}
 	//6. Command에 변경 사항이 있으면
 	if (this->isDirty == true)
@@ -208,30 +212,42 @@ void BackSpaceKeyActionCommand::Execute()
 		this->notepadForm->SetWindowText(CString(name.c_str()));
 		//6.2 메모장에 변경사항이 있음을 저장한다.
 		this->notepadForm->isDirty = true;
-		//6.3 글자를 지운 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-		this->rowIndex = this->notepadForm->note->GetCurrent();
-		this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
-		this->letterIndex = this->notepadForm->current->GetCurrent();
-		//6.4 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
-		if (this->notepadForm->isRowAutoChanging == true)
-		{
-			Long changedRowPos = this->rowIndex;
-			Long changedLetterPos = this->letterIndex;
-			Long originRowPos = 0;
-			Long originLetterPos = 0;
-			//6.4.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
-			rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
-				&originRowPos);
-			//6.4.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
-			this->rowIndex = originRowPos;
-			this->letterIndex = originLetterPos;
-		}
+	}
+	//7. 글자를 지운 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+	this->rowIndex = this->notepadForm->note->GetCurrent();
+	this->notepadForm->current = this->notepadForm->note->GetAt(this->rowIndex);
+	this->letterIndex = this->notepadForm->current->GetCurrent();
+	//8 자동개행이 진행중이면(command의 줄과 글자 위치는 항상 진짜 줄과 글자 위치를 저장해야함)
+	if (this->notepadForm->isRowAutoChanging == true)
+	{
+		Long changedRowPos = this->rowIndex;
+		Long changedLetterPos = this->letterIndex;
+		Long originRowPos = 0;
+		Long originLetterPos = 0;
+		//8.1 변경된 화면 크기에 맞는 줄과 캐럿의 위치를 구한다.
+		rowAutoChange.GetOriginPos(changedLetterPos, changedRowPos, &originLetterPos,
+			&originRowPos);
+		//8.2 command에 글자를 입력한 후에 현재 줄의 위치와 글자위치를 다시 저장한다.
+		this->rowIndex = originRowPos;
+		this->letterIndex = originLetterPos;
 	}
 }
 
 //실행취소
 void BackSpaceKeyActionCommand::Unexecute()
 {
+	//1. 선택이 진행되고 있는 중이었으면
+	if (this->notepadForm->isSelecting == true)
+	{
+		//1.1. 선택된 텍스트를 선택해제한다.(선택을 끝낸다.)
+		this->notepadForm->selectingTexts->Undo();
+		//1.2 선택이 끝난 상태로 바꾼다.
+		this->notepadForm->isSelecting = false;
+		//1.3 선택이 끝났기 때문에 캐럿의 x좌표를 0으로 저장한다.
+		this->notepadForm->selectedStartXPos = 0;
+		//1.4 선택이 끝났기 때문에 캐럿의 y좌표를 0으로 저장한다.
+		this->notepadForm->selectedStartYPos = 0;
+	}
 	//1. RowAutoChange를 생성한다.
 	RowAutoChange rowAutoChange(this->notepadForm);
 	Long changedRowPos = 0;
@@ -350,7 +366,9 @@ void BackSpaceKeyActionCommand::Unexecute()
 			Long endPastedRowPos = rowAutoChange.DoPartRows(currentRowPos, rowIndex);
 			//7.7.3 붙여넣기가 끝나는 줄로 이동시킨다.
 			//붙여넣기가 끝나는 줄은 OnSize에서 부분자동개행을 해서 처리되기 때문에 캐럿의 위치만 조정해주면 됨!
-			this->notepadForm->note->Move(endPastedRowPos);
+			currentRowPos = this->notepadForm->note->Move(endPastedRowPos);
+			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
+			currentLetterPos = this->notepadForm->current->GetCurrent();
 			this->notepadForm->current->Move(currentLetterPos);
 		}
 		//7.8 선택영역이 다시 생겼기 때문에 복사하기, 잘라내기, 삭제 메뉴를 활성화 시킨다.
@@ -441,6 +459,12 @@ bool BackSpaceKeyActionCommand::IsRedone()
 bool BackSpaceKeyActionCommand::IsDirty()
 {
 	return this->isDirty;
+}
+
+//선택영역이 지워졌는지 확인 여부
+bool BackSpaceKeyActionCommand::IsSelectedTextsRemoved()
+{
+	return this->isSelectedTextsRemoved;
 }
 
 //소멸자 정의
