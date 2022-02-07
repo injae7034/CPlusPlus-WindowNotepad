@@ -50,7 +50,7 @@ END_MESSAGE_MAP()
 
 //NotepadForm생성자
 NotepadForm::NotepadForm()
-	:CFrameWnd()//여기서 콜론초기화로 따로지정안하면 Font()와 Caret()의 기본생성자가 호출됨
+	//여기서 콜론초기화로 따로지정안하면 Font()와 Caret()의 기본생성자가 호출됨
 	//왜냐하면 NotepadForm이 멤버로 font와 caret을 가지고 있기때문에 notepadForm이 생성되면서
 	//font와 caret의 기본생성자가 호출되어 생성됨. 그렇기 때문에 Font와 Caret의
 	//기본생성자 Font()와 Caret()이 필요함.
@@ -82,6 +82,7 @@ NotepadForm::NotepadForm()
 //메모장 윈도우가 생성될 때
 int NotepadForm::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
+	CFrameWnd::OnCreate(lpCreateStruct);
 	//1. glyphCreator를 만든다.
 	GlyphCreator glyphCreator;
 	//2. 클립보드를 만든다.
@@ -729,7 +730,8 @@ void NotepadForm::OnClose()
 }
 
 //Save메세지박스
-LRESULT CALLBACK SaveMessageBoxProc(int nCode, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK SaveMessageBoxProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
 	HWND hChildWnd;
 
 	CString msg;// = TEXT("");

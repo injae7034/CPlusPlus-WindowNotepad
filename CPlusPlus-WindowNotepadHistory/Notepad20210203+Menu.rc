@@ -57,6 +57,8 @@ BEGIN
         MENUITEM "불러오기",                        IDM_FILE_OPEN
         MENUITEM "저장하기",                        IDM_FILE_SAVE
         MENUITEM "다른 이름으로 저장하기",                IDM_FILE_SAVEDIFFERENTNAME
+        MENUITEM "인쇄하기",                        IDM_FILE_PRINT
+        MENUITEM "페이지 설정하기",                    IDM_FILE_SETUP
     END
     POPUP "서식"
     BEGIN
