@@ -170,7 +170,7 @@ void BackSpaceKeyActionCommand::Execute()
 			}
 			//2.6.2 현재 글자를 지운다.
 			this->notepadForm->current->Remove(currentLetterPos - 1);
-			///2.6.4 Command에 변경 사항이 있음을 표시한다.
+			///2.6.3 Command에 변경 사항이 있음을 표시한다.
 			this->isDirty = true;
 		}
 		//2.7 변경사항이 있으면
@@ -415,26 +415,26 @@ void BackSpaceKeyActionCommand::Unexecute()
 			currentLetterPos = this->notepadForm->current->
 				Add(currentLetterPos, this->glyph->Clone());
 		}
-		//8. 연산이 끝났기 때문에 현재 줄의 위치를 다시 조정해준다.(note의연산안에서 현재 줄의 위치와 글자 위치는
+		//5.3 연산이 끝났기 때문에 현재 줄의 위치를 다시 조정해준다.(note의연산안에서 현재 줄의 위치와 글자 위치는
 		//조정이 되지만 notepadForm의 current(현재줄)는 조정할 수 없어서 notepadForm에서 해준다.)
 		currentRowPos = this->notepadForm->note->GetCurrent();
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//9. 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
+		//5.4 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
 		//있기 때문에 시작하는 줄의 위치를 현재 줄의 위치와 글자위치로 재갱신해줘야한다.
 		this->startYPos = currentRowPos;
 		this->startXPos = currentLetterPos;
-		//10. 자동 줄 바꿈 메뉴가 체크되어 있으면
+		//5.5 자동 줄 바꿈 메뉴가 체크되어 있으면
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//10.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//5.5.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
-			//10.2 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
+			//5.5.2 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
 			//있기 때문에 시작하는 줄의 위치를 현재 줄의 위치와 글자위치로 재갱신해줘야한다.
 			this->startYPos = this->notepadForm->note->GetCurrent();
 			this->startXPos = this->notepadForm->current->GetCurrent();
-			//10.3 지금 현재 startYPos와 startXPos의 위치는 자동개행이 적용된 상태의 위치이기 때문에
+			//5.5.3 지금 현재 startYPos와 startXPos의 위치는 자동개행이 적용된 상태의 위치이기 때문에
 			//자동개행을 안한 상태에서 선택하기가 시작되는 진짜 줄의 위치와 글자위치를 구한다.
 			changedRowPos = this->startYPos;
 			changedLetterPos = this->startXPos;
@@ -468,26 +468,26 @@ void BackSpaceKeyActionCommand::Unexecute()
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		//6.5 현재 줄의 글자 위치를 처음으로 이동시킨다.
 		this->notepadForm->current->First();
-		//8. 연산이 끝났기 때문에 현재 줄의 위치를 다시 조정해준다.(note의연산안에서 현재 줄의 위치와 글자 위치는
+		//6.6 연산이 끝났기 때문에 현재 줄의 위치를 다시 조정해준다.(note의연산안에서 현재 줄의 위치와 글자 위치는
 		//조정이 되지만 notepadForm의 current(현재줄)는 조정할 수 없어서 notepadForm에서 해준다.)
 		currentRowPos = this->notepadForm->note->GetCurrent();
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//9. 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
+		//6.7 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
 		//있기 때문에 시작하는 줄의 위치를 현재 줄의 위치와 글자위치로 재갱신해줘야한다.
 		this->startYPos = currentRowPos;
 		this->startXPos = currentLetterPos;
-		//10. 자동 줄 바꿈 메뉴가 체크되어 있으면
+		//6.8 자동 줄 바꿈 메뉴가 체크되어 있으면
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//10.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//6.8.1 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. 
 			this->notepadForm->SendMessage(WM_SIZE);
-			//10.2 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
+			//6.8.2 선택영역이 삭제되었기 때문에 자동개행이 끝나고 나면 줄의 위치와 글자 위치가 바뀔 수
 			//있기 때문에 시작하는 줄의 위치를 현재 줄의 위치와 글자위치로 재갱신해줘야한다.
 			this->startYPos = this->notepadForm->note->GetCurrent();
 			this->startXPos = this->notepadForm->current->GetCurrent();
-			//10.3 지금 현재 startYPos와 startXPos의 위치는 자동개행이 적용된 상태의 위치이기 때문에
+			//6.8.3 지금 현재 startYPos와 startXPos의 위치는 자동개행이 적용된 상태의 위치이기 때문에
 			//자동개행을 안한 상태에서 선택하기가 시작되는 진짜 줄의 위치와 글자위치를 구한다.
 			changedRowPos = this->startYPos;
 			changedLetterPos = this->startXPos;
@@ -499,55 +499,55 @@ void BackSpaceKeyActionCommand::Unexecute()
 			this->startXPos = originLetterPos;
 		}
 	}
-	//8. 지울 때 저장한 glyph가 노트(선택영역)이면
+	//7. 지울 때 저장한 glyph가 노트(선택영역)이면
 	else if (dynamic_cast<Note*>(this->glyph))
 	{
-		//11.1 바꾼단어를 지웠고 이제 선택영역을 다시 복원하기 때문에 현재 줄과 글자의 위치를
+		//7.1 바꾼단어를 지웠고 이제 선택영역을 다시 복원하기 때문에 현재 줄과 글자의 위치를
 		//선택영역을 시작 줄과 글자 위치로 설정한다.
 		currentRowPos = this->notepadForm->note->GetCurrent();
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		currentLetterPos = this->notepadForm->current->GetCurrent();
 		this->notepadForm->selectedStartYPos = currentRowPos;
 		this->notepadForm->selectedStartXPos = currentLetterPos;
-		//11.2 메모장에서 선택된 texts를 다시 복구하기 때문에 메모장에서 선택이 된 상태로 바꾼다.
+		//7.2 메모장에서 선택된 texts를 다시 복구하기 때문에 메모장에서 선택이 된 상태로 바꾼다.
 		this->notepadForm->isSelecting = true;
-		//11.3 선택영역이 다시 생겼기 때문에 복사하기, 잘라내기, 삭제 메뉴를 활성화 시킨다.
+		//7.3 선택영역이 다시 생겼기 때문에 복사하기, 잘라내기, 삭제 메뉴를 활성화 시킨다.
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_COPY, MF_BYCOMMAND | MF_ENABLED);
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_CUT, MF_BYCOMMAND | MF_ENABLED);
 		this->notepadForm->GetMenu()->EnableMenuItem(IDM_NOTE_REMOVE, MF_BYCOMMAND | MF_ENABLED);
-		//11.4 선택영역을 다시 복원하기 전에 줄의 위치를 저장한다.
+		//7.4 선택영역을 다시 복원하기 전에 줄의 위치를 저장한다.
 		Long previousRowIndex = currentRowPos;
-		//11.5 선택영역을 다시 복원하고 현재 줄의 위치를 반환받는다.
+		//7.5 선택영역을 다시 복원하고 현재 줄의 위치를 반환받는다.
 		currentRowPos = this->notepadForm->note->
 			InsertTexts(currentRowPos, currentLetterPos, this->glyph);
-		//11.6 메모장의 현재 줄을 저장한다.
+		//7.6 메모장의 현재 줄을 저장한다.
 		this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 		currentLetterPos = this->notepadForm->current->GetCurrent();
-		//11.7 메모장에 선택영역이 복원되었기 때문에 선택이 끝나는 줄과 글자위치를 갱신한다.
+		//7.7 메모장에 선택영역이 복원되었기 때문에 선택이 끝나는 줄과 글자위치를 갱신한다.
 		this->selectedEndYPos = currentRowPos;
 		this->selectedEndXPos = currentLetterPos;
-		//11.8 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
+		//7.8 자동개행이 진행중이면 붙여넣은 줄들을 자동개행시켜준다.
 		if (this->notepadForm->isRowAutoChanging == true)
 		{
-			//11.8.1 부분자동개행을 한다.(마지막 줄은 제외하고 자동개행함)
+			//7.8.1 부분자동개행을 한다.(마지막 줄은 제외하고 자동개행함)
 			Long endPastedRowPos = rowAutoChange.DoPartRows(previousRowIndex, currentRowPos);
-			//11.8.2 선택영역이 끝나는 줄로 이동시킨다.
+			//7.8.2 선택영역이 끝나는 줄로 이동시킨다.
 			//선택영역이 끝나는 줄은 OnSize에서 부분자동개행을 해서 처리되기 때문에 캐럿의 위치만 조정해주면 됨!
 			currentRowPos = this->notepadForm->note->Move(endPastedRowPos);
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 			currentLetterPos = this->notepadForm->current->GetCurrent();
 			this->notepadForm->current->Move(currentLetterPos);
-			//11.8.3 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
+			//7.8.3 OnSize로 메세지가 가지 않기 때문에 OnSize로 가는 메세지를 보내서
 			//OnSize에서 부분자동개행을 하도록 한다. (마지막 줄을 자동개행시킴)
 			this->notepadForm->SendMessage(WM_SIZE);
-			//11.8.4 메모장의 현재 줄을 저장한다.
+			//7.8.4 메모장의 현재 줄을 저장한다.
 			currentRowPos = this->notepadForm->note->GetCurrent();
 			this->notepadForm->current = this->notepadForm->note->GetAt(currentRowPos);
 			currentLetterPos = this->notepadForm->current->GetCurrent();
-			//11.8.5 메모장에 선택영역이 복원되었고, 자동개행인 반영된 선택이 끝나는 줄과 글자위치를 저장한다. 
+			//7.8.5 메모장에 선택영역이 복원되었고, 자동개행인 반영된 선택이 끝나는 줄과 글자위치를 저장한다. 
 			this->selectedEndYPos = currentRowPos;
 			this->selectedEndXPos = currentLetterPos;
-			//11.8.6 지금 현재 선택이 끝나는 줄과 글자 위치는 자동개행이 적용된 상태의 위치이기 때문에
+			//7.8.6 지금 현재 선택이 끝나는 줄과 글자 위치는 자동개행이 적용된 상태의 위치이기 때문에
 			//자동개행을 안한 상태에서 선택하기가 끝나는 진짜 줄의 위치와 글자위치를 구한다.
 			changedRowPos = this->selectedEndYPos;
 			changedLetterPos = this->selectedEndXPos;

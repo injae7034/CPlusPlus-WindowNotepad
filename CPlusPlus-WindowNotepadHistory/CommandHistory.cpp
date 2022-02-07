@@ -87,7 +87,6 @@ void CommandHistory::Redo()
 		this->undoList.Push(command);
 		//1.4 undoList의 사용량을 증가시킨다.
 		this->undoListLength++;
-
 		//1.5 꺼낸 command가 Execute 되기 전에 다시 실행이라는 표시를 한다.
 		command->SetRedone();
 		//1.6 꺼낸 command를 execute한다.

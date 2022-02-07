@@ -18,10 +18,6 @@ public:
 	virtual bool IsRedone();//다시 실행인지 아닌지 확인함
 	virtual bool IsDirty();//변경사항이 있는지 확인 여부(지우는 기능관 관련된 Command 에서 사용됨)
 	virtual bool IsSelectedTextsRemoved();
-	virtual Long GetStartPasteRowIndex();
-	virtual Long GetStartPasteLetterIndex();
-	virtual Long GetRowIndex();
-	virtual Long GetLetterIndex();
 	virtual Long GetStartXPos();//시작하는 글자의 위치구하기
 	virtual Long GetStartYPos();//시작하는 줄의 위치구하기
 	virtual Long GetSelectedEndXPos();//선택이 끝나는 글자의 위치구하기

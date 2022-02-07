@@ -66,30 +66,6 @@ bool Command::IsSelectedTextsRemoved()
 	return -1;
 }
 
-//시작하는 줄의 위치구하기
-Long Command::GetStartPasteRowIndex()
-{
-	return - 1;
-}
-
-//시작하는 글자의 위치구하기
-Long Command::GetStartPasteLetterIndex()
-{
-	return -1;
-}
-
-//줄의 위치구하기
-Long Command::GetRowIndex()
-{
-	return -1;
-}
-
-//글자 위치구하기
-Long Command::GetLetterIndex()
-{
-	return -1;
-}
-
 //시작하는 글자의 위치구하기
 Long Command::GetStartXPos()
 {
