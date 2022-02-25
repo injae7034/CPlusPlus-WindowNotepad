@@ -4,4 +4,4 @@
 ### 또한 기존 윈도우 메모장에서는 실행취소 및 다시실행이 1회만 되어 불편하였는데,
 ### 이를 개선하여 VisualStudio2019처럼 프로그램 종료 전까지 했던 모든 작업을 실행취소 및 다시실행할 수 있도록 기능을 개선시켰습니다.
 
-![UseCaseModeling](UseCaseModeling.JPG)
+![UseCaseModeling](images/UseCaseModeling.JPG)
